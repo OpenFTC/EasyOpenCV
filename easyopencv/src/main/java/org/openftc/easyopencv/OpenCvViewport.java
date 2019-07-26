@@ -1,0 +1,500 @@
+/*
+ * Copyright (c) 2018 OpenFTC Team
+ *
+ * Note: credit where credit is due - some parts of OpenCv's
+ *       JavaCameraView were used as a reference
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.openftc.easyopencv;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+import org.firstinspires.ftc.robotcore.external.android.util.Size;
+import org.firstinspires.ftc.robotcore.external.function.Consumer;
+import org.firstinspires.ftc.robotcore.internal.collections.EvictingBlockingQueue;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
+import java.util.concurrent.ArrayBlockingQueue;
+
+public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callback
+{
+    private Size size;
+    private Bitmap bitmapFromMat;
+    private RenderThread renderThread;
+    private Canvas canvas = null;
+    private double aspectRatio;
+    private Mat mat;
+    private EvictingBlockingQueue<Mat> visionPreviewFrameQueue = new EvictingBlockingQueue<>(new ArrayBlockingQueue<Mat>(3));
+    private volatile RenderingState internalRenderingState = RenderingState.STOPPED;
+    private final Object syncObj = new Object();
+    private volatile boolean userRequestedActive = false;
+    private volatile boolean userRequestedPause = false;
+    private boolean needToDeactivateRegardlessOfUser = false;
+    private boolean surfaceExistsAndIsReady = false;
+    private Paint fpsMeterBgPaint;
+    private Paint fpsMeterTextPaint;
+    private boolean fpsMeterEnabled = true;
+    private float fps = 0;
+    private int pipelineMs = 0;
+    private int overheadMs = 0;
+
+    public OpenCvViewport(Context context)
+    {
+        super(context);
+
+        fpsMeterBgPaint = new Paint();
+        fpsMeterBgPaint.setColor(Color.rgb(102, 20, 68));
+        fpsMeterBgPaint.setStyle(Paint.Style.FILL);
+
+        fpsMeterTextPaint = new Paint();
+        fpsMeterTextPaint.setColor(Color.WHITE);
+        fpsMeterTextPaint.setTextSize(30);
+
+        getHolder().addCallback(this);
+
+        visionPreviewFrameQueue.setEvictAction(new Consumer<Mat>()
+        {
+            @Override
+            public void accept(Mat value)
+            {
+                /*
+                 * If a Mat is evicted from the queue, we need
+                 * to make sure to release its native allocation
+                 * too. Otherwise we'll leak memory.
+                 */
+                value.release();
+            }
+        });
+    }
+
+    private enum RenderingState
+    {
+        STOPPED,
+        ACTIVE,
+        PAUSED,
+    }
+
+    public void setSize(Size size)
+    {
+        if(renderThread != null)
+        {
+            renderThread.pleaseWait = true;
+            renderThread.interrupt();
+        }
+
+        synchronized (syncObj)
+        {
+            //did they give us null?
+            if(size == null)
+            {
+                //ugh, they did
+                throw new IllegalArgumentException("size cannot be null!");
+            }
+
+            this.size = size;
+            this.aspectRatio = (double)size.getWidth() / (double)size.getHeight();
+
+            System.out.println("FRAME SIZE INFO: width=" + size.getWidth() + " height=" + size.getHeight() + " ratio=" + aspectRatio);
+        }
+    }
+
+    public void post(Mat mat)
+    {
+        //did they give us null?
+        if(mat == null)
+        {
+            //ugh, they did
+            throw new IllegalArgumentException("cannot post null mat!");
+        }
+
+        //Are we actually rendering to the display right now? If not,
+        //no need to waste time doing a memcpy
+        if(internalRenderingState == RenderingState.ACTIVE)
+        {
+            /*
+             * We need to clone this mat before adding it to the queue,
+             * because the pointer that was passed in here is only known
+             * to be pointing to a certain frame while we're executing.
+             */
+            visionPreviewFrameQueue.offer(mat.clone());
+        }
+    }
+
+    public void checkState()
+    {
+        /*
+         * If the surface isn't ready, don't do anything
+         */
+        if(!surfaceExistsAndIsReady)
+        {
+            return;
+        }
+
+        /*
+         * Does the user want us to stop?
+         */
+        if(!userRequestedActive || needToDeactivateRegardlessOfUser)
+        {
+            /*
+             * We only need to stop the render thread if it's not
+             * already stopped
+             */
+            if(internalRenderingState != RenderingState.STOPPED)
+            {
+                System.out.println("4634 KILLING RENDER THREAD");
+
+                /*
+                 * Interrupt him so he's not stuck looking at his
+                 * frame queue.
+                 */
+                renderThread.notifyExitRequested();
+                renderThread.interrupt();
+
+                try
+                {
+                    /*
+                     * Wait for him to die
+                     */
+                    renderThread.join();
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+
+                internalRenderingState = RenderingState.STOPPED;
+            }
+        }
+
+        /*
+         * Does the user want us to start?
+         */
+        else if(userRequestedActive)
+        {
+            /*
+             * We only need to start the render thread if it's
+             * stopped.
+             */
+            if(internalRenderingState == RenderingState.STOPPED)
+            {
+                internalRenderingState = RenderingState.PAUSED;
+
+                if(userRequestedPause)
+                {
+                    internalRenderingState = RenderingState.PAUSED;
+                }
+                else
+                {
+                    internalRenderingState = RenderingState.ACTIVE;
+                }
+
+                renderThread = new RenderThread();
+                renderThread.start();
+            }
+        }
+
+        if(internalRenderingState != RenderingState.STOPPED)
+        {
+            if(userRequestedPause && internalRenderingState != RenderingState.PAUSED
+                    || !userRequestedPause && internalRenderingState != RenderingState.ACTIVE)
+            {
+                if(userRequestedPause)
+                {
+                    internalRenderingState = RenderingState.PAUSED;
+                }
+                else
+                {
+                    internalRenderingState = RenderingState.ACTIVE;
+                }
+
+                /*
+                 * Interrupt him so that he's not stuck looking at his frame queue.
+                 * (We stop filling the frame queue if the user requested pause so
+                 * we aren't doing pointless memcpys)
+                 */
+                renderThread.interrupt();
+            }
+        }
+    }
+
+    /***
+     * Activate the render thread
+     */
+    public synchronized void activate()
+    {
+        synchronized (syncObj)
+        {
+            userRequestedActive = true;
+
+            checkState();
+        }
+
+
+        //showViewport(true);
+    }
+
+    /***
+     * Deactivate the render thread
+     */
+    public synchronized void deactivate()
+    {
+        System.out.println("4634 USER DEACTIVATE BEFORE SYNC");
+
+        synchronized (syncObj)
+        {
+            System.out.println("4634 USER DEACTIVATE");
+            userRequestedActive = false;
+            checkState();
+
+        }
+    }
+
+    public synchronized void resume()
+    {
+        synchronized (syncObj)
+        {
+            userRequestedPause = false;
+            checkState();
+        }
+    }
+
+    public synchronized void pause()
+    {
+        synchronized (syncObj)
+        {
+            userRequestedPause = true;
+            checkState();
+        }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder)
+    {
+
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+    {
+        synchronized (syncObj)
+        {
+            needToDeactivateRegardlessOfUser = false;
+            surfaceExistsAndIsReady = true;
+
+            canvas = holder.lockCanvas();
+            canvas.drawColor(Color.RED);
+            holder.unlockCanvasAndPost(canvas);
+
+            checkState();
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        System.out.println("SURFACE DEST BEFORE SYNC");
+
+        synchronized (syncObj)
+        {
+            System.out.println("SURFACE DEST AFTER SYNC");
+            needToDeactivateRegardlessOfUser = true;
+            checkState();
+            surfaceExistsAndIsReady = false;
+        }
+
+    }
+
+    public void setFpsMeterEnabled(boolean fpsMeterEnabled)
+    {
+        this.fpsMeterEnabled = fpsMeterEnabled;
+    }
+
+    public void notifyStatistics(float fps, int pipelineMs, int overheadMs)
+    {
+        this.fps = fps;
+        this.pipelineMs = pipelineMs;
+        this.overheadMs = overheadMs;
+    }
+
+    class RenderThread extends Thread
+    {
+        boolean shouldPaintOrange = true;
+        volatile boolean exitRequested = false;
+        volatile boolean pleaseWait = false;
+
+        public void notifyExitRequested()
+        {
+            exitRequested = true;
+        }
+
+        @Override
+        public void run()
+        {
+            bitmapFromMat = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.RGB_565);
+
+            /*try
+            {
+                canvasReadyLatch.await(2, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                System.out.println("LATCH AWAIT FAILED");
+                e.printStackTrace();
+                internalRenderingState = RenderingState.STOPPED;
+                return;
+            }*/
+
+            System.out.println("4634 RENDER THREAD ALIVE");
+            System.out.println("OpenCvWebcamMonitorView: Starting viewport rendering");
+
+            canvas = getHolder().lockCanvas();
+            canvas.drawColor(Color.BLUE);
+            getHolder().unlockCanvasAndPost(canvas);
+
+            while (true)
+            {
+                /*
+                 * Do we need to exit?
+                 */
+                if(exitRequested)
+                {
+                    break;
+                }
+
+                switch (internalRenderingState)
+                {
+                    case ACTIVE:
+                    {
+                        shouldPaintOrange = true;
+
+                        try
+                        {
+                            //Grab a Mat from the frame queue
+                            mat = visionPreviewFrameQueue.take();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                            break;
+                        }
+
+                        //Get canvas object for rendering on
+                        canvas = getHolder().lockCanvas();
+
+                        if(canvas != null)
+                        {
+                            //Convert that Mat to a bitmap we can render
+                            Utils.matToBitmap(mat, bitmapFromMat);
+
+                            //We're done with that Mat object; release its native memory
+                            mat.release();
+
+                            //Draw the background black each time to prevent double buffering problems
+                            canvas.drawColor(Color.BLACK);
+
+                            //System.out.println("4634 drawing");
+
+                            //Landscape
+                            if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
+                            {
+                                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                                canvas.drawBitmap(
+                                        bitmapFromMat,
+                                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
+                                        new Rect(0,0,(int) Math.round(canvas.getHeight() * aspectRatio), canvas.getHeight()),
+                                        null);
+                            }
+                            //Portrait
+                            else
+                            {
+                                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                                canvas.drawBitmap(
+                                        bitmapFromMat,
+                                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
+                                        new Rect(0,0,canvas.getWidth(), (int) Math.round(canvas.getWidth() / aspectRatio)),
+                                        null);
+                            }
+
+                            if(fpsMeterEnabled)
+                            {
+                                canvas.drawRect(0, canvas.getHeight()-120, 450, canvas.getHeight(), fpsMeterBgPaint);
+                                canvas.drawText("FTC EasyOpenCV v1.0", 5, canvas.getHeight() - 80, fpsMeterTextPaint);
+                                canvas.drawText(getFpsString(), 5, canvas.getHeight() - 45, fpsMeterTextPaint);
+                                canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", 5, canvas.getHeight() - 10, fpsMeterTextPaint);
+                            }
+
+                            getHolder().unlockCanvasAndPost(canvas);
+                        }
+                        else
+                        {
+                            System.out.println("11115 CANVAS WAS NULL!!!!!!!");
+                        }
+
+                        break;
+                    }
+
+                    case PAUSED:
+                    {
+                        if(shouldPaintOrange)
+                        {
+                            shouldPaintOrange = false;
+
+                            System.out.println("Painting orange");
+
+                            canvas = getHolder().lockCanvas();
+                            canvas.drawColor(Color.rgb(255, 166, 0));
+                            canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterBgPaint);
+                            canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
+                            getHolder().unlockCanvasAndPost(canvas);
+                        }
+
+                        try
+                        {
+                            Thread.sleep(50);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                }
+            }
+
+            System.out.println("OpenCvWebcamMonitorView: Terminated viewport rendering");
+            bitmapFromMat.recycle(); //Help the garbage collector :)
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    public String getFpsString()
+    {
+        return String.format("FPS@%dx%d: %.2f", size.getWidth(), size.getHeight(), fps);
+    }
+}
