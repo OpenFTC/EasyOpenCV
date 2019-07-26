@@ -29,4 +29,4 @@ Finally, a straightforward and easy way to use OpenCV on your robot! With this l
 
 7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy `libOpenCvNative.so` from the `/doc/apk` folder of that repo into the `FIRST` folder on the internal storage of the Robot Controller.
 
-8. Congrats, you're ready to go! Now check out either the [Internal Camera Example]() or the [External Camera Example]().
+8. Congrats, you're ready to go! Now check out either the [example OpModes](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples).
