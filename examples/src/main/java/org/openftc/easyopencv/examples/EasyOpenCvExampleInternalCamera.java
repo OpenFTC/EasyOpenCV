@@ -77,10 +77,9 @@ public class EasyOpenCvExampleInternalCamera extends LinearOpMode
          * the resolution you specify is supported by the camera. If it is not, an exception
          * will be thrown.
          *
-         * Also, we specify the orientation that the phone is to be used in. This is so that
-         * the image from the camera sensor can be rotated such that it's not either 90 or 180
-         * degrees out from what you would expect it to be. Rotation is defined assuming the camera
-         * is facing AWAY FROM the user.
+         * Also, we specify the rotation that the camera is used in. This is so that the image
+         * from the camera sensor can be rotated such that it is always displayed with the image upright.
+         * Rotation is defined assuming the camera is facing AWAY FROM the user.
          */
         phoneRearCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 

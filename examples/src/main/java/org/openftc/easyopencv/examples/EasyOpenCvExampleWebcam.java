@@ -87,10 +87,9 @@ public class EasyOpenCvExampleWebcam extends LinearOpMode
          * than 30FPS is not currently supported, although this will likely be addressed in a future
          * release. TLDR: You can't stream in greater than 480p from a webcam at the moment.
          *
-         * Also, we specify the orientation that the webcam is used in. This is so that
-         * the image from the camera sensor can be rotated such that it's not either 90 or 180
-         * degrees out from what you would expect it to be. Rotation is defined assuming the camera
-         * is facing AWAY FROM the user.
+         * Also, we specify the rotation that the webcam is used in. This is so that the image
+         * from the camera sensor can be rotated such that it is always displayed with the image upright.
+         * Rotation is defined assuming the camera is facing AWAY FROM the user.
          */
         webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
