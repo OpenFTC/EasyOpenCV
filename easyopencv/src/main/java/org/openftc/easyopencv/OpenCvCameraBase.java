@@ -100,14 +100,21 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         {
             closeCameraDeviceImplSpecific();
 
-            if(viewport != null)
-            {
-                removeViewport();
-            }
-
             isOpen = false;
         }
 
+        /*
+         * Viewport might be initialized even if the
+         * camera isn't open, because if the camera
+         * open throws an exception, isOpen will still
+         * be false (viewport is created before cam
+         * is opened)
+         */
+        if(viewport != null)
+        {
+            removeViewport();
+            viewport = null;
+        }
     }
 
     @Override
