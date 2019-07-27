@@ -25,9 +25,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import com.qualcomm.robotcore.eventloop.EventLoopManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.robot.RobotState;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.MovingStatistics;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.android.util.Size;
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
@@ -35,6 +38,8 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 
 public abstract class OpenCvCameraBase implements OpenCvCamera
@@ -267,10 +272,23 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
 
     protected void handleFrame(Mat frame)
     {
+        try
+        {
+            handleFrameUserCrashable(frame);
+        }
+        catch (Exception e)
+        {
+            emulateEStop(e);
+        }
+    }
+
+    protected void handleFrameUserCrashable(Mat frame)
+    {
         msFrameIntervalRollingAverage.add(timer.milliseconds());
         timer.reset();
         double secondsPerFrame = msFrameIntervalRollingAverage.getMean() / 1000d;
         avgFps = (float) (1d/secondsPerFrame);
+        Mat userProcessedFrame = null;
 
         int rotateCode = mapRotationEnumToOpenCvRotateCode(rotation);
 
@@ -282,12 +300,20 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         if(pipeline != null)
         {
             long pipelineStart = System.currentTimeMillis();
-            frame = pipeline.processFrame(frame);
+            userProcessedFrame = pipeline.processFrame(frame);
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);
         }
 
         if(viewport != null)
         {
+            if(userProcessedFrame == null)
+            {
+                throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
+            }
+            else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
+            {
+                throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
+            }
             viewport.post(frame);
         }
 
@@ -303,6 +329,34 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         frameCount++;
 
         msTotalFrameProcessingTimeRollingAverage.add(System.currentTimeMillis() - currentFrameStartTime);
+    }
+
+    private void emulateEStop(Exception e)
+    {
+        RobotLog.ee("OpenCvCamera", e, "User code threw an uncaught exception");
+
+        String errorMsg = e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+        RobotLog.setGlobalErrorMsg("User code threw an uncaught exception: " + errorMsg);
+
+        OpModeManagerImpl mgr = OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity());
+        mgr.initActiveOpMode(OpModeManagerImpl.DEFAULT_OP_MODE_NAME);
+
+        try
+        {
+            Field eventLoopMgrField = OpModeManagerImpl.class.getDeclaredField("eventLoopManager");
+            eventLoopMgrField.setAccessible(true);
+            EventLoopManager eventLoopManager = (EventLoopManager) eventLoopMgrField.get(mgr);
+
+            Method changeStateMethod = EventLoopManager.class.getDeclaredMethod("changeState", RobotState.class);
+            changeStateMethod.setAccessible(true);
+            changeStateMethod.invoke(eventLoopManager, RobotState.EMERGENCY_STOP);
+
+            eventLoopManager.refreshSystemTelemetryNow();
+        }
+        catch (Exception e2)
+        {
+            e2.printStackTrace();
+        }
     }
 
     @Override
