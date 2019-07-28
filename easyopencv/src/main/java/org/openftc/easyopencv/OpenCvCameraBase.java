@@ -207,34 +207,51 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     {
         final CountDownLatch latch = new CountDownLatch(1);
 
-        viewportContainerLayout = (LinearLayout) AppUtil.getInstance().getActivity().findViewById(containerLayoutId);
-
-        if(viewportContainerLayout == null)
-        {
-            throw new OpenCvCameraException("Viewport container specified by user does not exist!");
-        }
-        else if(viewportContainerLayout.getChildCount() != 0)
-        {
-            throw new OpenCvCameraException("Viewport container specified by user is not empty!");
-        }
+        //We do the viewport creation on the UI thread, but if there's an exception then
+        //we need to catch it and rethrow it on the OpMode thread
+        final RuntimeException[] exToRethrowOnOpModeThread = {null};
 
         AppUtil.getInstance().getActivity().runOnUiThread(new Runnable()
         {
             @Override
             public void run()
             {
-                viewport = new OpenCvViewport(AppUtil.getInstance().getActivity());
+                try
+                {
+                    viewportContainerLayout = (LinearLayout) AppUtil.getInstance().getActivity().findViewById(containerLayoutId);
 
-                viewport.setSize(new org.firstinspires.ftc.robotcore.external.android.util.Size(320, 240));
+                    if(viewportContainerLayout == null)
+                    {
+                        throw new OpenCvCameraException("Viewport container specified by user does not exist!");
+                    }
+                    else if(viewportContainerLayout.getChildCount() != 0)
+                    {
+                        throw new OpenCvCameraException("Viewport container specified by user is not empty!");
+                    }
 
-                viewport.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    viewport = new OpenCvViewport(AppUtil.getInstance().getActivity());
 
-                viewportContainerLayout.setVisibility(View.VISIBLE);
-                viewportContainerLayout.addView(viewport);
+                    viewport.setSize(new org.firstinspires.ftc.robotcore.external.android.util.Size(320, 240));
 
-                latch.countDown();
+                    viewport.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+                    viewportContainerLayout.setVisibility(View.VISIBLE);
+                    viewportContainerLayout.addView(viewport);
+
+                    latch.countDown();
+                }
+                catch (RuntimeException e)
+                {
+                    exToRethrowOnOpModeThread[0] = e;
+                }
+
             }
         });
+
+        if(exToRethrowOnOpModeThread[0] != null)
+        {
+            throw exToRethrowOnOpModeThread[0];
+        }
 
         try
         {
