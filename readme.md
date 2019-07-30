@@ -20,7 +20,7 @@ Finally, a straightforward and easy way to use OpenCV on your robot! With this l
 5. At the bottom, add this:
 
         dependencies {
-            compile 'org.openftc:easyopencv:1.0-test'
+            implementation 'org.openftc:easyopencv:1.0-test'
          }
 
 6. Now perform a Gradle Sync:
