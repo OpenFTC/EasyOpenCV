@@ -443,7 +443,20 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         @Override
         public void onOpModePostStop(OpMode opMode)
         {
-            closeCameraDevice();
+            /*
+             * For some reason, we need to run this on another thread in order
+             * to prevent weird issues when a "restart robot" was performed while
+             * the OpMode was still running.
+             */
+            new Thread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    closeCameraDevice();
+                }
+            }).start();
+
             OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(this);
         }
     }
