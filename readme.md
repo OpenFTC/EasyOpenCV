@@ -1,6 +1,6 @@
 # EasyOpenCV
 
-Finally, a straightforward and easy way to use OpenCV on your robot! With this library, you can **go from a stock SDK to running a sample OpenCV OpMode, with either an internal or external camera, in less than 2 minutes!**
+Finally, a straightforward and easy way to use OpenCV on your robot! With this library, you can **go from a stock SDK to running a sample OpenCV OpMode, with either an internal or external camera, in less than 10 minutes!**
 
 ## Installation instructions:
 
