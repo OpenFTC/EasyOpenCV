@@ -83,7 +83,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void openCameraDevice()
+    public synchronized final void openCameraDevice()
     {
         if(!isOpen)
         {
@@ -94,7 +94,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void closeCameraDevice()
+    public synchronized final void closeCameraDevice()
     {
         /*
          * Viewport might be initialized even if the
@@ -118,13 +118,13 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void startStreaming(int width, int height)
+    public synchronized final void startStreaming(int width, int height)
     {
         startStreaming(width, height, getDefaultRotation());
     }
 
     @Override
-    public final void startStreaming(int width, int height, OpenCvCameraRotation rotation)
+    public synchronized final void startStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
         if(!isOpen)
         {
@@ -153,7 +153,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void stopStreaming()
+    public synchronized final void stopStreaming()
     {
         if(!isOpen)
         {
@@ -171,7 +171,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void pauseViewport()
+    public synchronized final void pauseViewport()
     {
         if(viewport != null)
         {
@@ -180,7 +180,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void resumeViewport()
+    public synchronized final void resumeViewport()
     {
         if(viewport != null)
         {
@@ -189,7 +189,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void showFpsMeterOnViewport(boolean show)
+    public synchronized final void showFpsMeterOnViewport(boolean show)
     {
         if(viewport != null)
         {
@@ -198,7 +198,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     }
 
     @Override
-    public final void setPipeline(OpenCvPipeline pipeline)
+    public synchronized final void setPipeline(OpenCvPipeline pipeline)
     {
         this.pipeline = pipeline;
     }
@@ -294,7 +294,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         currentFrameStartTime = System.currentTimeMillis();
     }
 
-    protected void handleFrame(Mat frame)
+    protected synchronized void handleFrame(Mat frame)
     {
         try
         {
