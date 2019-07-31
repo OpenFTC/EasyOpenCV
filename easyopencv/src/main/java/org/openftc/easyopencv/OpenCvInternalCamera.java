@@ -38,8 +38,8 @@ import java.util.List;
 
 public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.PreviewCallback
 {
-    private int cameraId = -1;
     private Camera camera;
+    private CameraDirection direction;
     private byte[] rawSensorBuffer;
     private Mat rawSensorMat;
     private Mat rgbMat;
@@ -58,26 +58,15 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
         }
     }
 
-
-    public OpenCvInternalCamera(int cameraId)
-    {
-        this.cameraId = cameraId;
-    }
-
     public OpenCvInternalCamera(CameraDirection direction)
     {
-        this(direction.id);
-    }
-
-    public OpenCvInternalCamera(int cameraId, int containerLayoutId)
-    {
-        super(containerLayoutId);
-        this.cameraId = cameraId;
+        this.direction = direction;
     }
 
     public OpenCvInternalCamera(CameraDirection direction, int containerLayoutId)
     {
-        this(direction.id, containerLayoutId);
+        super(containerLayoutId);
+        this.direction = direction;
     }
 
     @Override
@@ -95,22 +84,46 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
          * to manually rotate the image if the phone is in any other orientation
          */
 
-        if(rotation == OpenCvCameraRotation.UPRIGHT)
+        if(direction == CameraDirection.BACK)
         {
-            return Core.ROTATE_90_CLOCKWISE;
+            if(rotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return Core.ROTATE_90_CLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return Core.ROTATE_90_COUNTERCLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return Core.ROTATE_180;
+            }
+            else
+            {
+                return -1;
+            }
         }
-        else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+        else if(direction == CameraDirection.FRONT)
         {
-            return Core.ROTATE_90_COUNTERCLOCKWISE;
+            if(rotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return Core.ROTATE_90_COUNTERCLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return Core.ROTATE_90_CLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return Core.ROTATE_180;
+            }
+            else
+            {
+                return -1;
+            }
         }
-        else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
-        {
-            return Core.ROTATE_180;
-        }
-        else
-        {
-            return -1;
-        }
+
+        return -1;
     }
 
     @Override
@@ -118,7 +131,7 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
     {
         if(camera == null)
         {
-            camera = Camera.open(cameraId);
+            camera = Camera.open(direction.id);
 
             if(camera != null)
             {

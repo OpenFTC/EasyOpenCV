@@ -89,7 +89,9 @@ public class EasyOpenCvExampleWebcam extends LinearOpMode
          *
          * Also, we specify the rotation that the webcam is used in. This is so that the image
          * from the camera sensor can be rotated such that it is always displayed with the image upright.
-         * Rotation is defined assuming the camera is facing AWAY FROM the user.
+         * For a front facing camera, rotation is defined assuming the user is looking at the screen.
+         * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
+         * away from the user.
          */
         webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 

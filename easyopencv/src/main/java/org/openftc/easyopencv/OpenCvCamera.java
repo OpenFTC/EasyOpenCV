@@ -106,8 +106,9 @@ public interface OpenCvCamera
      * @param height the height of the resolution in which you would like the camera to stream
      * @param rotation the rotation that the camera is being used in. This is so that
      *                 the image from the camera sensor can be rotated such that it is always
-     *                 displayed with the image upright. Rotation is defined assuming the camera
-     *                 is facing AWAY FROM the user.
+     *                 displayed with the image upright. For a front facing camera, rotation is
+     *                 defined assuming the user is looking at the screen. For a rear facing camera
+     *                 or a webcam, rotation is defined assuming the camera is facing away from the user.
      */
     void startStreaming(int width, int height, OpenCvCameraRotation rotation);
 
