@@ -35,6 +35,7 @@ Finally, a straightforward and easy way to use OpenCV on your robot! With this l
 
 Feel free to submit a pull request if you know how to fix any of these!
 
+ - [Bug induced by SDK] On some devices, it has been reported that the entire RC app will crash if a webcam is disconnect while it is in use. However, this is a bug in the SDK's webcam driver, not a bug in this library. Devices that exhibit this behavior also suffer from the exact same issue when running the sample Vuforia webcam OpMode.
  - Webcam stream does not automatically restart if the USB link is disconnected and then reconnected during the same run of an OpMode
  - [???] Opening the internal camera very occasionally fails with a "Fail to connect to camera service" error from the Android OS. I think this may be a bug in the ROM of my test device rather than a bug with this library, because in that scenario the standard camera app also fails to open the camera with the same error.
 
