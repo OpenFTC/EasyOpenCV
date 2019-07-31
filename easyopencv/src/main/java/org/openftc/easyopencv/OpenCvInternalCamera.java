@@ -164,7 +164,22 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
             Camera.Parameters parameters = camera.getParameters();
             parameters.setPreviewFormat(ImageFormat.NV21);
             parameters.setPreviewSize(width, height);
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+
+            /*
+             * Not all cameras support all focus modes...
+             */
+            if(parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
+            {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            }
+            else if(parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE))
+            {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }
+            else if(parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_FIXED))
+            {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_FIXED);
+            }
 
             boolean isRequestedSizeSupported = false;
 
