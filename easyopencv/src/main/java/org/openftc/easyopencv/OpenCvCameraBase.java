@@ -96,13 +96,6 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     @Override
     public final void closeCameraDevice()
     {
-        if(isOpen)
-        {
-            closeCameraDeviceImplSpecific();
-
-            isOpen = false;
-        }
-
         /*
          * Viewport might be initialized even if the
          * camera isn't open, because if the camera
@@ -114,6 +107,13 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         {
             removeViewport();
             viewport = null;
+        }
+
+        if(isOpen)
+        {
+            closeCameraDeviceImplSpecific();
+
+            isOpen = false;
         }
     }
 
