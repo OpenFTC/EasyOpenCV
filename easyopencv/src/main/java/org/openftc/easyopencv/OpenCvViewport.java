@@ -315,10 +315,6 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             needToDeactivateRegardlessOfUser = false;
             surfaceExistsAndIsReady = true;
 
-            canvas = holder.lockCanvas();
-            canvas.drawColor(Color.RED);
-            holder.unlockCanvasAndPost(canvas);
-
             checkState();
         }
     }
@@ -399,6 +395,13 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         //Get canvas object for rendering on
                         canvas = getHolder().lockCanvas();
 
+                        /*
+                         * For some reason, the canvas will very occasionally be null upon closing.
+                         * Stack Overflow seems to suggest this means the canvas has been destroyed.
+                         * However, surfaceDestroyed(), which is called right before the surface is
+                         * destroyed, calls checkState(), which *SHOULD* block until we die. This
+                         * works most of the time, but not always? We don't yet understand...
+                         */
                         if(canvas != null)
                         {
                             //Convert that Mat to a bitmap we can render
@@ -456,10 +459,21 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                             shouldPaintOrange = false;
 
                             canvas = getHolder().lockCanvas();
-                            canvas.drawColor(Color.rgb(255, 166, 0));
-                            canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterBgPaint);
-                            canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
-                            getHolder().unlockCanvasAndPost(canvas);
+
+                            /*
+                             * For some reason, the canvas will very occasionally be null upon closing.
+                             * Stack Overflow seems to suggest this means the canvas has been destroyed.
+                             * However, surfaceDestroyed(), which is called right before the surface is
+                             * destroyed, calls checkState(), which *SHOULD* block until we die. This
+                             * works most of the time, but not always? We don't yet understand...
+                             */
+                            if(canvas != null)
+                            {
+                                canvas.drawColor(Color.rgb(255, 166, 0));
+                                canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterBgPaint);
+                                canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
+                                getHolder().unlockCanvasAndPost(canvas);
+                            }
                         }
 
                         try

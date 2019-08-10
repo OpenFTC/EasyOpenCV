@@ -105,8 +105,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
          */
         if(viewport != null)
         {
-            removeViewport();
-            viewport = null;
+            removeViewportAsync();
         }
 
         if(isOpen)
@@ -264,29 +263,18 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         }
     }
 
-    private void removeViewport()
+    private void removeViewportAsync()
     {
-        final CountDownLatch latch = new CountDownLatch(1);
-
         AppUtil.getInstance().runOnUiThread(new Runnable()
         {
             @Override
             public void run()
             {
                 viewportContainerLayout.removeView(viewport);
+                viewport = null;
                 viewportContainerLayout.setVisibility(View.GONE);
-                latch.countDown();
             }
         });
-
-        try
-        {
-            latch.await();
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
     }
 
     protected void notifyStartOfFrameProcessing()

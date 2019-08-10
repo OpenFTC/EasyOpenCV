@@ -127,7 +127,7 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
     }
 
     @Override
-    protected void openCameraDeviceImplSpecific()
+    protected synchronized void openCameraDeviceImplSpecific()
     {
         if(camera == null)
         {
@@ -141,7 +141,7 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
     }
 
     @Override
-    public void closeCameraDeviceImplSpecific()
+    public synchronized void closeCameraDeviceImplSpecific()
     {
         if(camera != null)
         {
@@ -154,7 +154,7 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
     }
 
     @Override
-    public void startStreamingImplSpecific(int width, int height)
+    public synchronized void startStreamingImplSpecific(int width, int height)
     {
         rawSensorMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
         rgbMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
@@ -226,7 +226,7 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
     }
 
     @Override
-    public void stopStreamingImplSpecific()
+    public synchronized void stopStreamingImplSpecific()
     {
         if(camera != null)
         {
@@ -247,8 +247,12 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
         }
     }
 
+    /*
+     * This needs to be synchronized with stopStreamingImplSpecific()
+     * because we touch objects that are destroyed in that method.
+     */
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera)
+    public synchronized void onPreviewFrame(byte[] data, Camera camera)
     {
         notifyStartOfFrameProcessing();
 
@@ -261,14 +265,17 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
          *
          * TODO: investigate using a bit of native code to remove the need to do a memcpy
          */
-        rawSensorMat.put(0,0,data);
-
-        Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_NV21, 4);
-        handleFrame(rgbMat);
-
-        if(camera != null)
+        if(rawSensorMat != null)
         {
-            camera.addCallbackBuffer(rawSensorBuffer);
+            rawSensorMat.put(0,0,data);
+
+            Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+            handleFrame(rgbMat);
+
+            if(camera != null)
+            {
+                camera.addCallbackBuffer(rawSensorBuffer);
+            }
         }
     }
 }
