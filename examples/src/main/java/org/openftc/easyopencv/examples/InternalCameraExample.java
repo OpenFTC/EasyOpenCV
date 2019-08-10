@@ -24,51 +24,48 @@ package org.openftc.easyopencv.examples;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
-import org.openftc.easyopencv.OpenCvWebcam;
 
 @TeleOp
-public class EasyOpenCvExampleWebcam extends LinearOpMode
+public class InternalCameraExample extends LinearOpMode
 {
-    OpenCvCamera webcam;
+    OpenCvCamera phoneCam;
 
     @Override
     public void runOpMode()
     {
         /*
          * Instantiate an OpenCvCamera object for the camera we'll be using.
-         * In this sample, we're using a webcam. Note that you will need to
-         * make sure you have added the webcam to your configuration file and
-         * adjusted the name here to match what you named it in said config file.
-         *
-         * We pass it the view that we wish to use for camera monitor (on
+         * In this sample, we're using the phone's internal camera. We pass it a
+         * CameraDirection enum indicating whether to use the front or back facing
+         * camera, as well as the view that we wish to use for camera monitor (on
          * the RC phone). If no camera monitor is desired, use the alternate
          * single-parameter constructor instead (commented out below)
          */
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        webcam = new OpenCvWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        phoneCam = new OpenCvInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
 
         // OR...  Do Not Activate the Camera Monitor View
-        //webcam = new OpenCvWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
+        //phoneCam = new OpenCvInternalCamera(OpenCvInternalCamera.CameraDirection.BACK);
 
         /*
          * Open the connection to the camera device
          */
-        webcam.openCameraDevice();
+        phoneCam.openCameraDevice();
 
         /*
          * Specify the image processing pipeline we wish to invoke upon receipt
          * of a frame from the camera. Note that switching pipelines on-the-fly
          * (while a streaming session is in flight) *IS* supported.
          */
-        webcam.setPipeline(new SamplePipeline());
+        phoneCam.setPipeline(new SamplePipeline());
 
         /*
          * Wait for the user to press start on the Driver Station
@@ -76,36 +73,29 @@ public class EasyOpenCvExampleWebcam extends LinearOpMode
         waitForStart();
 
         /*
-         * Tell the webcam to start streaming images to us! Note that you must make sure
+         * Tell the camera to start streaming images to us! Note that you must make sure
          * the resolution you specify is supported by the camera. If it is not, an exception
          * will be thrown.
          *
-         * Keep in mind that the SDK's UVC driver (what OpenCvWebcam uses under the hood) only
-         * supports streaming from the webcam in the uncompressed YUV image format. This means
-         * that the maximum resolution you can stream at and still get up to 30FPS is 480p (640x480).
-         * Streaming at 720p will limit you to up to 10FPS. However, streaming at frame rates other
-         * than 30FPS is not currently supported, although this will likely be addressed in a future
-         * release. TLDR: You can't stream in greater than 480p from a webcam at the moment.
-         *
-         * Also, we specify the rotation that the webcam is used in. This is so that the image
+         * Also, we specify the rotation that the camera is used in. This is so that the image
          * from the camera sensor can be rotated such that it is always displayed with the image upright.
          * For a front facing camera, rotation is defined assuming the user is looking at the screen.
          * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
          * away from the user.
          */
-        webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
         while (opModeIsActive())
         {
             /*
              * Send some stats to the telemetry
              */
-            telemetry.addData("Frame Count", webcam.getFrameCount());
-            telemetry.addData("FPS", String.format("%.2f", webcam.getFps()));
-            telemetry.addData("Total frame time ms", webcam.getTotalFrameTimeMs());
-            telemetry.addData("Pipeline time ms", webcam.getPipelineTimeMs());
-            telemetry.addData("Overhead time ms", webcam.getOverheadTimeMs());
-            telemetry.addData("Theoretical max FPS", webcam.getCurrentPipelineMaxFps());
+            telemetry.addData("Frame Count", phoneCam.getFrameCount());
+            telemetry.addData("FPS", String.format("%.2f", phoneCam.getFps()));
+            telemetry.addData("Total frame time ms", phoneCam.getTotalFrameTimeMs());
+            telemetry.addData("Pipeline time ms", phoneCam.getPipelineTimeMs());
+            telemetry.addData("Overhead time ms", phoneCam.getOverheadTimeMs());
+            telemetry.addData("Theoretical max FPS", phoneCam.getCurrentPipelineMaxFps());
             telemetry.update();
 
             /*
@@ -134,8 +124,29 @@ public class EasyOpenCvExampleWebcam extends LinearOpMode
                  * time. Of course, this comment is irrelevant in light of the use case described in
                  * the above "important note".
                  */
-                webcam.stopStreaming();
+                phoneCam.stopStreaming();
                 //webcam.closeCameraDevice();
+            }
+
+            /*
+             * The viewport (if one was specified in the constructor) can also be dynamically "paused"
+             * and "resumed". The primary use case of this is to reduce CPU, memory, and power load
+             * when you need your vision pipeline running, but do not require a live preview on the
+             * robot controller screen. For instance, this could be useful if you wish to see the live
+             * camera preview as you are initializing your robot, but you no longer require the live
+             * preview after you have finished your initialization process; pausing the viewport does
+             * not stop running your pipeline.
+             *
+             * The "if" statements below will pause the viewport if the "X" button on gamepad1 is pressed,
+             * and resume the viewport if the "Y" button on gamepad1 is pressed.
+             */
+            else if(gamepad1.x)
+            {
+                phoneCam.pauseViewport();
+            }
+            else if(gamepad1.y)
+            {
+                phoneCam.resumeViewport();
             }
 
             /*
