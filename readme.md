@@ -1,8 +1,10 @@
 # EasyOpenCV
 
-Finally, a straightforward and easy way to use OpenCV on your robot! With this library, you can **go from a stock SDK to running a sample OpenCV OpMode, with either an internal or external camera, in less than 10 minutes!**
+Finally, a straightforward and easy way to use OpenCV on an FTC robot! With this library, you can **go from a stock SDK to running a sample OpenCV OpMode, with either an internal or external camera, in just a few minutes!**
 
 ## Installation instructions:
+
+**IMPORTANT NOTE: This tutorial assumes you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
 
 1. Open your FTC SDK Android Studio project
 2. Open the `build.common.gradle` file:
@@ -20,7 +22,7 @@ Finally, a straightforward and easy way to use OpenCV on your robot! With this l
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.0-test'
+            implementation 'org.openftc:easyopencv:1.0'
          }
 
 6. Now perform a Gradle Sync:
