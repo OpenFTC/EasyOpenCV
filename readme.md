@@ -43,6 +43,16 @@ Feel free to submit a pull request if you know how to fix any of these!
 
 ## Changelog:
 
+### v1.1
+
+ - SDK v5.1 or higher now required
+ - Add support for stream preview on Driver Station
+ - Fix bug where internal camera was not correctly released
+ - Fix bug where a null pipeline caused a crash
+ - API change: user pipelines now need to `extends OpenCvPipeline` instead of `implements OpenCvPipeline`
+ - Add ability for user pipeline to override `onViewportTapped()` to be notified if the user taps the viewport
+ - Add `PipelineStageSwitchingExample` to show how to use `onViewportTapped()` to change which stage of your pipeline is drawn to the viewport for debugging purposes. It also shows how to get data from your pipeline to your OpMode.
+
 ### v1.0
 
  - Initial release
