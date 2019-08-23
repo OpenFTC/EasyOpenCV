@@ -1,5 +1,9 @@
 # EasyOpenCV
 
+NOTE: SDK v5.1+ is required to use this
+
+NOTE: an OpenRC-based SDK is NOT required to use this
+
 Finally, a straightforward and easy way to use OpenCV on an FTC robot! With this library, you can **go from a stock SDK to running a sample OpenCV OpMode, with either an internal or external camera, in just a few minutes!**
 
 ## Installation instructions:
