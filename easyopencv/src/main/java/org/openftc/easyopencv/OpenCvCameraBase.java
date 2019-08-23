@@ -338,7 +338,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             {
                 throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
             }
-            viewport.post(frame);
+            viewport.post(userProcessedFrame);
         }
 
         avgPipelineTime = (int) Math.round(msUserPipelineRollingAverage.getMean());
