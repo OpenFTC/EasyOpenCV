@@ -40,12 +40,13 @@ import java.util.List;
 /**
  * In this sample, we demonstrate how to use the {@link OpenCvPipeline#onViewportTapped()}
  * callback to switch which stage of a pipeline is rendered to the viewport for debugging
- * purposes.
+ * purposes. We also show how to get data from the pipeline to your OpMode.
  */
 @TeleOp
 public class PipelineStageSwitchingExample extends LinearOpMode
 {
     OpenCvCamera phoneCam;
+    StageSwitchingPipeline stageSwitchingPipeline;
 
     @Override
     public void runOpMode()
@@ -60,13 +61,16 @@ public class PipelineStageSwitchingExample extends LinearOpMode
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = new OpenCvInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
         phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new StageSwitchingPipeline());
+        stageSwitchingPipeline = new StageSwitchingPipeline();
+        phoneCam.setPipeline(stageSwitchingPipeline);
         phoneCam.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
 
         waitForStart();
 
         while (opModeIsActive())
         {
+            telemetry.addData("Num contours found", stageSwitchingPipeline.getNumContoursFound());
+            telemetry.update();
             sleep(100);
         }
     }
@@ -74,7 +78,8 @@ public class PipelineStageSwitchingExample extends LinearOpMode
     /*
      * With this pipeline, we demonstrate how to change which stage of
      * is rendered to the viewport when the viewport is tapped. This is
-     * particularly useful during pipeline development.
+     * particularly useful during pipeline development. We also show how
+     * to get data from the pipeline to your OpMode.
      */
     static class StageSwitchingPipeline extends OpenCvPipeline
     {
@@ -82,6 +87,7 @@ public class PipelineStageSwitchingExample extends LinearOpMode
         Mat thresholdMat = new Mat();
         Mat contoursOnFrameMat = new Mat();
         List<MatOfPoint> contoursList = new ArrayList<>();
+        int numContoursFound;
 
         enum Stage
         {
@@ -127,6 +133,7 @@ public class PipelineStageSwitchingExample extends LinearOpMode
             Core.extractChannel(yCbCrChan2Mat, yCbCrChan2Mat, 2);
             Imgproc.threshold(yCbCrChan2Mat, thresholdMat, 102, 255, Imgproc.THRESH_BINARY_INV);
             Imgproc.findContours(thresholdMat, contoursList, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+            numContoursFound = contoursList.size();
             input.copyTo(contoursOnFrameMat);
             Imgproc.drawContours(contoursOnFrameMat, contoursList, -1, new Scalar(0, 0, 255), 3, 8);
 
@@ -157,6 +164,11 @@ public class PipelineStageSwitchingExample extends LinearOpMode
                     return input;
                 }
             }
+        }
+
+        public int getNumContoursFound()
+        {
+            return numContoursFound;
         }
     }
 }
