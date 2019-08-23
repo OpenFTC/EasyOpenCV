@@ -39,7 +39,6 @@ Feel free to submit a pull request if you know how to fix any of these!
 
  - Currently, this library uses the SDK's built-in UVC driver for webcam support. Unforutnetly, the SDK's UVC driver is a buggy mess. This can cause all sorts of undesirable things to happen, such as crashes on USB disconnection, (or, if it survived the USB disconnection, hanging/deadlock when trying to stop the OpMode after the connection was restored), crashing of the Linux kernel if run too many times in a row, etc. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that would use a 3rd party UVC driver.
  - Internal camera support is currently provided via the Android Camera v1 API. This means that manual focus/exposure/ISO control is not possible. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that used the Camera v2 API.
- - [???] Opening the internal camera very occasionally fails with a "Fail to connect to camera service" error from the Android OS. I think this may be a bug in the ROM of my test device rather than a bug with this library, because in that scenario the standard camera app also fails to open the camera with the same error.
 
 ## Changelog:
 
