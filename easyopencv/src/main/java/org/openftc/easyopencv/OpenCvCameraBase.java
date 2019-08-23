@@ -343,15 +343,23 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
         if(viewport != null)
         {
-            if(userProcessedFrame == null)
+            if(pipeline != null)
             {
-                throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
+                if(userProcessedFrame == null)
+                {
+                    throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
+                }
+                else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
+                {
+                    throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
+                }
+
+                viewport.post(userProcessedFrame);
             }
-            else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
+            else
             {
-                throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
+                viewport.post(frame);
             }
-            viewport.post(userProcessedFrame);
         }
 
         avgPipelineTime = (int) Math.round(msUserPipelineRollingAverage.getMean());
