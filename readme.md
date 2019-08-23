@@ -22,7 +22,7 @@ Finally, a straightforward and easy way to use OpenCV on an FTC robot! With this
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.0'
+            implementation 'org.openftc:easyopencv:1.1'
          }
 
 6. Now perform a Gradle Sync:
