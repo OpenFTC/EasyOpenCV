@@ -71,11 +71,6 @@ public class WebcamExample extends LinearOpMode
         webcam.setPipeline(new SamplePipeline());
 
         /*
-         * Wait for the user to press start on the Driver Station
-         */
-        waitForStart();
-
-        /*
          * Tell the webcam to start streaming images to us! Note that you must make sure
          * the resolution you specify is supported by the camera. If it is not, an exception
          * will be thrown.
@@ -94,6 +89,11 @@ public class WebcamExample extends LinearOpMode
          * away from the user.
          */
         webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+
+        /*
+         * Wait for the user to press start on the Driver Station
+         */
+        waitForStart();
 
         while (opModeIsActive())
         {
