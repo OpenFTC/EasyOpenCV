@@ -66,7 +66,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private int overheadMs = 0;
     private String TAG = "OpenCvViewport";
 
-    public OpenCvViewport(Context context)
+    public OpenCvViewport(Context context, OnClickListener onClickListener)
     {
         super(context);
 
@@ -93,6 +93,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 value.release();
             }
         });
+
+        setOnClickListener(onClickListener);
     }
 
     private enum RenderingState
@@ -104,13 +106,13 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
     public void setSize(Size size)
     {
-        if(renderThread != null)
-        {
-            renderThread.interrupt();
-        }
-
         synchronized (syncObj)
         {
+            if(renderThread != null)
+            {
+                renderThread.interrupt();
+            }
+
             //did they give us null?
             if(size == null)
             {
@@ -125,26 +127,32 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
     public void post(Mat mat)
     {
-        //did they give us null?
-        if(mat == null)
+        synchronized (syncObj)
         {
-            //ugh, they did
-            throw new IllegalArgumentException("cannot post null mat!");
-        }
+            //did they give us null?
+            if(mat == null)
+            {
+                //ugh, they did
+                throw new IllegalArgumentException("cannot post null mat!");
+            }
 
-        //Are we actually rendering to the display right now? If not,
-        //no need to waste time doing a memcpy
-        if(internalRenderingState == RenderingState.ACTIVE)
-        {
-            /*
-             * We need to clone this mat before adding it to the queue,
-             * because the pointer that was passed in here is only known
-             * to be pointing to a certain frame while we're executing.
-             */
-            visionPreviewFrameQueue.offer(mat.clone());
+            //Are we actually rendering to the display right now? If not,
+            //no need to waste time doing a memcpy
+            if(internalRenderingState == RenderingState.ACTIVE)
+            {
+                /*
+                 * We need to clone this mat before adding it to the queue,
+                 * because the pointer that was passed in here is only known
+                 * to be pointing to a certain frame while we're executing.
+                 */
+                visionPreviewFrameQueue.offer(mat.clone());
+            }
         }
     }
 
+    /*
+     * Called with syncObj held
+     */
     public void checkState()
     {
         /*

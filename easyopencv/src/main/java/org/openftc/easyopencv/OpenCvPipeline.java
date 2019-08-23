@@ -23,7 +23,8 @@ package org.openftc.easyopencv;
 
 import org.opencv.core.Mat;
 
-public interface OpenCvPipeline
+public abstract class OpenCvPipeline
 {
-    Mat processFrame(Mat input);
+    public abstract Mat processFrame(Mat input);
+    void onViewportTapped() {}
 }

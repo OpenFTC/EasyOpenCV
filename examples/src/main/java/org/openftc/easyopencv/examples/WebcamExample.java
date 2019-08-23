@@ -183,7 +183,7 @@ public class WebcamExample extends LinearOpMode
      * if you're doing something weird where you do need it synchronized with your OpMode thread,
      * then you will need to account for that accordingly.
      */
-    class SamplePipeline implements OpenCvPipeline
+    class SamplePipeline extends OpenCvPipeline
     {
         /*
          * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is

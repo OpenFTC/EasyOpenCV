@@ -240,7 +240,20 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                         throw new OpenCvCameraException("Viewport container specified by user is not empty!");
                     }
 
-                    viewport = new OpenCvViewport(AppUtil.getInstance().getActivity());
+                    viewport = new OpenCvViewport(AppUtil.getInstance().getActivity(), new View.OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View view)
+                        {
+                            synchronized (OpenCvCameraBase.this)
+                            {
+                                if(pipeline != null)
+                                {
+                                    pipeline.onViewportTapped();
+                                }
+                            }
+                        }
+                    });
 
                     viewport.setSize(new org.firstinspires.ftc.robotcore.external.android.util.Size(320, 240));
 
