@@ -26,5 +26,5 @@ import org.opencv.core.Mat;
 public abstract class OpenCvPipeline
 {
     public abstract Mat processFrame(Mat input);
-    void onViewportTapped() {}
+    public void onViewportTapped() {}
 }
