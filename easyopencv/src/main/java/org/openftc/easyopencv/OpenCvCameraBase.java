@@ -21,6 +21,7 @@
 
 package org.openftc.easyopencv;
 
+import android.graphics.Bitmap;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -33,8 +34,14 @@ import com.qualcomm.robotcore.util.MovingStatistics;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.android.util.Size;
+import org.firstinspires.ftc.robotcore.external.function.Consumer;
+import org.firstinspires.ftc.robotcore.external.function.Continuation;
+import org.firstinspires.ftc.robotcore.external.function.ContinuationResult;
+import org.firstinspires.ftc.robotcore.external.stream.CameraStreamServer;
+import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
@@ -42,8 +49,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 
-public abstract class OpenCvCameraBase implements OpenCvCamera
-{
+public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource {
     private boolean isStreaming = false;
     private boolean isOpen = false;
     private OpenCvPipeline pipeline = null;
@@ -60,7 +66,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
     private int avgOverheadTime;
     private int avgTotalFrameTime;
     private long currentFrameStartTime;
-
+    private final Object bitmapFrameLock = new Object();
+    private Continuation<? extends Consumer<Bitmap>> bitmapContinuation;
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
      * to register the listener, because the SDK stores the list of listeners in
@@ -149,6 +156,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         }
 
         startStreamingImplSpecific(width, height);
+
+        /*
+         * For preview on DS
+         */
+        CameraStreamServer.getInstance().setSource(this);
     }
 
     @Override
@@ -341,6 +353,56 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         frameCount++;
 
         msTotalFrameProcessingTimeRollingAverage.add(System.currentTimeMillis() - currentFrameStartTime);
+
+        /*
+         * For stream preview on DS
+         */
+        synchronized (bitmapFrameLock)
+        {
+            if (bitmapContinuation != null)
+            {
+                Mat matToCvt = null;
+
+                if(userProcessedFrame == null)
+                {
+                    matToCvt = frame;
+                }
+                else
+                {
+                    matToCvt = userProcessedFrame;
+                }
+
+                final Bitmap bitmapFromMat = Bitmap.createBitmap(matToCvt.cols(), matToCvt.rows(), Bitmap.Config.RGB_565);
+
+                Utils.matToBitmap(matToCvt, bitmapFromMat);
+
+                if (bitmapFromMat != null)
+                {
+                    bitmapContinuation.dispatch(new ContinuationResult<Consumer<Bitmap>>()
+                    {
+                        @Override
+                        public void handle(Consumer<Bitmap> bitmapConsumer)
+                        {
+                            bitmapConsumer.accept(bitmapFromMat);
+                            bitmapFromMat.recycle();
+                        }
+                    });
+                    bitmapContinuation = null;
+                }
+            }
+        }
+    }
+
+    /*
+     * For stream preview on DS
+     */
+    @Override
+    public void getFrameBitmap(Continuation<? extends Consumer<Bitmap>> continuation)
+    {
+        synchronized (bitmapFrameLock)
+        {
+            bitmapContinuation = continuation;
+        }
     }
 
     private void emulateEStop(Exception e)

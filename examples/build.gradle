@@ -22,6 +22,6 @@ android {
 
 dependencies {
     //implementation fileTree(dir: 'libs', include: ['*.jar'])
-    compileOnly 'org.openftc:robotcore-stock:5.0'
+    compileOnly 'org.openftc:robotcore-stock:5.1'
     compileOnly project(':easyopencv')
 }
