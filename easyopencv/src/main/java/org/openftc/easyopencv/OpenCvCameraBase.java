@@ -432,9 +432,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera
         public void onOpModePostStop(OpMode opMode)
         {
             /*
-             * For some reason, we need to run this on another thread in order
-             * to prevent weird issues when a "restart robot" was performed while
-             * the OpMode was still running.
+             * Closing the camera can take a while, so do it on another thread
+             * so that there isn't visible "lag" when stopping an OpMode
              */
             new Thread(new Runnable()
             {
