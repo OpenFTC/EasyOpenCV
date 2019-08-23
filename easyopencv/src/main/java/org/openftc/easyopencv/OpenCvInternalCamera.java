@@ -132,11 +132,6 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
         if(camera == null)
         {
             camera = Camera.open(direction.id);
-
-            if(camera != null)
-            {
-                camera.lock();
-            }
         }
     }
 
@@ -147,7 +142,6 @@ public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.Pre
         {
             stopStreaming();
             camera.stopPreview();
-            camera.unlock();
             camera.release();
             camera = null;
         }
