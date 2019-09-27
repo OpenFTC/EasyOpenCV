@@ -8,6 +8,10 @@ Finally, a straightforward and easy way to use OpenCV on an FTC robot! With this
 
 Features at a glance:
 
+ - **Supports concurrent streaming from:**
+     - An internal camera and a webcam
+     - Two webcams
+     - Two internal cameras *(select devices; internal cameras must not share the same bus)*
  - Supports Driver Station camera preview feature introduced in SDK v5.1
  - Supports tapping on the viewport to cycle through the various stages of a pipeline (see [PipelineStageSwitchingExample](https://github.com/OpenFTC/EasyOpenCV/blob/master/examples/src/main/java/org/openftc/easyopencv/examples/PipelineStageSwitchingExample.java))
  - Supports using webcams directly with OpenCV instead of going through a Vuforia instance
