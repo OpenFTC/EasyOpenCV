@@ -66,7 +66,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("WeakerAccess")
-public class OpenCvWebcam extends OpenCvCameraBase
+class OpenCvWebcam extends OpenCvCameraBase
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;

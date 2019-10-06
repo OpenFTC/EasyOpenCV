@@ -36,7 +36,7 @@ import org.opencv.imgproc.Imgproc;
 import java.io.IOException;
 import java.util.List;
 
-public class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.PreviewCallback
+class OpenCvInternalCamera extends OpenCvCameraBase implements Camera.PreviewCallback
 {
     private Camera camera;
     private CameraDirection direction;
