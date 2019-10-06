@@ -43,13 +43,13 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     }
 
     @Override
-    public OpenCvCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction)
+    public OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction)
     {
         return new OpenCvInternalCameraImpl(direction);
     }
 
     @Override
-    public OpenCvCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, int containerId)
+    public OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, int containerId)
     {
         return new OpenCvInternalCameraImpl(direction, containerId);
     }

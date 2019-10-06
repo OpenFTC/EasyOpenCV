@@ -37,4 +37,62 @@ public interface OpenCvInternalCamera extends OpenCvCamera
             this.id = id;
         }
     }
+
+    /***
+     * Sets the recording hint parameter of the camera.
+     * This tells the camera API that the intent of the
+     * application is to record a video. While this is
+     * not true for OpenCV image processing, it does seem
+     * to make the camera choose to boost ISO before lowering
+     * the frame rate.
+     *
+     * @param hint the recording hint parameter of the camera
+     */
+    void setRecordingHint(boolean hint);
+
+    /***
+     * Set the FPS range the camera hardware should send
+     * frames at. Note that only a few ranges are supported.
+     * Usually, a device will support (30,30), which will allow
+     * you to "lock" the camera into sending 30FPS. This will,
+     * however, have the potential to cause the stream to be
+     * dark in low light.
+     *
+     * @param frameTiming the frame timing range the hardware
+     *                    should send frames at
+     */
+    void setHardwareFrameTimingRange(FrameTimingRange frameTiming);
+
+    /***
+     * Ask the camera hardware what frame timing ranges it supports.
+     *
+     * @return an array of FrameTimingRange objects which represents
+     *         the frame timing ranges supported by the camera hardware.
+     */
+    FrameTimingRange[] getFrameTimingRangesSupportedByHardware();
+
+    class FrameTimingRange
+    {
+        int min;
+        int max;
+
+        public FrameTimingRange(int min, int max)
+        {
+            this.min = min;
+            this.max = max;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if(o == null || o.getClass() != this.getClass())
+            {
+                return false;
+            }
+
+            FrameTimingRange objToCompare = (FrameTimingRange)o;
+
+            return min == objToCompare.min && max == objToCompare.max;
+        }
+    }
 }

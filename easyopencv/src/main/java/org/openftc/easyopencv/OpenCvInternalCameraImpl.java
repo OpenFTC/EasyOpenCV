@@ -36,7 +36,7 @@ import org.opencv.imgproc.Imgproc;
 import java.io.IOException;
 import java.util.List;
 
-class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.PreviewCallback
+class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.PreviewCallback, OpenCvInternalCamera
 {
     private Camera camera;
     private OpenCvInternalCamera.CameraDirection direction;
@@ -258,5 +258,37 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
                 camera.addCallbackBuffer(rawSensorBuffer);
             }
         }
+    }
+
+    @Override
+    public synchronized void setRecordingHint(boolean hint)
+    {
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setRecordingHint(hint);
+        camera.setParameters(parameters);
+    }
+
+    @Override
+    public synchronized void setHardwareFrameTimingRange(FrameTimingRange frameTiming)
+    {
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setPreviewFpsRange(frameTiming.min*1000, frameTiming.max*1000);
+        camera.setParameters(parameters);
+    }
+
+    @Override
+    public synchronized FrameTimingRange[] getFrameTimingRangesSupportedByHardware()
+    {
+        Camera.Parameters parameters = camera.getParameters();
+        List<int[]> rawRanges = parameters.getSupportedPreviewFpsRange();
+        FrameTimingRange[] ranges = new FrameTimingRange[rawRanges.size()];
+
+        for(int i = 0; i < ranges.length; i++)
+        {
+            int[] raw = rawRanges.get(i);
+            ranges[i] = new FrameTimingRange(raw[0]/1000, raw[1]/1000);
+        }
+
+        return ranges;
     }
 }

@@ -40,8 +40,8 @@ public abstract class OpenCvCameraFactory
     /*
      * Internal
      */
-    public abstract OpenCvCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction);
-    public abstract OpenCvCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, @IdRes int viewportContainerId);
+    public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction);
+    public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, @IdRes int viewportContainerId);
 
     /*
      * Webcam
