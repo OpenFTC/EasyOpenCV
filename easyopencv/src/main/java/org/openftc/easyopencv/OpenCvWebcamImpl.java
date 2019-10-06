@@ -66,7 +66,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("WeakerAccess")
-class OpenCvWebcam extends OpenCvCameraBase
+class OpenCvWebcamImpl extends OpenCvCameraBase
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
@@ -81,14 +81,14 @@ class OpenCvWebcam extends OpenCvCameraBase
     // Constructors
     //----------------------------------------------------------------------------------------------
 
-    public OpenCvWebcam(CameraName cameraName)
+    public OpenCvWebcamImpl(CameraName cameraName)
     {
         this.cameraManager = (CameraManagerInternal) ClassFactory.getInstance().getCameraManager();
         this.serialThreadPool = cameraManager.getSerialThreadPool();
         this.cameraName = cameraName;
     }
 
-    public OpenCvWebcam(CameraName cameraName, int containerLayoutId)
+    public OpenCvWebcamImpl(CameraName cameraName, int containerLayoutId)
     {
         super(containerLayoutId);
         this.cameraManager = (CameraManagerInternal) ClassFactory.getInstance().getCameraManager();
