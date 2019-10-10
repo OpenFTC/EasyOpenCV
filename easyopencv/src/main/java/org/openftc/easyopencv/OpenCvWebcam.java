@@ -54,19 +54,24 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
+import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
+import org.firstinspires.ftc.robotcore.internal.camera.libuvc.api.UvcApiCameraFrame;
+import org.firstinspires.ftc.robotcore.internal.camera.libuvc.nativeobject.UvcFrame;
 import org.firstinspires.ftc.robotcore.internal.system.Deadline;
 import org.firstinspires.ftc.robotcore.internal.vuforia.externalprovider.CameraMode;
 import org.firstinspires.ftc.robotcore.internal.vuforia.externalprovider.FrameFormat;
-import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("WeakerAccess")
-public class OpenCvWebcam extends OpenCvCameraBase
+public class OpenCvWebcam extends OpenCvCameraBase implements CameraCaptureSession.CaptureCallback
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
@@ -75,7 +80,9 @@ public class OpenCvWebcam extends OpenCvCameraBase
     private CameraCharacteristics cameraCharacteristics = null;
     private Camera camera = null;
     private CameraCaptureSession cameraCaptureSession = null;
-    private Mat mat = new Mat();
+    private Mat rawSensorMat;
+    private Mat rgbMat;
+    private byte[] imgDat;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -201,7 +208,7 @@ public class OpenCvWebcam extends OpenCvCameraBase
 
                         // Start streaming!
                         session.startCapture(cameraCaptureRequest,
-                                new OpenCvWebcamCaptureCallback(cameraCaptureRequest),
+                                OpenCvWebcam.this,
                                 Continuation.create(serialThreadPool, new CameraCaptureSession.StatusCallback()
                                 {
                                     @Override
@@ -293,6 +300,10 @@ public class OpenCvWebcam extends OpenCvCameraBase
      */
     public synchronized void stopStreamingImplSpecific()
     {
+        imgDat = null;
+        rgbMat = null;
+        rawSensorMat = null;
+
         if (cameraCaptureSession != null)
         {
             cameraCaptureSession.stopCapture();
@@ -301,35 +312,57 @@ public class OpenCvWebcam extends OpenCvCameraBase
         }
     }
 
-    private class OpenCvWebcamCaptureCallback implements CameraCaptureSession.CaptureCallback
+    /*
+     * This needs to be synchronized with stopStreamingImplSpecific()
+     * because we touch objects that are destroyed in that method.
+     */
+    @Override
+    public synchronized void onNewFrame(@NonNull CameraCaptureSession session, @NonNull CameraCaptureRequest request, @NonNull CameraFrame cameraFrame)
     {
-        Bitmap bitmap;
+        notifyStartOfFrameProcessing();
 
-        OpenCvWebcamCaptureCallback(CameraCaptureRequest cameraCaptureRequest)
+        if(imgDat == null)
         {
-            bitmap = cameraCaptureRequest.createEmptyBitmap();
+            imgDat = new byte[cameraFrame.getImageSize()];
+        }
+        if(rgbMat == null)
+        {
+            rgbMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC1);
+        }
+        if(rawSensorMat == null)
+        {
+            rawSensorMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC2);
         }
 
-        @Override
-        public void onNewFrame(@NonNull CameraCaptureSession session, @NonNull CameraCaptureRequest request, @NonNull CameraFrame cameraFrame)
+        try
         {
-            notifyStartOfFrameProcessing();
-
             /*
-             * Unfortunately, we can't easily work with the native memory in
-             * in CameraFrame, so we're stuck doing the incredibly inefficient
-             * method of converting it to a bitmap, and then turning around
-             * and converting that bitmap into a Mat. If we could find a way to
-             * set the Mat's image buffer to a pointer to the CameraFrame's buffer,
-             * or even just do a memcpy from one buffer to the other, it would
-             * likely improve performance significantly.
+             * v1.2 HOTFIX for renderscript crashes on some devices when using frame.copyToBitmap()
              *
-             * TODO: investigate using a bit of native code to improve efficiency
+             * Is it pretty? Heck no. Does it work? Yes! :)
+             * Also it seems to be *considerably* more efficient than copyToBitmap(). Not entirely
+             * sure why because one would think renderscript would be faster since it can run on
+             * the GPU...
              */
-            cameraFrame.copyToBitmap(bitmap);
-            Utils.bitmapToMat(bitmap, mat);
+            RenumberedCameraFrame renumberedCameraFrame = (RenumberedCameraFrame) cameraFrame;
+            Field innerFrameField = RenumberedCameraFrame.class.getDeclaredField("innerFrame");
+            innerFrameField.setAccessible(true);
+            CameraFrame innerFrame = (CameraFrame) innerFrameField.get(renumberedCameraFrame);
+            UvcApiCameraFrame uvcApiCameraFrame = (UvcApiCameraFrame) innerFrame;
+            Field uvcFrameField = UvcApiCameraFrame.class.getDeclaredField("uvcFrame");
+            uvcFrameField.setAccessible(true);
+            UvcFrame uvcFrame = (UvcFrame) uvcFrameField.get(uvcApiCameraFrame);
 
-            handleFrame(mat);
+            uvcFrame.getImageData(imgDat);
+            rawSensorMat.put(0,0,imgDat);
+            Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_YUY2, 4);
+
+            handleFrame(rgbMat);
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 }
