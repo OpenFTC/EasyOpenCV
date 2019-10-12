@@ -3,7 +3,7 @@ apply plugin: 'com.android.library'
 ext {
     PUBLISH_GROUP_ID = 'org.openftc'
     PUBLISH_ARTIFACT_ID = 'easyopencv'
-    PUBLISH_VERSION = '1.1'
+    PUBLISH_VERSION = '1.2'
 }
 
 android {
@@ -13,7 +13,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 19
         versionCode 1
-        versionName "1.1"
+        versionName "1.2"
     }
 
     buildTypes {
