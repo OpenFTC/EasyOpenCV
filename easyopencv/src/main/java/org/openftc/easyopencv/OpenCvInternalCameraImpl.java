@@ -265,6 +265,37 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     }
 
     @Override
+    public synchronized void setFlashlightEnabled(boolean enabled)
+    {
+        if(camera != null)
+        {
+            Camera.Parameters parameters = camera.getParameters();
+
+            List<String> supportedFlashModes = parameters.getSupportedFlashModes();
+
+            if(supportedFlashModes == null)
+            {
+                throw new OpenCvCameraException("Camera does not have a flash!");
+            }
+            else if(!supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_TORCH))
+            {
+                throw new OpenCvCameraException("Camera flash does not support torch mode!");
+            }
+
+            if(enabled)
+            {
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+            }
+            else
+            {
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            }
+
+            camera.setParameters(parameters);
+        }
+    }
+
+    @Override
     public synchronized int getMaxSupportedZoom()
     {
         if(camera != null)

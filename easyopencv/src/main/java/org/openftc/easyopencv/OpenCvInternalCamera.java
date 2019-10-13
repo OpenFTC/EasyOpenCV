@@ -39,6 +39,23 @@ public interface OpenCvInternalCamera extends OpenCvCamera
     }
 
     /***
+     * Set whether or not the camera's flash should be
+     * put into flashlight ("torch") mode, i.e. where
+     * it is always on.
+     *
+     * Note that the camera must be opened before calling
+     * this method. Also, if the camera does not support
+     * "torch" mode (or it does not even have a flash at all
+     * as in the case of a front camera) an exception will
+     * be thrown.
+     *
+     * @param flashlightEnabled whether or not the camera's
+     *        flash should be put into flashlight ("torch")
+     *        mode, i.e. where it is always on.
+     */
+    void setFlashlightEnabled(boolean flashlightEnabled);
+
+    /***
      * Set the zoom level of the camera. Must be >= 0
      * and <= {@link #getMaxSupportedZoom()}
      *
@@ -53,7 +70,7 @@ public interface OpenCvInternalCamera extends OpenCvCamera
      * Gets the maximum supported zoom level of the camera
      * in the current streaming mode.
      *
-     * Note that the value returned *may* be differ
+     * Note that the value returned *may* be different
      * based on streaming resolution. Because of this,
      * streaming must be active before you call this
      * method.
