@@ -39,6 +39,31 @@ public interface OpenCvInternalCamera extends OpenCvCamera
     }
 
     /***
+     * Set the zoom level of the camera. Must be >= 0
+     * and <= {@link #getMaxSupportedZoom()}
+     *
+     * Note that this method cannot be called until
+     * streaming is active.
+     *
+     * @param zoom the zoom level to set the camera to
+     */
+    void setZoom(int zoom);
+
+    /***
+     * Gets the maximum supported zoom level of the camera
+     * in the current streaming mode.
+     *
+     * Note that the value returned *may* be differ
+     * based on streaming resolution. Because of this,
+     * streaming must be active before you call this
+     * method.
+     *
+     * @return the maximum supported zoom level of the camera
+     *         in the current streaming mode.
+     */
+    int getMaxSupportedZoom();
+
+    /***
      * Sets the recording hint parameter of the camera.
      * This tells the camera API that the intent of the
      * application is to record a video. While this is

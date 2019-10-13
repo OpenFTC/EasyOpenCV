@@ -44,6 +44,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     private Mat rawSensorMat;
     private Mat rgbMat;
     private SurfaceTexture bogusSurfaceTexture;
+    private int maxZoom = -1;
 
     public OpenCvInternalCameraImpl(OpenCvInternalCamera.CameraDirection direction)
     {
@@ -180,6 +181,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
                 throw new OpenCvCameraException("Camera does not support requested resolution!");
             }
 
+            maxZoom = parameters.getMaxZoom();
             camera.setParameters(parameters);
 
             int pixels = width * height;
@@ -209,6 +211,8 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void stopStreamingImplSpecific()
     {
+        maxZoom = -1;
+
         if(camera != null)
         {
             camera.setPreviewCallback(null);
@@ -257,6 +261,44 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             {
                 camera.addCallbackBuffer(rawSensorBuffer);
             }
+        }
+    }
+
+    @Override
+    public synchronized int getMaxSupportedZoom()
+    {
+        if(camera != null)
+        {
+            if(maxZoom == -1)
+            {
+                throw new OpenCvCameraException("Cannot set zoom until streaming has been started");
+            }
+
+            return maxZoom;
+        }
+        return 0;
+    }
+
+    @Override
+    public synchronized void setZoom(int zoom)
+    {
+        if(camera != null)
+        {
+            if(maxZoom == -1)
+            {
+                throw new OpenCvCameraException("Cannot set zoom until streaming has been started");
+            }
+            else if(zoom > maxZoom)
+            {
+                throw new OpenCvCameraException(String.format("Zoom value of %d requested, but maximum zoom supported in current configuration is %d", zoom, maxZoom));
+            }
+            else if(zoom < 0)
+            {
+                throw new OpenCvCameraException("Zoom value cannot be less than 0");
+            }
+            Camera.Parameters parameters = camera.getParameters();
+            parameters.setZoom(zoom);
+            camera.setParameters(parameters);
         }
     }
 
