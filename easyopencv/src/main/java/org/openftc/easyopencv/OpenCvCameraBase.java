@@ -68,6 +68,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private long currentFrameStartTime;
     private final Object bitmapFrameLock = new Object();
     private Continuation<? extends Consumer<Bitmap>> bitmapContinuation;
+    private Mat rotatedMat = new Mat();
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
      * to register the listener, because the SDK stores the list of listeners in
@@ -331,7 +332,26 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
         if(rotateCode != -1)
         {
-            Core.rotate(frame, frame, rotateCode);
+            /*
+             * Rotate onto another Mat rather than doing so in-place.
+             *
+             * This does two things:
+             *     1) It seems that rotating by 90 or 270 in-place
+             *        causes the backing buffer to be re-allocated
+             *        since the width/height becomes swapped. This
+             *        causes a problem for user code which makes a
+             *        submat from the input Mat, because after the
+             *        parent Mat is re-allocated the submat is no
+             *        longer tied to it. Thus, by rotating onto
+             *        another Mat (which is never re-allocated) we
+             *        remove that issue.
+             *
+             *     2) Since the backing buffer does need need to be
+             *        re-allocated for each frame, we reduce overhead
+             *        time by about 1ms.
+             */
+            Core.rotate(frame, rotatedMat, rotateCode);
+            frame = rotatedMat;
         }
 
         if(pipeline != null)
