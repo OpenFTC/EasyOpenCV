@@ -50,8 +50,10 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private RenderThread renderThread;
     private Canvas canvas = null;
     private double aspectRatio;
-    private Mat mat;
-    private EvictingBlockingQueue<Mat> visionPreviewFrameQueue = new EvictingBlockingQueue<>(new ArrayBlockingQueue<Mat>(3));
+    private static final int VISION_PREVIEW_FRAME_QUEUE_CAPACITY = 2;
+    private static final int FRAMEBUFFER_RECYCLER_CAPACITY = VISION_PREVIEW_FRAME_QUEUE_CAPACITY + 2; //So that the evicting queue can be full, and the render thread has one checked out (+1) and post() can still take one (+1).
+    private EvictingBlockingQueue<MatRecycler.RecyclableMat> visionPreviewFrameQueue = new EvictingBlockingQueue<>(new ArrayBlockingQueue<MatRecycler.RecyclableMat>(VISION_PREVIEW_FRAME_QUEUE_CAPACITY));
+    private MatRecycler framebufferRecycler;
     private volatile RenderingState internalRenderingState = RenderingState.STOPPED;
     private final Object syncObj = new Object();
     private volatile boolean userRequestedActive = false;
@@ -80,17 +82,16 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
         getHolder().addCallback(this);
 
-        visionPreviewFrameQueue.setEvictAction(new Consumer<Mat>()
+        visionPreviewFrameQueue.setEvictAction(new Consumer<MatRecycler.RecyclableMat>()
         {
             @Override
-            public void accept(Mat value)
+            public void accept(MatRecycler.RecyclableMat value)
             {
                 /*
                  * If a Mat is evicted from the queue, we need
-                 * to make sure to release its native allocation
-                 * too. Otherwise we'll leak memory.
+                 * to make sure to return it to the Mat recycler
                  */
-                value.release();
+                framebufferRecycler.returnMat(value);
             }
         });
 
@@ -122,6 +123,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             this.size = size;
             this.aspectRatio = (double)size.getWidth() / (double)size.getHeight();
+
+            framebufferRecycler = new MatRecycler(FRAMEBUFFER_RECYCLER_CAPACITY);
         }
     }
 
@@ -141,11 +144,26 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             if(internalRenderingState == RenderingState.ACTIVE)
             {
                 /*
-                 * We need to clone this mat before adding it to the queue,
+                 * We need to copy this mat before adding it to the queue,
                  * because the pointer that was passed in here is only known
                  * to be pointing to a certain frame while we're executing.
                  */
-                visionPreviewFrameQueue.offer(mat.clone());
+                try
+                {
+                    /*
+                     * Grab a framebuffer Mat from the recycler
+                     * instead of doing a new alloc and then having
+                     * to free it after rendering/eviction from queue
+                     */
+                    MatRecycler.RecyclableMat matToCopyTo = framebufferRecycler.takeMat();
+                    mat.copyTo(matToCopyTo);
+                    visionPreviewFrameQueue.offer(matToCopyTo);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
@@ -389,6 +407,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                     {
                         shouldPaintOrange = true;
 
+                        MatRecycler.RecyclableMat mat;
+
                         try
                         {
                             //Grab a Mat from the frame queue
@@ -414,9 +434,6 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         {
                             //Convert that Mat to a bitmap we can render
                             Utils.matToBitmap(mat, bitmapFromMat);
-
-                            //We're done with that Mat object; release its native memory
-                            mat.release();
 
                             //Draw the background black each time to prevent double buffering problems
                             canvas.drawColor(Color.BLACK);
@@ -456,6 +473,9 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         {
                             Log.d(TAG, "Canvas was null");
                         }
+
+                        //We're done with that Mat object; return it to the Mat recycler so it can be used again later
+                        framebufferRecycler.returnMat(mat);
 
                         break;
                     }
