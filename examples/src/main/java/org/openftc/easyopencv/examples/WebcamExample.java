@@ -56,7 +56,7 @@ public class WebcamExample extends LinearOpMode
         webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
         // OR...  Do Not Activate the Camera Monitor View
-        //webcam = new OpenCvWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
+        //webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
 
         /*
          * Open the connection to the camera device
