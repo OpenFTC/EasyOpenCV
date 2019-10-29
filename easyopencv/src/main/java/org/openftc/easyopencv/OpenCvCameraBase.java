@@ -50,8 +50,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 
 public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource {
-    private boolean isStreaming = false;
-    private boolean isOpen = false;
+
     private OpenCvPipeline pipeline = null;
     private LinearLayout viewportContainerLayout;
     private MovingStatistics msFrameIntervalRollingAverage;
@@ -90,61 +89,17 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         setupViewport(containerLayoutId);
     }
 
-    @Override
-    public synchronized final void openCameraDevice()
+    public synchronized final void cleanupForClosingCamera()
     {
-        if(!isOpen)
-        {
-            openCameraDeviceImplSpecific();
-
-            isOpen = true;
-        }
-    }
-
-    @Override
-    public synchronized final void closeCameraDevice()
-    {
-        /*
-         * Viewport might be initialized even if the
-         * camera isn't open, because if the camera
-         * open throws an exception, isOpen will still
-         * be false (viewport is created before cam
-         * is opened)
-         */
         if(viewport != null)
         {
             removeViewportAsync();
         }
-
-        if(isOpen)
-        {
-            closeCameraDeviceImplSpecific();
-
-            isOpen = false;
-        }
     }
 
-    @Override
-    public synchronized final void startStreaming(int width, int height)
+    public synchronized final void prepareForStartStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
-        startStreaming(width, height, getDefaultRotation());
-    }
-
-    @Override
-    public synchronized final void startStreaming(int width, int height, OpenCvCameraRotation rotation)
-    {
-        if(!isOpen)
-        {
-            throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
-        }
-
-        if(isStreaming)
-        {
-            stopStreaming();
-        }
-
         this.rotation = rotation;
-        isStreaming = true;
         msFrameIntervalRollingAverage = new MovingStatistics(30);
         msUserPipelineRollingAverage = new MovingStatistics(30);
         msTotalFrameProcessingTimeRollingAverage = new MovingStatistics(30);
@@ -156,30 +111,18 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             viewport.activate();
         }
 
-        startStreamingImplSpecific(width, height);
-
         /*
          * For preview on DS
          */
         CameraStreamServer.getInstance().setSource(this);
     }
 
-    @Override
-    public synchronized final void stopStreaming()
+    public synchronized final void cleanupForEndStreaming()
     {
-        if(!isOpen)
-        {
-            throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
-        }
-
         if(viewport != null)
         {
             viewport.deactivate();
         }
-
-        stopStreamingImplSpecific();
-
-        isStreaming = false;
     }
 
     @Override
@@ -572,10 +515,6 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         return new Size(screenRenderedWidth, screenRenderedHeight);
     }
 
-    protected abstract void openCameraDeviceImplSpecific();
-    protected abstract void closeCameraDeviceImplSpecific();
-    protected abstract void startStreamingImplSpecific(int width, int height);
     protected abstract OpenCvCameraRotation getDefaultRotation();
     protected abstract int mapRotationEnumToOpenCvRotateCode(OpenCvCameraRotation rotation);
-    protected abstract void stopStreamingImplSpecific();
 }

@@ -45,6 +45,8 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     private Mat rgbMat;
     private SurfaceTexture bogusSurfaceTexture;
     private int maxZoom = -1;
+    private volatile boolean isOpen = false;
+    private volatile boolean isStreaming = false;
 
     public OpenCvInternalCameraImpl(OpenCvInternalCamera.CameraDirection direction)
     {
@@ -115,29 +117,66 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     }
 
     @Override
-    protected synchronized void openCameraDeviceImplSpecific()
+    public synchronized void openCameraDevice()
     {
-        if(camera == null)
+        if(!isOpen)
         {
-            camera = Camera.open(direction.id);
+            if(camera == null)
+            {
+                camera = Camera.open(direction.id);
+            }
+
+            isOpen = true;
         }
     }
 
     @Override
-    public synchronized void closeCameraDeviceImplSpecific()
+    public synchronized void closeCameraDevice()
     {
-        if(camera != null)
+        cleanupForClosingCamera();
+
+        if(isOpen)
+        {
+            if(camera != null)
+            {
+                stopStreaming();
+                camera.stopPreview();
+                camera.release();
+                camera = null;
+            }
+
+            isOpen = false;
+        }
+    }
+
+    @Override
+    public synchronized void startStreaming(int width, int height)
+    {
+        startStreaming(width, height, getDefaultRotation());
+    }
+
+    @Override
+    public synchronized void startStreaming(int width, int height, OpenCvCameraRotation rotation)
+    {
+        if(!isOpen)
+        {
+            throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
+        }
+
+        /*
+         * If we're already streaming, then that's OK, but we need to stop
+         * streaming in the old mode before we can restart in the new one.
+         */
+        if(isStreaming)
         {
             stopStreaming();
-            camera.stopPreview();
-            camera.release();
-            camera = null;
         }
-    }
 
-    @Override
-    public synchronized void startStreamingImplSpecific(int width, int height)
-    {
+        /*
+         * Prep the viewport
+         */
+        prepareForStartStreaming(width, height, rotation);
+
         rawSensorMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
         rgbMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
 
@@ -200,17 +239,25 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             catch (IOException e)
             {
                 e.printStackTrace();
-                closeCameraDevice();
+                //closeCameraDevice();
                 return;
             }
 
             camera.startPreview();
+            isStreaming = true;
         }
     }
 
     @Override
-    public synchronized void stopStreamingImplSpecific()
+    public synchronized void stopStreaming()
     {
+        if(!isOpen)
+        {
+            throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
+        }
+
+        cleanupForEndStreaming();
+
         maxZoom = -1;
 
         if(camera != null)
@@ -230,6 +277,8 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             rgbMat.release();
             rgbMat = null;
         }
+
+        isStreaming = false;
     }
 
     /*

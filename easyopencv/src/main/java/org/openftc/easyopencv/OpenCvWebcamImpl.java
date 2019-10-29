@@ -83,6 +83,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     private Mat rawSensorMat;
     private Mat rgbMat;
     private byte[] imgDat;
+    private volatile boolean isOpen = false;
+    private volatile boolean isStreaming = false;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -137,41 +139,78 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     }
 
     @Override
-    public synchronized void openCameraDeviceImplSpecific() /*throws CameraException*/
+    public synchronized void openCameraDevice() /*throws CameraException*/
     {
-        try
+        if(!isOpen)
         {
-            camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
+            try
+            {
+                camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
 
-            if (camera != null) //Opening succeeded!
-            {
-                cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
+                if (camera != null) //Opening succeeded!
+                {
+                    cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
+                    isOpen = true;
+                }
+                else //Opening failed! :(
+                {
+                    cameraCharacteristics = cameraName.getCameraCharacteristics();
+                }
             }
-            else //Opening failed! :(
+            catch (Exception e)
             {
-                cameraCharacteristics = cameraName.getCameraCharacteristics();
+                camera = null;
+                throw e;
             }
-        }
-        catch (Exception e)
-        {
-            camera = null;
-            throw e;
         }
     }
 
     @Override
-    public synchronized void closeCameraDeviceImplSpecific()
+    public synchronized void closeCameraDevice()
     {
-        if (camera != null)
+        cleanupForClosingCamera();
+
+        if(isOpen)
         {
-            stopStreaming();
-            camera.close();
-            camera = null;
+            if (camera != null)
+            {
+                stopStreaming();
+                camera.close();
+                camera = null;
+            }
+
+            isOpen = false;
         }
     }
 
-    public synchronized void startStreamingImplSpecific(final int width, final int height)
+    @Override
+    public synchronized void startStreaming(int width, int height)
     {
+        startStreaming(width, height, getDefaultRotation());
+    }
+
+    @Override
+    public synchronized void startStreaming(final int width, final int height, OpenCvCameraRotation rotation)
+    {
+        if(!isOpen)
+        {
+            throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
+        }
+
+        /*
+         * If we're already streaming, then that's OK, but we need to stop
+         * streaming in the old mode before we can restart in the new one.
+         */
+        if(isStreaming)
+        {
+            stopStreaming();
+        }
+
+        /*
+         * Prep the viewport
+         */
+        prepareForStartStreaming(width, height, rotation);
+
         final CountDownLatch captureStartResult = new CountDownLatch(1);
 
         boolean sizeSupported = false;
@@ -257,6 +296,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
         {
             Thread.currentThread().interrupt();
         }
+
+        isStreaming = true;
     }
 
     @Override
@@ -298,8 +339,16 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
      * streaming in the first place. If not, we don't do
      * anything at all here.
      */
-    public synchronized void stopStreamingImplSpecific()
+    @Override
+    public synchronized void stopStreaming()
     {
+        if(!isOpen)
+        {
+            throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
+        }
+
+        cleanupForEndStreaming();
+
         imgDat = null;
         rgbMat = null;
         rawSensorMat = null;
@@ -310,6 +359,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
             cameraCaptureSession.close();
             cameraCaptureSession = null;
         }
+
+        isStreaming = false;
     }
 
     /*
