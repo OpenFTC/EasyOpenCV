@@ -43,7 +43,10 @@ import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -68,6 +71,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private final Object bitmapFrameLock = new Object();
     private Continuation<? extends Consumer<Bitmap>> bitmapContinuation;
     private Mat rotatedMat = new Mat();
+    private Mat matToUseIfPipelineReturnedCropped;
+
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
      * to register the listener, because the SDK stores the list of listeners in
@@ -119,6 +124,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     public synchronized final void cleanupForEndStreaming()
     {
+        matToUseIfPipelineReturnedCropped = null;
+
         if(viewport != null)
         {
             viewport.deactivate();
@@ -263,7 +270,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    protected void handleFrameUserCrashable(Mat frame)
+    protected synchronized void handleFrameUserCrashable(Mat frame)
     {
         msFrameIntervalRollingAverage.add(timer.milliseconds());
         timer.reset();
@@ -304,24 +311,58 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);
         }
 
-        if(viewport != null)
+        if(viewport != null && pipeline != null)
         {
-            if(pipeline != null)
+            if(userProcessedFrame == null)
             {
-                if(userProcessedFrame == null)
+                /*
+                 * Silly user, they returned null from their pipeline....
+                 */
+                throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
+            }
+            else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
+            {
+                /*
+                 * The user didn't return the same size image from their pipeline as we gave them,
+                 * ugh. This makes our lives interesting because we can't just send an arbitrary
+                 * frame size to the viewport. It re-uses framebuffers that are of a fixed resolution.
+                 * So, we copy the user's Mat onto a Mat of the correct size, and then send that other
+                 * Mat to the viewport.
+                 */
+
+                if(userProcessedFrame.cols() > frame.cols() || userProcessedFrame.rows() > frame.rows())
                 {
-                    throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
-                }
-                else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
-                {
+                    /*
+                     * What on earth was this user thinking?! They returned a Mat that's BIGGER in
+                     * a dimension than the one we gave them!
+                     */
+
                     throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
                 }
 
-                viewport.post(userProcessedFrame);
+                //We re-use this buffer, only create if needed
+                if(matToUseIfPipelineReturnedCropped == null)
+                {
+                    matToUseIfPipelineReturnedCropped = frame.clone();
+                }
+
+                //Set to brown to indicate to the user the areas which they cropped off
+                matToUseIfPipelineReturnedCropped.setTo(new Scalar(82, 61, 46));
+
+                //Copy the user's frame onto a Mat of the correct size
+                userProcessedFrame.copyTo(matToUseIfPipelineReturnedCropped.submat(
+                        new Rect(0,0,userProcessedFrame.cols(), userProcessedFrame.rows())));
+
+                //Send that correct size Mat to the viewport
+                viewport.post(matToUseIfPipelineReturnedCropped);
             }
             else
             {
-                viewport.post(frame);
+                /*
+                 * Yay, smart user! They gave us the frame size we were expecting!
+                 * Go ahead and send it right on over to the viewport.
+                 */
+                viewport.post(userProcessedFrame);
             }
         }
 
