@@ -38,6 +38,46 @@ public interface OpenCvInternalCamera extends OpenCvCamera
         }
     }
 
+    enum BufferMethod
+    {
+        /*
+         * Acquires a frame from the camera, processes it, and then waits for the
+         * next frame. Causes time to be wasted waiting for the next frame if the
+         * pipeline compute time is greater than the frame timing interval.
+         */
+        SINGLE,
+
+        /*
+         * Acquires a frame from the camera, processes it, and then either waits
+         * for the next frame from the camera OR reads the next frame from a second
+         * buffer which was filled while the first frame was still being processed.
+         * This can increase FPS if the pipeline time is greater than the frame
+         * timing interval.
+         */
+        DOUBLE,
+    }
+
+    /***
+     * Same as {@link #startStreaming(int, int, OpenCvCameraRotation)} except for:
+     *
+     * @param bufferMethod the method by which frames from the camera hardware are buffered.
+     *                     Using single buffering acquires a frame from the camera, processes
+     *                     it, and then waits for the next frame from the camera. This works
+     *                     fine if the total compute time per frame is less than the camera's
+     *                     frame timing interval. However, consider a camera which is able to
+     *                     provide frames every 33ms (30FPS) but the pipeline and overhead compute
+     *                     time is 40ms. In this case, if we are processing, say, frame 150, then
+     *                     frame 151 will be missed because frame 150 was still being processed.
+     *                     This would cause ~26ms to be wasted waiting for the next frame, which
+     *                     will reduce FPS by a considerable margin. When using double buffering,
+     *                     a second buffer is available for the next frame to be dumped into while
+     *                     the previous frame is still being processed. Then after that frame is done,
+     *                     the next frame can simply be read from the buffer and started through the
+     *                     pipeline immediately, rather than wasting time waiting for yet another
+     *                     frame.
+     */
+    void startStreaming(int width, int height, OpenCvCameraRotation rotation, BufferMethod bufferMethod);
+
     /***
      * Set whether or not the camera's flash should be
      * put into flashlight ("torch") mode, i.e. where

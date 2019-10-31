@@ -40,7 +40,6 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 {
     private Camera camera;
     private OpenCvInternalCamera.CameraDirection direction;
-    private byte[] rawSensorBuffer;
     private Mat rawSensorMat;
     private Mat rgbMat;
     private SurfaceTexture bogusSurfaceTexture;
@@ -158,6 +157,12 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void startStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
+        startStreaming(width, height, rotation, BufferMethod.DOUBLE);
+    }
+
+    @Override
+    public synchronized void startStreaming(int width, int height, OpenCvCameraRotation rotation, BufferMethod bufferMethod)
+    {
         if(!isOpen)
         {
             throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
@@ -225,12 +230,26 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 
             int pixels = width * height;
             int bufSize  = pixels * ImageFormat.getBitsPerPixel(parameters.getPreviewFormat()) / 8;
-            rawSensorBuffer = new byte[bufSize];
 
             bogusSurfaceTexture = new SurfaceTexture(10);
 
             camera.setPreviewCallbackWithBuffer(this);
-            camera.addCallbackBuffer(rawSensorBuffer);
+
+            if(bufferMethod == BufferMethod.SINGLE)
+            {
+                //One buffer
+                camera.addCallbackBuffer(new byte[bufSize]);
+            }
+            else if(bufferMethod == BufferMethod.DOUBLE)
+            {
+                //Two buffers
+                camera.addCallbackBuffer(new byte[bufSize]);
+                camera.addCallbackBuffer(new byte[bufSize]);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Illegal buffer method!");
+            }
 
             try
             {
@@ -308,7 +327,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 
             if(camera != null)
             {
-                camera.addCallbackBuffer(rawSensorBuffer);
+                camera.addCallbackBuffer(data);
             }
         }
     }

@@ -91,19 +91,8 @@ public interface OpenCvCamera
     void startStreaming(int width, int height);
 
     /***
-     * Tell the camera to start streaming images to us! Note that you must make sure
-     * the resolution you specify is supported by the camera. If it is not, an exception
-     * will be thrown.
+     * Same as {@link #startStreaming(int, int)} except for:
      *
-     * Keep in mind that the SDK's UVC driver (what OpenCvWebcam uses under the hood) only
-     * supports streaming from the webcam in the uncompressed YUV image format. This means
-     * that the maximum resolution you can stream at and still get up to 30FPS is 480p (640x480).
-     * Streaming at 720p will limit you to up to 10FPS. However, streaming at frame rates other
-     * than 30FPS is not currently supported, although this will likely be addressed in a future
-     * release. TLDR: You can't stream in greater than 480p from a webcam at the moment.
-     *
-     * @param width the width of the resolution in which you would like the camera to stream
-     * @param height the height of the resolution in which you would like the camera to stream
      * @param rotation the rotation that the camera is being used in. This is so that
      *                 the image from the camera sensor can be rotated such that it is always
      *                 displayed with the image upright. For a front facing camera, rotation is
