@@ -155,8 +155,8 @@ public interface OpenCvInternalCamera extends OpenCvCamera
 
     class FrameTimingRange
     {
-        int min;
-        int max;
+        public int min;
+        public int max;
 
         public FrameTimingRange(int min, int max)
         {
