@@ -75,7 +75,7 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     }
 
     @Override
-    public int[] splitLayoutForMultipleViewports(final int containerId, final int numViewports)
+    public int[] splitLayoutForMultipleViewports(final int containerId, final int numViewports, final ViewportSplitMethod viewportSplitMethod)
     {
         if(numViewports < 2)
         {
@@ -111,6 +111,19 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
 
                     containerLayout.setVisibility(View.VISIBLE);
 
+                    if(viewportSplitMethod == null)
+                    {
+                        throw new IllegalArgumentException("Viewport split method cannot be null!");
+                    }
+                    else if(viewportSplitMethod == ViewportSplitMethod.VERTICALLY)
+                    {
+                        containerLayout.setOrientation(LinearLayout.VERTICAL);
+                    }
+                    else
+                    {
+                        containerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                    }
+
                     for(int i = 0; i < numViewports; i++)
                     {
                         LinearLayout linearLayout = new LinearLayout(AppUtil.getInstance().getActivity());
@@ -138,6 +151,7 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
                                         containerLayout.removeView(layout);
                                     }
                                     containerLayout.setVisibility(View.GONE);
+                                    containerLayout.setOrientation(LinearLayout.VERTICAL);
                                 }
                             });
 
