@@ -84,7 +84,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     public OpenCvCameraBase()
     {
         frameCount = 0;
-        OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotifications);
+        LIFO_OpModeCallbackDelegate.getInstance().add(opModeNotifications);
     }
 
     public OpenCvCameraBase(int containerLayoutId)
@@ -501,20 +501,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    private class OpModeNotifications implements OpModeManagerImpl.Notifications
+    private class OpModeNotifications implements LIFO_OpModeCallbackDelegate.OnOpModeStoppedListener
     {
-        @Override
-        public void onOpModePreInit(OpMode opMode)
-        {
-
-        }
-
-        @Override
-        public void onOpModePreStart(OpMode opMode)
-        {
-
-        }
-
         @Override
         public void onOpModePostStop(OpMode opMode)
         {
@@ -530,8 +518,6 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                     closeCameraDevice();
                 }
             }).start();
-
-            OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(this);
         }
     }
 

@@ -23,11 +23,19 @@ package org.openftc.easyopencv;
 
 import android.content.Context;
 import android.support.annotation.IdRes;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.opmode.AnnotatedOpModeManager;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
 {
@@ -64,5 +72,103 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     public OpenCvCamera createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
     {
         return new OpenCvWebcamImpl(webcamName, viewportContainerId);
+    }
+
+    @Override
+    public int[] splitLayoutForMultipleViewports(final int containerId, final int numViewports)
+    {
+        if(numViewports < 2)
+        {
+            throw new IllegalArgumentException("Layout requested to be split for <2 viewports!");
+        }
+
+        final int[] ids = new int[numViewports];
+        final ArrayList<LinearLayout> layoutArrayList = new ArrayList<>(numViewports);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        //We do the viewport creation on the UI thread, but if there's an exception then
+        //we need to catch it and rethrow it on the OpMode thread
+        final RuntimeException[] exToRethrowOnOpModeThread = {null};
+
+        AppUtil.getInstance().getActivity().runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    final LinearLayout containerLayout = (LinearLayout) AppUtil.getInstance().getActivity().findViewById(containerId);
+
+                    if(containerLayout == null)
+                    {
+                        throw new OpenCvCameraException("Viewport container specified by user does not exist!");
+                    }
+                    else if(containerLayout.getChildCount() != 0)
+                    {
+                        throw new OpenCvCameraException("Viewport container specified by user is not empty!");
+                    }
+
+                    containerLayout.setVisibility(View.VISIBLE);
+
+                    for(int i = 0; i < numViewports; i++)
+                    {
+                        LinearLayout linearLayout = new LinearLayout(AppUtil.getInstance().getActivity());
+                        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                        params.weight = 1;
+                        linearLayout.setLayoutParams(params);
+                        linearLayout.setId(View.generateViewId());
+                        ids[i] = linearLayout.getId();
+                        layoutArrayList.add(linearLayout);
+                        containerLayout.addView(linearLayout);
+                    }
+
+                    LIFO_OpModeCallbackDelegate.getInstance().add(new LIFO_OpModeCallbackDelegate.OnOpModeStoppedListener()
+                    {
+                        @Override
+                        public void onOpModePostStop(OpMode opMode)
+                        {
+                            AppUtil.getInstance().getActivity().runOnUiThread(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    for(LinearLayout layout : layoutArrayList)
+                                    {
+                                        containerLayout.removeView(layout);
+                                    }
+                                    containerLayout.setVisibility(View.GONE);
+                                }
+                            });
+
+                        }
+                    });
+
+                    latch.countDown();
+                }
+                catch (RuntimeException e)
+                {
+                    exToRethrowOnOpModeThread[0] = e;
+                }
+
+            }
+        });
+
+        if(exToRethrowOnOpModeThread[0] != null)
+        {
+            throw exToRethrowOnOpModeThread[0];
+        }
+
+        try
+        {
+            latch.await();
+
+            return ids;
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

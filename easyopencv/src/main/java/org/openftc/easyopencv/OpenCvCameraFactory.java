@@ -48,4 +48,9 @@ public abstract class OpenCvCameraFactory
      */
     public abstract OpenCvCamera createWebcam(WebcamName cameraName);
     public abstract OpenCvCamera createWebcam(WebcamName cameraName, @IdRes int viewportContainerId);
+
+    /*
+     * Viewport containers
+     */
+    public abstract @IdRes int[] splitLayoutForMultipleViewports(@IdRes int containerId, int numViewports);
 }
