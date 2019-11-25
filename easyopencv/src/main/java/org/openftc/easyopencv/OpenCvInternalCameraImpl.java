@@ -335,7 +335,11 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setFlashlightEnabled(boolean enabled)
     {
-        if(camera != null)
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot control flash until camera is opened!");
+        }
+        else
         {
             Camera.Parameters parameters = camera.getParameters();
 
@@ -366,22 +370,29 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized int getMaxSupportedZoom()
     {
-        if(camera != null)
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot get supported zooms until camera is opened and streaming is started");
+        }
+        else
         {
             if(maxZoom == -1)
             {
-                throw new OpenCvCameraException("Cannot set zoom until streaming has been started");
+                throw new OpenCvCameraException("Cannot get supported zooms until streaming has been started");
             }
 
             return maxZoom;
         }
-        return 0;
     }
 
     @Override
     public synchronized void setZoom(int zoom)
     {
-        if(camera != null)
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot set zoom until camera is opened and streaming is started");
+        }
+        else
         {
             if(maxZoom == -1)
             {
@@ -404,32 +415,53 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setRecordingHint(boolean hint)
     {
-        Camera.Parameters parameters = camera.getParameters();
-        parameters.setRecordingHint(hint);
-        camera.setParameters(parameters);
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot set recording hint until camera is opened");
+        }
+        else
+        {
+            Camera.Parameters parameters = camera.getParameters();
+            parameters.setRecordingHint(hint);
+            camera.setParameters(parameters);
+        }
     }
 
     @Override
     public synchronized void setHardwareFrameTimingRange(FrameTimingRange frameTiming)
     {
-        Camera.Parameters parameters = camera.getParameters();
-        parameters.setPreviewFpsRange(frameTiming.min*1000, frameTiming.max*1000);
-        camera.setParameters(parameters);
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot set hardware frame timing range until camera is opened");
+        }
+        else
+        {
+            Camera.Parameters parameters = camera.getParameters();
+            parameters.setPreviewFpsRange(frameTiming.min*1000, frameTiming.max*1000);
+            camera.setParameters(parameters);
+        }
     }
 
     @Override
     public synchronized FrameTimingRange[] getFrameTimingRangesSupportedByHardware()
     {
-        Camera.Parameters parameters = camera.getParameters();
-        List<int[]> rawRanges = parameters.getSupportedPreviewFpsRange();
-        FrameTimingRange[] ranges = new FrameTimingRange[rawRanges.size()];
-
-        for(int i = 0; i < ranges.length; i++)
+        if(!isOpen || camera == null)
         {
-            int[] raw = rawRanges.get(i);
-            ranges[i] = new FrameTimingRange(raw[0]/1000, raw[1]/1000);
+            throw new OpenCvCameraException("Cannot get frame timing ranges until camera is opened");
         }
+        else
+        {
+            Camera.Parameters parameters = camera.getParameters();
+            List<int[]> rawRanges = parameters.getSupportedPreviewFpsRange();
+            FrameTimingRange[] ranges = new FrameTimingRange[rawRanges.size()];
 
-        return ranges;
+            for(int i = 0; i < ranges.length; i++)
+            {
+                int[] raw = rawRanges.get(i);
+                ranges[i] = new FrameTimingRange(raw[0]/1000, raw[1]/1000);
+            }
+
+            return ranges;
+        }
     }
 }
