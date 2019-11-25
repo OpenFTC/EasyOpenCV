@@ -44,7 +44,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.2'
+            implementation 'org.openftc:easyopencv:1.3'
          }
 
 6. Now perform a Gradle Sync:
@@ -63,6 +63,28 @@ Feel free to submit a pull request if you know how to fix any of these!
  - Internal camera support is currently provided via the Android Camera v1 API. This means that manual focus/exposure/ISO control is not possible. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that used the Camera v2 API.
 
 ## Changelog:
+
+### v1.3
+
+ - Add official support for multiple concurrent camera streams (was possible before but required manual activity UI modifications)
+   - Also allows for running Vuforia alongside EasyOpenCV
+ - Add "TrackerAPI" classes (ability to run multiple OpenCV algorithms in the same pipeline, and switch between which output is rendered to the screen in realtime by tapping the viewport)
+ - Add support for rendering cropped returns from user pipeline
+ - A little internal code cleanup
+ - Optimise viewport to re-use existing framebuffer memory
+ - Fix issue where if a user pipeline created a submat from the input Mat, the submat would be de-linked from the input buffer on the next frame
+ - Added ability to use some advanced features for internal cameras:
+   - Added ability to set "recording hint"
+   - Added ability to set "hardware frame timing range"
+   - Added ability to control zoom
+   - Added ability to control flashlight
+   - Added support for using double buffering (default; can improve FPS)
+ - API change: camera instances are now created by invoking `OpenCvCameraFactory.getInstance().create...`
+ - Add examples:
+   - InternalCameraAdvancedFeaturesExample
+   - MultipleCameraExample
+   - MultipleCameraExampleOpenCvAlongsideVuforia
+   - TrackerApiExample
 
 ### v1.2
 
