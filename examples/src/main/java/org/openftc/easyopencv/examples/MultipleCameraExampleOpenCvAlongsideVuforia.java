@@ -63,6 +63,8 @@ public class MultipleCameraExampleOpenCvAlongsideVuforia extends LinearOpMode
          * sake of conciseness. If you're just starting out with EasyOpenCV,
          * you should take a look at {@link InternalCameraExample} or its
          * cam2 counterpart, {@link WebcamExample} first.
+         *
+         * Also check out {@link MultipleCameraExample}
          */
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
