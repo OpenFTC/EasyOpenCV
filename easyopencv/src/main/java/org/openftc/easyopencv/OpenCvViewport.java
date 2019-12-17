@@ -462,7 +462,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                             if(fpsMeterEnabled)
                             {
                                 canvas.drawRect(0, canvas.getHeight()-120, 450, canvas.getHeight(), fpsMeterBgPaint);
-                                canvas.drawText("FTC EasyOpenCV v" + BuildConfig.VERSION_NAME, 5, canvas.getHeight() - 80, fpsMeterTextPaint);
+                                canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, 5, canvas.getHeight() - 80, fpsMeterTextPaint);
                                 canvas.drawText(getFpsString(), 5, canvas.getHeight() - 45, fpsMeterTextPaint);
                                 canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", 5, canvas.getHeight() - 10, fpsMeterTextPaint);
                             }

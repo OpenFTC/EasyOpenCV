@@ -44,7 +44,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.3'
+            implementation 'org.openftc:easyopencv:1.3.1'
          }
 
 6. Now perform a Gradle Sync:
@@ -63,6 +63,11 @@ Feel free to submit a pull request if you know how to fix any of these!
  - Internal camera support is currently provided via the Android Camera v1 API. This means that manual focus/exposure/ISO control is not possible. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that used the Camera v2 API.
 
 ## Changelog:
+
+
+### v1.3.1
+
+ - Update to OpenCV-Repackged 4.1.0-B, which drastically improves error handling when loading native library
 
 ### v1.3
 
