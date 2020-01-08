@@ -222,7 +222,14 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 
             if(!isRequestedSizeSupported)
             {
-                throw new OpenCvCameraException("Camera does not support requested resolution!");
+                StringBuilder supportedSizesBuilder = new StringBuilder();
+
+                for(Camera.Size s : cameraSupportedPreviewSizes)
+                {
+                    supportedSizesBuilder.append(String.format("[%dx%d], ", s.width, s.height));
+                }
+
+                throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
             }
 
             maxZoom = parameters.getMaxZoom();
