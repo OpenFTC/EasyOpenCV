@@ -44,7 +44,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.3.1'
+            implementation 'org.openftc:easyopencv:1.3.2'
          }
 
 6. Now perform a Gradle Sync:
@@ -65,9 +65,16 @@ Feel free to submit a pull request if you know how to fix any of these!
 ## Changelog:
 
 
+### v1.3.2
+
+ - Resolutions >480p are now possible with webcams (at reduced framerates)
+ - Add exposure compensation and autoexposure lock APIs for internal camera
+ - Fix blank display when user pipeline returned cropped mat of type CV_8UC1 (e.g. masks)
+ - Print supported resolutions when user selects illegal resolution for camera
+
 ### v1.3.1
 
- - Update to OpenCV-Repackged 4.1.0-B, which drastically improves error handling when loading native library
+ - Transitive dependency on OpenCV-Repackged updated to 4.1.0-B, which drastically improves error handling when loading native library
 
 ### v1.3
 
