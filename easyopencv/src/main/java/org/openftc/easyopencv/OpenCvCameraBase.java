@@ -47,6 +47,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -72,6 +73,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private Continuation<? extends Consumer<Bitmap>> bitmapContinuation;
     private Mat rotatedMat = new Mat();
     private Mat matToUseIfPipelineReturnedCropped;
+    private Mat croppedColorCvtedMat = new Mat();
+    private Scalar brown = new Scalar(82, 61, 46);
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -351,7 +354,28 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                 }
 
                 //Set to brown to indicate to the user the areas which they cropped off
-                matToUseIfPipelineReturnedCropped.setTo(new Scalar(82, 61, 46));
+                matToUseIfPipelineReturnedCropped.setTo(brown);
+
+                int usrFrmTyp = userProcessedFrame.type();
+
+                if(usrFrmTyp == CvType.CV_8UC1)
+                {
+                    /*
+                     * Handle 8UC1 returns (masks and single channels of images);
+                     *
+                     * We have to color convert onto a different mat (rather than
+                     * doing so in place) to avoid breaking any of the user's submats
+                     */
+                    Imgproc.cvtColor(userProcessedFrame, croppedColorCvtedMat, Imgproc.COLOR_GRAY2RGBA);
+                    userProcessedFrame = croppedColorCvtedMat; //Doesn't affect user's handle, only ours
+                }
+                else if(usrFrmTyp != CvType.CV_8UC4 && usrFrmTyp != CvType.CV_8UC3)
+                {
+                    /*
+                     * Oof, we don't know how to handle the type they gave us
+                     */
+                    throw new OpenCvCameraException("User pipeline returned a frame of an illegal type. Valid types are CV_8UC1, CV_8UC3, and CV_8UC4");
+                }
 
                 //Copy the user's frame onto a Mat of the correct size
                 userProcessedFrame.copyTo(matToUseIfPipelineReturnedCropped.submat(
