@@ -225,7 +225,14 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
 
         if(!sizeSupported)
         {
-            throw new OpenCvCameraException("Camera does not support requested resolution!");
+            StringBuilder supportedSizesBuilder = new StringBuilder();
+
+            for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
+            {
+                supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
+            }
+
+            throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
         }
 
         try
