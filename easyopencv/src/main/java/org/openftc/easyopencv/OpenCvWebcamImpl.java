@@ -54,6 +54,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
+import org.firstinspires.ftc.robotcore.internal.camera.ImageFormatMapper;
 import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
 import org.firstinspires.ftc.robotcore.internal.camera.libuvc.api.UvcApiCameraFrame;
 import org.firstinspires.ftc.robotcore.internal.camera.libuvc.nativeobject.UvcFrame;
@@ -244,7 +245,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
                 {
                     try
                     {
-                        CameraMode streamingMode = new CameraMode(width, height, 30, FrameFormat.YUYV);
+                        CameraMode streamingMode = new CameraMode(
+                                width,
+                                height,
+                                cameraCharacteristics.getMaxFramesPerSecond(
+                                        ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
+                                        new Size(width, height)),
+                                        FrameFormat.YUYV);
 
                         //Indicate how we want to stream
                         final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(
