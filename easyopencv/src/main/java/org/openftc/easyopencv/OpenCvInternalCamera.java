@@ -96,6 +96,56 @@ public interface OpenCvInternalCamera extends OpenCvCamera
     void setFlashlightEnabled(boolean flashlightEnabled);
 
     /***
+     * Set the exposure compensation value of the auto exposure
+     * routine. This can allow for (limited) relative exposure
+     * adjustment from the automatically determined value.
+     *
+     * This method cannot be called until the camera has been opened.
+     *
+     * @param exposureCompensation the exposure compensation value that the auto exposure routine
+     *                             should use. Must be in the range returned by {@link #getMaxSupportedExposureCompensation()}
+     *                             and {@link #getMinSupportedExposureCompensation()}
+     */
+    void setExposureCompensation(int exposureCompensation);
+
+    /***
+     * Get the maximum exposure compensation value
+     * supported by the auto exposure routine.
+     *
+     * This method cannot be called until the camera
+     * has been opened.
+     *
+     * @return the maximum exposure compensation value
+     *         supported by the auto exposure routine.
+     */
+    int getMaxSupportedExposureCompensation();
+
+    /***
+     * Get the minimum exposure compensation value
+     * supported by the auto exposure routine.
+     *
+     * This method cannot be called until the camera
+     * has been opened.
+     *
+     * @return the minimum exposure compensation value
+     *         supported by the auto exposure routine.
+     */
+    int getMinSupportedExposureCompensation();
+
+    /***
+     * Locks / unlocks the auto exposure routine. Changes
+     * to exposure compensation will still take effect if
+     * the exposure has been locked.
+     *
+     * This method cannot be called until the camera has
+     * been opened.
+     *
+     * @param lock whether the auto exposure routine should be
+     *             locked
+     */
+    void setExposureLocked(boolean lock);
+
+    /***
      * Set the zoom level of the camera. Must be >= 0
      * and <= {@link #getMaxSupportedZoom()}
      *

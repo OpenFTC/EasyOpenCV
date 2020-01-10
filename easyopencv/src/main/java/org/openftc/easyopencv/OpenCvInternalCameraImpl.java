@@ -24,6 +24,7 @@
 
 package org.openftc.easyopencv;
 
+import android.annotation.SuppressLint;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -371,6 +372,79 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             }
 
             camera.setParameters(parameters);
+        }
+    }
+
+    @Override
+    public synchronized void setExposureLocked(boolean lock)
+    {
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot lock exposure until camera is opened");
+        }
+
+        Camera.Parameters parameters = camera.getParameters();
+
+        if(!parameters.isAutoExposureLockSupported())
+        {
+            throw new OpenCvCameraException("Locking exposure is not supported on this camera");
+        }
+
+        parameters.setAutoExposureLock(lock);
+        camera.setParameters(parameters);
+    }
+
+    @Override
+    public synchronized void setExposureCompensation(int exposureCompensation)
+    {
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot set exposure compensation until camera is opened!");
+        }
+        else
+        {
+            Camera.Parameters parameters = camera.getParameters();
+
+            int minExposureCompensation = parameters.getMinExposureCompensation();
+            int maxExposureCompensation = parameters.getMaxExposureCompensation();
+
+            if(exposureCompensation > maxExposureCompensation)
+            {
+                throw new OpenCvCameraException(String.format("Exposure compensation value of %d requested, but max supported compensation is %d", exposureCompensation, maxExposureCompensation));
+            }
+            else if(exposureCompensation < minExposureCompensation)
+            {
+                throw new OpenCvCameraException(String.format("Exposure compensation value of %d requested, but min supported compensation is %d", exposureCompensation, minExposureCompensation));
+            }
+
+            parameters.setExposureCompensation(exposureCompensation);
+            camera.setParameters(parameters);
+        }
+    }
+
+    @Override
+    public synchronized int getMaxSupportedExposureCompensation()
+    {
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot get max supported exposure compensation until camera is opened");
+        }
+        else
+        {
+            return camera.getParameters().getMaxExposureCompensation();
+        }
+    }
+
+    @Override
+    public synchronized int getMinSupportedExposureCompensation()
+    {
+        if(!isOpen || camera == null)
+        {
+            throw new OpenCvCameraException("Cannot get min supported exposure compensation until camera is opened");
+        }
+        else
+        {
+            return camera.getParameters().getMinExposureCompensation();
         }
     }
 
