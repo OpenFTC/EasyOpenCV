@@ -62,7 +62,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 Feel free to submit a pull request if you know how to fix any of these!
 
  - Currently, this library uses the SDK's built-in UVC driver for webcam support. Unforutnetly, the SDK's UVC driver is a buggy mess. This can cause all sorts of undesirable things to happen, such as crashes on USB disconnection, (or, if it survived the USB disconnection, hanging/deadlock when trying to stop the OpMode after the connection was restored), crashing of the Linux kernel if run too many times in a row, etc. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that would use a 3rd party UVC driver.
- - Internal camera support is currently provided via the Android Camera v1 API. This means that manual focus/exposure/ISO control is not possible. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that used the Camera v2 API.
+ - Internal camera support is currently provided via the Android Camera v1 API. This means that manual focus/exposure/ISO control is not possible. **Edit:** as of v1.3.2, exposure compensation and lock is now supported, which, while it does not provide all the benefits of manual exposure, is probably sufficient for most needs. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that used the Camera v2 API.
 
 ## Changelog:
 
