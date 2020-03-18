@@ -42,6 +42,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callback
 {
@@ -67,6 +68,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private int pipelineMs = 0;
     private int overheadMs = 0;
     private String TAG = "OpenCvViewport";
+    private ReentrantLock renderThreadAliveLock = new ReentrantLock();
 
     public OpenCvViewport(Context context, OnClickListener onClickListener)
     {
@@ -109,9 +111,9 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     {
         synchronized (syncObj)
         {
-            if(renderThread != null)
+            if(internalRenderingState != RenderingState.STOPPED)
             {
-                renderThread.interrupt();
+                throw new IllegalStateException("Cannot set size while renderer is active!");
             }
 
             //did they give us null?
@@ -123,6 +125,10 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             this.size = size;
             this.aspectRatio = (double)size.getWidth() / (double)size.getHeight();
+
+            //Make sure we don't have any mats hanging around
+            //from when we might have been running before
+            visionPreviewFrameQueue.clear();
 
             framebufferRecycler = new MatRecycler(FRAMEBUFFER_RECYCLER_CAPACITY);
         }
@@ -204,17 +210,23 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 renderThread.notifyExitRequested();
                 renderThread.interrupt();
 
-                try
-                {
-                    /*
-                     * Wait for him to die
-                     */
-                    renderThread.join();
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();
-                }
+                /*
+                 * Wait for him to die non-interuptibly
+                 */
+                renderThreadAliveLock.lock();
+                renderThreadAliveLock.unlock();
+
+//                try
+//                {
+//                    /*
+//                     * Wait for him to die
+//                     */
+//                    renderThread.join();
+//                }
+//                catch (InterruptedException e)
+//                {
+//                    e.printStackTrace();
+//                }
 
                 internalRenderingState = RenderingState.STOPPED;
             }
@@ -383,6 +395,12 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         @Override
         public void run()
         {
+            renderThreadAliveLock.lock();
+
+            //Make sure we don't have any mats hanging around
+            //from when we might have been running before
+            visionPreviewFrameQueue.clear();
+
             Log.d(TAG, "I am alive!");
 
             bitmapFromMat = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.RGB_565);
@@ -519,6 +537,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             Log.d(TAG, "About to exit");
             bitmapFromMat.recycle(); //Help the garbage collector :)
+            renderThreadAliveLock.unlock();
         }
     }
 
