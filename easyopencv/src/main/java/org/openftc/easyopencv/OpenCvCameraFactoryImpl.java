@@ -63,6 +63,18 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     }
 
     @Override
+    public OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction)
+    {
+        return new OpenCvInternalCamera2Impl(direction);
+    }
+
+    @Override
+    public OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction, int containerId)
+    {
+        return new OpenCvInternalCamera2Impl(direction, containerId);
+    }
+
+    @Override
     public OpenCvCamera createWebcam(WebcamName webcamName)
     {
         return new OpenCvWebcamImpl(webcamName);

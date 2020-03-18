@@ -44,6 +44,12 @@ public abstract class OpenCvCameraFactory
     public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, @IdRes int viewportContainerId);
 
     /*
+     * Internal2
+     */
+    public abstract OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction);
+    public abstract OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction, @IdRes int viewportContainerId);
+
+    /*
      * Webcam
      */
     public abstract OpenCvCamera createWebcam(WebcamName cameraName);
