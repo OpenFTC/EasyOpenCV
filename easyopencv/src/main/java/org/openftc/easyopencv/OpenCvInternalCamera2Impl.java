@@ -24,9 +24,10 @@ import org.opencv.imgproc.Imgproc;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressLint({"NewApi", "MissingPermission"})
-public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenCvInternalCamera2
+public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenCvInternalCamera2, ImageReader.OnImageAvailableListener
 {
     CameraDevice mCameraDevice;
 
@@ -47,6 +48,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     public float exposureTime = 1/50f;
     private volatile boolean isStreaming = false;
     Surface surface;
+
+    ReentrantLock sync = new ReentrantLock();
 
     public OpenCvInternalCamera2Impl(OpenCvInternalCamera2.CameraDirection direction)
     {
@@ -87,14 +90,11 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
-    public synchronized void openCameraDevice()
+    public void openCameraDevice()
     {
-        if(isOpen)
-        {
-            return;
-        }
+        sync.lock();
 
-        if(mCameraDevice == null)
+        if(!isOpen && mCameraDevice == null)
         {
             try
             {
@@ -114,11 +114,15 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 e.printStackTrace();
             }
         }
+
+        sync.unlock();
     }
 
     @Override
-    public synchronized void closeCameraDevice()
+    public void closeCameraDevice()
     {
+        sync.lock();
+
         cleanupForClosingCamera();
 
         if(isOpen)
@@ -134,6 +138,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
             isOpen = false;
         }
+
+        sync.unlock();
     }
 
     @Override
@@ -147,147 +153,101 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         System.out.println("startStreaming() ENTER");
 
+        sync.lock();
+
         /*
          * If we're already streaming, then that's OK, but we need to stop
          * streaming in the old mode before we can restart in the new one.
          */
         if(isStreaming)
         {
-            frameWorkerHandlerThread.quit();
-            frameWorkerHandlerThread.interrupt();
-
             stopStreaming();
         }
 
-        synchronized (this)
+        prepareForStartStreaming(width, height, rotation);
+
+        try
         {
-            prepareForStartStreaming(width, height, rotation);
+            rgbMat = new Mat(height, width, CvType.CV_8UC3);
 
-            try
+            startFrameWorkerHandlerThread();
+
+            imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
+            imageReader.setOnImageAvailableListener(this, frameWorkerHandler);
+
+            surface = imageReader.getSurface();
+
+            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            mPreviewRequestBuilder.addTarget(surface);
+
+            streamingStartedLatch = new CountDownLatch(1);
+
+            CameraCaptureSession.StateCallback callback = new CameraCaptureSession.StateCallback()
             {
-                rgbMat = new Mat(height, width, CvType.CV_8UC3);
-
-                startFrameWorkerHandlerThread();
-
-                imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
-                imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener()
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession session)
                 {
-                    @Override
-                    public void onImageAvailable(ImageReader reader)
+                    try
                     {
-                        System.out.println("onImageAvailable() ENTER");
+                        System.out.println("STATECALLBACK: onConfigured()");
 
-                        if(!frameWorkerHandlerThread.isInterrupted())
+                        if (null == mCameraDevice)
                         {
-                            synchronized (OpenCvInternalCamera2Impl.this)
-                            {
-                                if(frameWorkerHandlerThread.isInterrupted())
-                                {
-                                    System.out.println("onImageAvailable() EXIT");
-                                    return;
-                                }
-
-                                Image image = reader.acquireLatestImage();
-                                if (image == null)
-                                {
-                                    return;
-                                }
-
-                                /*
-                                 * For some reason, when we restart the streaming while live,
-                                 * the image returned from the image reader is somehow
-                                 * already closed and so onPreviewFrame() dies. Therefore,
-                                 * until we can figure out what's going on here, we simply
-                                 * catch and ignore the exception.
-                                 */
-                                try
-                                {
-                                    onPreviewFrame(image);
-                                }
-                                catch (IllegalStateException e)
-                                {
-                                    e.printStackTrace();
-                                }
-
-                                image.close();
-                            }
+                            return; // camera is already closed
                         }
+                        cameraCaptureSession = session;
 
-                        System.out.println("onImageAvailable() EXIT");
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(60,60));
+                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, (long)16666666);
 
+                        //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 250);
+                        //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long)(exposureTime*1000*1000*1000));
+
+                        cameraCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, cameraHardwareHandler);
                     }
-                }, frameWorkerHandler);
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    finally
+                    {
+                        System.out.println("STATECALLBACK: releasing latch");
+                        streamingStartedLatch.countDown();
+                    }
+                }
 
-                surface = imageReader.getSurface();
-
-                mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                mPreviewRequestBuilder.addTarget(surface);
-
-                streamingStartedLatch = new CountDownLatch(1);
-
-                CameraCaptureSession.StateCallback callback = new CameraCaptureSession.StateCallback()
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession session)
                 {
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession session)
-                    {
-                        try
-                        {
-                            System.out.println("STATECALLBACK: onConfigured()");
+                    System.out.println("STATECALLBACK: onConfigureFailed()");
+                }
+            };
 
-                            if (null == mCameraDevice)
-                            {
-                                return; // camera is already closed
-                            }
-                            cameraCaptureSession = session;
+            mCameraDevice.createCaptureSession(Arrays.asList(surface), callback, cameraHardwareHandler);
 
-                            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-                            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(60,60));
-                            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, (long)16666666);
+            System.out.println("Awaiting STATECALLBACK latch");
+            streamingStartedLatch.await();
 
-                            //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 250);
-                            //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long)(exposureTime*1000*1000*1000));
-
-                            cameraCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, cameraHardwareHandler);
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                        finally
-                        {
-                            System.out.println("STATECALLBACK: releasing latch");
-                            streamingStartedLatch.countDown();
-                        }
-                    }
-
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession session)
-                    {
-                        System.out.println("STATECALLBACK: onConfigureFailed()");
-                    }
-                };
-
-                mCameraDevice.createCaptureSession(Arrays.asList(surface), callback, cameraHardwareHandler);
-
-                System.out.println("Awaiting STATECALLBACK latch");
-                streamingStartedLatch.await();
-
-                isStreaming = true;
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
-            System.out.println("startStreaming() EXIT");
+            isStreaming = true;
         }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        sync.unlock();
+
+        System.out.println("startStreaming() EXIT");
     }
 
     @Override
-    public synchronized void stopStreaming()
+    public void stopStreaming()
     {
         System.out.println("stopStreaming() ENTER");
+
+        sync.lock();
 
         cleanupForEndStreaming();
 
@@ -302,17 +262,19 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         finally
         {
             //stopCameraHardwareHandlerThread();
-            stopFrameWorkerHandlerThread();
+            //stopFrameWorkerHandlerThread();
             if (null != imageReader)
             {
                 imageReader.close();
                 imageReader = null;
 
-                //stopFrameWorkerHandlerThread();
+                stopFrameWorkerHandlerThread();
             }
-        }
 
-        System.out.println("stopStreaming() EXIT");
+            sync.unlock();
+
+            System.out.println("stopStreaming() EXIT");
+        }
     }
 
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback()
@@ -374,16 +336,22 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         handleFrame(rgbMat);
     }
 
-    private synchronized void startFrameWorkerHandlerThread()
+    private void startFrameWorkerHandlerThread()
     {
+        sync.lock();
+
         frameWorkerHandlerThread = new HandlerThread("FrameWorker");
         frameWorkerHandlerThread.start();
         frameWorkerHandler = new Handler(frameWorkerHandlerThread.getLooper());
+
+        sync.unlock();
     }
 
-    private synchronized void stopFrameWorkerHandlerThread()
+    private void stopFrameWorkerHandlerThread()
     {
         System.out.println("stopFrameWorkerHandlerThread() ENTER");
+
+        sync.lock();
 
         if (frameWorkerHandlerThread != null)
         {
@@ -393,31 +361,44 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             System.out.println("stopFrameWorkerHandlerThread() interrupt()");
             frameWorkerHandlerThread.interrupt();
 
-            try
-            {
-                System.out.println("stopFrameWorkerHandlerThread() join()");
-                frameWorkerHandlerThread.join();
-                frameWorkerHandlerThread = null;
-                frameWorkerHandler = null;
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
+//            try
+//            {
+//                System.out.println("stopFrameWorkerHandlerThread() join()");
+//                frameWorkerHandlerThread.join();
+//                frameWorkerHandlerThread = null;
+//                frameWorkerHandler = null;
+//            }
+//            catch (InterruptedException e)
+//            {
+//                e.printStackTrace();
+//            }
+
+            System.out.println("stopFrameWorkerHandlerThread() joinUninterruptibly()");
+            joinUninterruptibly(frameWorkerHandlerThread);
+            frameWorkerHandlerThread = null;
+            frameWorkerHandler = null;
         }
+
+        sync.unlock();
 
         System.out.println("stopFrameWorkerHandlerThread() EXIT");
     }
 
-    private synchronized void startCameraHardwareHandlerThread()
+    private void startCameraHardwareHandlerThread()
     {
+        sync.lock();
+
         cameraHardwareHandlerThread = new HandlerThread("OpenCVCameraBackground");
         cameraHardwareHandlerThread.start();
         cameraHardwareHandler = new Handler(cameraHardwareHandlerThread.getLooper());
+
+        sync.unlock();
     }
 
-    private synchronized void stopCameraHardwareHandlerThread()
+    private void stopCameraHardwareHandlerThread()
     {
+        sync.lock();
+
         if (cameraHardwareHandlerThread == null)
             return;
 
@@ -433,6 +414,85 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         catch (InterruptedException e)
         {
             e.printStackTrace();
+        }
+
+        sync.unlock();
+    }
+
+    @Override
+    public void onImageAvailable(ImageReader reader)
+    {
+        System.out.println("onImageAvailable() ENTER");
+
+        try
+        {
+            /*
+             * Note: this it is VERY important that we lock
+             * interruptibly, because otherwise we can get
+             * into a deadlock with the OpMode thread where
+             * it's waiting for us to exit, but we can't exit
+             * because we're waiting on this lock which the OpMode
+             * thread is holding!!!
+             */
+            sync.lockInterruptibly();
+
+            System.out.println("onImageAvailable() acquireLatestImage()");
+            Image image = reader.acquireLatestImage();
+
+            if(image != null)
+            {
+                /*
+                 * For some reason, when we restart the streaming while live,
+                 * the image returned from the image reader is somehow
+                 * already closed and so onPreviewFrame() dies. Therefore,
+                 * until we can figure out what's going on here, we simply
+                 * catch and ignore the exception.
+                 */
+                try
+                {
+                    onPreviewFrame(image);
+                }
+                catch (IllegalStateException e)
+                {
+                    e.printStackTrace();
+                }
+
+                image.close();
+            }
+
+            sync.unlock();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        }
+        finally
+        {
+            System.out.println("onImageAvailable() EXIT");
+        }
+    }
+
+    private void joinUninterruptibly(Thread thread)
+    {
+        boolean interrupted = false;
+
+        while (true)
+        {
+            try
+            {
+                thread.join();
+                break;
+            }
+            catch (InterruptedException e)
+            {
+                interrupted = true;
+            }
+        }
+
+        if(interrupted)
+        {
+            Thread.currentThread().interrupt();
         }
     }
 }
