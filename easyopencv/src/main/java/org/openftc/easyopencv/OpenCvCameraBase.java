@@ -53,7 +53,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 
-public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource {
+public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource
+{
 
     private OpenCvPipeline pipeline = null;
     private LinearLayout viewportContainerLayout;
@@ -238,6 +239,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         catch (InterruptedException e)
         {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
             viewport = null;
         }
     }
