@@ -157,8 +157,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     public void startStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
-        System.out.println("startStreaming() ENTER");
-
         sync.lock();
 
         /*
@@ -168,41 +166,25 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         if(isStreaming)
         {
             stopStreaming();
-
-            System.out.println("startStreaming() RESTART interrupted " + Thread.currentThread().isInterrupted());
         }
 
         prepareForStartStreaming(width, height, rotation);
-
-        System.out.println("startStreaming() PREPARED interrupted " + Thread.currentThread().isInterrupted());
 
         try
         {
             rgbMat = new Mat(height, width, CvType.CV_8UC3);
 
-            System.out.println("startStreaming() MAT CREATED interrupted " + Thread.currentThread().isInterrupted());
-
             startFrameWorkerHandlerThread();
-
-            System.out.println("startStreaming() started frame worker interrupted " + Thread.currentThread().isInterrupted());
-
-            imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
-
-            System.out.println("startStreaming() IMAGE reader CREATED interrupted " + Thread.currentThread().isInterrupted());
-
-            imageReader.setOnImageAvailableListener(this, frameWorkerHandler);
-
-            surface = imageReader.getSurface();
 
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_MANUAL);
 
-            System.out.println("startStreaming() CAPTURE REQUEST CREATED interrupted " + Thread.currentThread().isInterrupted());
-
+            imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
+            imageReader.setOnImageAvailableListener(this, frameWorkerHandler);
+            surface = imageReader.getSurface();
             mPreviewRequestBuilder.addTarget(surface);
 
             streamingStartedLatch = new CountDownLatch(1);
 
-            System.out.println("startStreaming() LATCH CREATED interrupted " + Thread.currentThread().isInterrupted());
 
             CameraCaptureSession.StateCallback callback = new CameraCaptureSession.StateCallback()
             {
@@ -211,8 +193,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 {
                     try
                     {
-                        System.out.println("STATECALLBACK: onConfigured()");
-
                         if (null == mCameraDevice)
                         {
                             return; // camera is already closed
@@ -235,7 +215,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                     }
                     finally
                     {
-                        System.out.println("STATECALLBACK: releasing latch");
                         streamingStartedLatch.countDown();
                     }
                 }
@@ -243,15 +222,11 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession session)
                 {
-                    System.out.println("STATECALLBACK: onConfigureFailed()");
                 }
             };
 
             mCameraDevice.createCaptureSession(Arrays.asList(surface), callback, cameraHardwareHandler);
 
-            System.out.println("startStreaming() CREATED CAP SESSION interrupted " + Thread.currentThread().isInterrupted());
-
-            System.out.println("Awaiting STATECALLBACK latch");
             streamingStartedLatch.await();
 
             isStreaming = true;
@@ -267,15 +242,11 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         }
 
         sync.unlock();
-
-        System.out.println("startStreaming() EXIT interrupted " + Thread.currentThread().isInterrupted());
     }
 
     @Override
     public void stopStreaming()
     {
-        System.out.println("stopStreaming() ENTER");
-
         sync.lock();
 
         cleanupForEndStreaming();
@@ -301,8 +272,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             }
 
             sync.unlock();
-
-            System.out.println("stopStreaming() EXIT");
         }
     }
 
@@ -367,71 +336,39 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
     private void startFrameWorkerHandlerThread()
     {
-        System.out.println("startFrameWorkerHandlerThread() ENTER interrupted " + Thread.currentThread().isInterrupted());
 
         sync.lock();
 
-        System.out.println("startFrameWorkerHandlerThread() LOCK ACQUIRED interrupted " + Thread.currentThread().isInterrupted());
-
-        frameWorkerHandlerThread = new FixedHandlerThread("FrameWorker");
+        frameWorkerHandlerThread = new FixedHandlerThread("FrameWorkerHandlerThread");
         frameWorkerHandlerThread.start();
-
-        System.out.println("startFrameWorkerHandlerThread() STARTED THREAD interrupted " + Thread.currentThread().isInterrupted());
 
         frameWorkerHandler = new Handler(frameWorkerHandlerThread.getLooper());
 
-        System.out.println("startFrameWorkerHandlerThread() CREATED HANDLER interrupted " + Thread.currentThread().isInterrupted());
-
         sync.unlock();
-
-        System.out.println("startFrameWorkerHandlerThread() LOCK RELEASED interrupted " + Thread.currentThread().isInterrupted());
-
-        System.out.println("startFrameWorkerHandlerThread() EXIT interrupted " + Thread.currentThread().isInterrupted());
     }
 
     private void stopFrameWorkerHandlerThread()
     {
-        System.out.println("stopFrameWorkerHandlerThread() ENTER");
-
         sync.lock();
 
         if (frameWorkerHandlerThread != null)
         {
-            System.out.println("stopFrameWorkerHandlerThread() quit()");
             frameWorkerHandlerThread.quit();
-
-            System.out.println("stopFrameWorkerHandlerThread() interrupt()");
             frameWorkerHandlerThread.interrupt();
-
-//            try
-//            {
-//                System.out.println("stopFrameWorkerHandlerThread() join()");
-//                frameWorkerHandlerThread.join();
-//                frameWorkerHandlerThread = null;
-//                frameWorkerHandler = null;
-//            }
-//            catch (InterruptedException e)
-//            {
-//                e.printStackTrace();
-//            }
-
-            System.out.println("stopFrameWorkerHandlerThread() joinUninterruptibly()");
             joinUninterruptibly(frameWorkerHandlerThread);
-            System.out.println("stopFrameWorkerHandlerThread() interrupted after joinUninterruptibly() " + Thread.currentThread().isInterrupted());
+
             frameWorkerHandlerThread = null;
             frameWorkerHandler = null;
         }
 
         sync.unlock();
-
-        System.out.println("stopFrameWorkerHandlerThread() EXIT");
     }
 
     private void startCameraHardwareHandlerThread()
     {
         sync.lock();
 
-        cameraHardwareHandlerThread = new FixedHandlerThread("OpenCVCameraBackground");
+        cameraHardwareHandlerThread = new FixedHandlerThread("CameraHardwareHandlerThread");
         cameraHardwareHandlerThread.start();
         cameraHardwareHandler = new Handler(cameraHardwareHandlerThread.getLooper());
 
@@ -449,21 +386,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         cameraHardwareHandlerThread.interrupt();
 
         joinUninterruptibly(cameraHardwareHandlerThread);
-        System.out.println("stopCameraHardwareHandlerThread() interrupted after joinUninterruptibly() " + Thread.currentThread().isInterrupted());
         cameraHardwareHandlerThread = null;
         cameraHardwareHandler = null;
-
-//        try
-//        {
-//            cameraHardwareHandlerThread.join();
-//            cameraHardwareHandlerThread = null;
-//            cameraHardwareHandler = null;
-//        }
-//        catch (InterruptedException e)
-//        {
-//            e.printStackTrace();
-//            Thread.currentThread().interrupt();
-//        }
 
         sync.unlock();
     }
@@ -471,8 +395,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     public void onImageAvailable(ImageReader reader)
     {
-        System.out.println("onImageAvailable() ENTER");
-
         try
         {
             /*
@@ -485,7 +407,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
              */
             sync.lockInterruptibly();
 
-            System.out.println("onImageAvailable() acquireLatestImage()");
             Image image = reader.acquireLatestImage();
 
             if(image != null)
@@ -516,16 +437,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             e.printStackTrace();
             Thread.currentThread().interrupt();
         }
-        finally
-        {
-            System.out.println("onImageAvailable() EXIT");
-        }
     }
 
     private void joinUninterruptibly(Thread thread)
     {
-        System.out.println("joinUninterruptibly() ENTER!");
-
         boolean interrupted = false;
 
         while (true)
@@ -544,10 +459,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         if(interrupted)
         {
-            System.out.println("joinUninterruptibly() INTERRUPTING!");
             Thread.currentThread().interrupt();
         }
-
-        System.out.println("joinUninterruptibly() EXIT!");
     }
 }
