@@ -5,15 +5,14 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.util.Range;
 import android.view.Surface;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -49,18 +48,24 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     public float exposureTime = 1/50f;
     private volatile boolean isStreaming = false;
     Surface surface;
+    CameraManager cameraManager;
+    CameraCharacteristics cameraCharacteristics;
 
     ReentrantLock sync = new ReentrantLock();
 
+    @SuppressLint("WrongConstant")
     public OpenCvInternalCamera2Impl(OpenCvInternalCamera2.CameraDirection direction)
     {
         this.direction = direction;
+        cameraManager = (CameraManager) AppUtil.getInstance().getActivity().getSystemService(Context.CAMERA_SERVICE);
     }
 
+    @SuppressLint("WrongConstant")
     public OpenCvInternalCamera2Impl(OpenCvInternalCamera2.CameraDirection direction, int containerLayoutId)
     {
         super(containerLayoutId);
         this.direction = direction;
+        cameraManager = (CameraManager) AppUtil.getInstance().getActivity().getSystemService(Context.CAMERA_SERVICE);
     }
 
     @Override
@@ -72,21 +77,43 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     protected int mapRotationEnumToOpenCvRotateCode(OpenCvCameraRotation rotation)
     {
-        if(rotation == OpenCvCameraRotation.UPRIGHT)
+        if(direction == CameraDirection.BACK)
         {
-            return Core.ROTATE_90_CLOCKWISE;
-        }
-        else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
-        {
-            return Core.ROTATE_90_COUNTERCLOCKWISE;
-        }
-        else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
-        {
-            return Core.ROTATE_180;
+            if(rotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return Core.ROTATE_90_CLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return Core.ROTATE_90_COUNTERCLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return Core.ROTATE_180;
+            }
+            else
+            {
+                return -1;
+            }
         }
         else
         {
-            return -1;
+            if(rotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return Core.ROTATE_90_COUNTERCLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return Core.ROTATE_90_CLOCKWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return Core.ROTATE_180;
+            }
+            else
+            {
+                return -1;
+            }
         }
     }
 
@@ -101,11 +128,22 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             {
                 startCameraHardwareHandlerThread();
 
-                CameraManager manager = (CameraManager) AppUtil.getInstance().getActivity().getSystemService(Context.CAMERA_SERVICE);
-                String camList[] = manager.getCameraIdList();
-                String camId = camList[0];
+                String camList[] = cameraManager.getCameraIdList();
+
+                String camId = null;
+
+                for(String s : camList)
+                {
+                    if(cameraManager.getCameraCharacteristics(s).get(CameraCharacteristics.LENS_FACING) == direction.id)
+                    {
+                        camId = s;
+                        break;
+                    }
+                }
+
                 cameraOpenedLatch = new CountDownLatch(1);
-                manager.openCamera(camId, mStateCallback, cameraHardwareHandler);
+                cameraCharacteristics = cameraManager.getCameraCharacteristics(camId);
+                cameraManager.openCamera(camId, mStateCallback, cameraHardwareHandler);
 
                 cameraOpenedLatch.await();
                 isOpen = true;
@@ -460,6 +498,184 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         if(interrupted)
         {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    @Override
+    public int getMinSensorGain()
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("getMinSensorGain() called, but camera is not opened!");
+            }
+
+            return cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE).getLower();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public int getMaxSensorGain()
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("getMinSensorGain() called, but camera is not opened!");
+            }
+
+            return cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE).getUpper();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setSensorGain(int iso)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setSensorGain() called, but camera is not opened!");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setSensorFps(int sensorFps)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setSensorFps() called, but camera is not opened!");
+            }
+
+            long nanos = (long) ((1.0/sensorFps)*1e9);
+
+            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, nanos);
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setExposureFractional(int denominator)
+    {
+
+
+        double exposureTimeSeconds = 1.0/denominator;
+        long exposureTimeNanos = (long) (exposureTimeSeconds * (int) 1e9);
+
+        setExposureNanos(exposureTimeNanos);
+    }
+
+    @Override
+    public void setExposureNanos(long nanos)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setExposureNanos() called, but camera is not opened!");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, nanos);
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public float getMinFocusDistance()
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("getMinFocusDistance() called, but camera is not opened!");
+            }
+
+            return cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setFocusDistance(float diopters)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new RuntimeException("setFocusDistance() called, but camera is not opened!");
+            }
+            else if(diopters < 0.0)
+            {
+                throw new RuntimeException("Focus distance must be >= 0.0!");
+            }
+            else if(diopters > getMinFocusDistance())
+            {
+                throw new RuntimeException("Focus distance must be <= the value returned by getMinFocusDistance()");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, diopters);
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    private void apply()
+    {
+        try
+        {
+            cameraCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, cameraHardwareHandler);
+        }
+        catch (CameraAccessException e)
+        {
+            e.printStackTrace();
         }
     }
 }

@@ -1,6 +1,5 @@
 package org.openftc.easyopencv;
 
-import android.hardware.Camera;
 import android.hardware.camera2.CameraCharacteristics;
 
 public interface OpenCvInternalCamera2 extends OpenCvCamera
@@ -17,4 +16,18 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
             this.id = id;
         }
     }
+
+    int getMinSensorGain();
+    int getMaxSensorGain();
+
+    void setSensorGain(int iso);
+
+    void setExposureFractional(int denominator);
+    void setExposureNanos(long nanos);
+
+    float getMinFocusDistance();
+
+    void setFocusDistance(float diopters);
+
+    void setSensorFps(int sensorFps);
 }
