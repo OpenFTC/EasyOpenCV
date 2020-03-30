@@ -587,10 +587,108 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    public void setFlashlightEnabled(boolean enabled)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setSensorFps() called, but camera is not opened!");
+            }
+
+            if(enabled)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            }
+            else
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            }
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public int getMinAutoExposureCompensation()
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("getMinAutoExposureCompensation() called, but camera is not opened!");
+            }
+
+            return cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE).getLower();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public int getMaxAutoExposureCompensation()
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("getMaxAutoExposureCompensation() called, but camera is not opened!");
+            }
+
+            return cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE).getUpper();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setAutoExposureCompensation(int aeCompensation)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setAutoExposureCompensation() called, but camera is not opened!");
+            }
+
+            if(aeCompensation < getMinAutoExposureCompensation())
+            {
+                throw new OpenCvCameraException("Auto exposure compensation must be >= the value returned by getMinAutoExposureCompensation()");
+            }
+            else if(aeCompensation > getMaxAutoExposureCompensation())
+            {
+                throw new OpenCvCameraException("Auto exposure compensation must be <= the value returned by getMaxAutoExposureCompensation()");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, aeCompensation);
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
     public void setExposureFractional(int denominator)
     {
-
-
         double exposureTimeSeconds = 1.0/denominator;
         long exposureTimeNanos = (long) (exposureTimeSeconds * (int) 1e9);
 
