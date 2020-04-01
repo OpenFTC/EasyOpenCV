@@ -21,7 +21,9 @@
 
 package org.openftc.easyopencv;
 
-public interface OpenCvCamera
+import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
+
+public interface OpenCvCamera extends CameraStreamSource
 {
     /***
      * Open the connection to the camera device. If the camera is
