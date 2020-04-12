@@ -13,7 +13,10 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.util.Range;
 import android.view.Surface;
+
+import com.qualcomm.robotcore.util.MovingStatistics;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Core;
@@ -52,6 +55,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     CameraCharacteristics cameraCharacteristics;
 
     ReentrantLock sync = new ReentrantLock();
+
+
 
     @SuppressLint("WrongConstant")
     public OpenCvInternalCamera2Impl(OpenCvInternalCamera2.CameraDirection direction)
@@ -208,13 +213,33 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         prepareForStartStreaming(width, height, rotation);
 
+        if(viewport != null)
+        {
+            OpenCvViewport.OptimizedRotation optimizedRotation = null;
+
+            if(rotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
+            }
+            else
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.NONE;
+            }
+
+            viewport.setOptimizedViewRotation(optimizedRotation);
+        }
+
         try
         {
             rgbMat = new Mat(height, width, CvType.CV_8UC3);
 
             startFrameWorkerHandlerThread();
 
-            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_MANUAL);
+            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
             imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
             imageReader.setOnImageAvailableListener(this, frameWorkerHandler);
@@ -237,8 +262,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                         }
                         cameraCaptureSession = session;
 
-//                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-//                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 //                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(60,60));
 //                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, (long)16666666);
 

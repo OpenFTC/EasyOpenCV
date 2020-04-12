@@ -62,7 +62,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private MovingStatistics msUserPipelineRollingAverage;
     private MovingStatistics msTotalFrameProcessingTimeRollingAverage;
     private ElapsedTime timer;
-    private OpenCvViewport viewport;
+    protected OpenCvViewport viewport;
     private OpenCvCameraRotation rotation;
     private int frameCount = 0;
     private float avgFps;
@@ -528,6 +528,15 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         else
         {
             return 0;
+        }
+    }
+
+    @Override
+    public synchronized void setViewportRenderingPolicy(ViewportRenderingPolicy policy)
+    {
+        if(viewport != null)
+        {
+            viewport.setRenderingPolicy(policy);
         }
     }
 

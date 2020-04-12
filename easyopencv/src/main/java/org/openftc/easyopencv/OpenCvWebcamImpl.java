@@ -34,7 +34,6 @@
 
 package org.openftc.easyopencv;
 
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.support.annotation.NonNull;
 
@@ -211,6 +210,26 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
          * Prep the viewport
          */
         prepareForStartStreaming(width, height, rotation);
+
+        if(viewport != null)
+        {
+            OpenCvViewport.OptimizedRotation optimizedRotation = null;
+
+            if(rotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
+            }
+            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
+            }
+            else
+            {
+                optimizedRotation = OpenCvViewport.OptimizedRotation.NONE;
+            }
+
+            viewport.setOptimizedViewRotation(optimizedRotation);
+        }
 
         final CountDownLatch captureStartResult = new CountDownLatch(1);
 

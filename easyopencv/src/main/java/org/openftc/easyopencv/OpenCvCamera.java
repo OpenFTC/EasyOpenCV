@@ -74,6 +74,40 @@ public interface OpenCvCamera extends CameraStreamSource
     void resumeViewport();
 
     /***
+     * The way the viewport will render the live preview
+     *
+     * IMPORTANT NOTE: The policy you choose here has NO IMPACT on the
+     * frames passed to your pipeline. This ONLY affects how the frames
+     * you return from your pipeline are rendered to the viewport.
+     */
+    enum ViewportRenderingPolicy
+    {
+        /*
+         * This policy will minimize the CPU load caused by the viewport
+         * rendering, at the expense of displaying a preview which is 90
+         * or 180 out from what you might expect in some orientations.
+         * (Note: unlike when viewing a still picture which is taken sideways,
+         * simply rotating the phone physically does not correct the view
+         * because when doing so you also rotate the camera on the phone).
+         */
+        MAXIMIZE_EFFICIENCY,
+
+        /*
+         * This policy will ensure that the live view in the viewport is
+         * always displayed in a logical orientation, at the expense of
+         * additional CPU load.
+         */
+        OPTIMIZE_VIEW
+    }
+
+    /***
+     * Set the viewport rendering policy for this camera
+     *
+     * @param policy see {@link ViewportRenderingPolicy}
+     */
+    void setViewportRenderingPolicy(ViewportRenderingPolicy policy);
+
+    /***
      * Tell the camera to start streaming images to us! Note that you must make sure
      * the resolution you specify is supported by the camera. If it is not, an exception
      * will be thrown.

@@ -29,16 +29,20 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.qualcomm.robotcore.util.MovingStatistics;
+
 import org.firstinspires.ftc.robotcore.external.android.util.Size;
 import org.firstinspires.ftc.robotcore.external.function.Consumer;
 import org.firstinspires.ftc.robotcore.internal.collections.EvictingBlockingQueue;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -69,6 +73,9 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private int overheadMs = 0;
     private String TAG = "OpenCvViewport";
     private ReentrantLock renderThreadAliveLock = new ReentrantLock();
+    private volatile OptimizedRotation optimizedViewRotation;
+
+    private volatile OpenCvCamera.ViewportRenderingPolicy renderingPolicy = OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY;
 
     public OpenCvViewport(Context context, OnClickListener onClickListener)
     {
@@ -107,6 +114,25 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         PAUSED,
     }
 
+    public enum OptimizedRotation
+    {
+        NONE(0),
+        ROT_90_COUNTERCLOCWISE(90),
+        ROT_90_CLOCKWISE(-90);
+
+        int val;
+
+        OptimizedRotation(int val)
+        {
+            this.val = val;
+        }
+    }
+
+    public void setRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy policy)
+    {
+        renderingPolicy = policy;
+    }
+
     public void setSize(Size size)
     {
         synchronized (syncObj)
@@ -132,6 +158,11 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             framebufferRecycler = new MatRecycler(FRAMEBUFFER_RECYCLER_CAPACITY);
         }
+    }
+
+    public void setOptimizedViewRotation(OptimizedRotation optimizedViewRotation)
+    {
+        this.optimizedViewRotation = optimizedViewRotation;
     }
 
     public void post(Mat mat)
@@ -456,33 +487,13 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                             //Draw the background black each time to prevent double buffering problems
                             canvas.drawColor(Color.BLACK);
 
-                            //Landscape
-                            if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
+                            if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY)
                             {
-                                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
-                                canvas.drawBitmap(
-                                        bitmapFromMat,
-                                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
-                                        new Rect(0,0,(int) Math.round(canvas.getHeight() * aspectRatio), canvas.getHeight()),
-                                        null);
+                                drawOptimizingEfficiency(canvas);
                             }
-                            //Portrait
-                            else
+                            else if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW)
                             {
-                                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
-                                canvas.drawBitmap(
-                                        bitmapFromMat,
-                                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
-                                        new Rect(0,0,canvas.getWidth(), (int) Math.round(canvas.getWidth() / aspectRatio)),
-                                        null);
-                            }
-
-                            if(fpsMeterEnabled)
-                            {
-                                canvas.drawRect(0, canvas.getHeight()-120, 450, canvas.getHeight(), fpsMeterBgPaint);
-                                canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, 5, canvas.getHeight() - 80, fpsMeterTextPaint);
-                                canvas.drawText(getFpsString(), 5, canvas.getHeight() - 45, fpsMeterTextPaint);
-                                canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", 5, canvas.getHeight() - 10, fpsMeterTextPaint);
+                                drawOptimizingView(canvas);
                             }
 
                             getHolder().unlockCanvasAndPost(canvas);
@@ -539,11 +550,128 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             bitmapFromMat.recycle(); //Help the garbage collector :)
             renderThreadAliveLock.unlock();
         }
+
+        void drawOptimizingView(Canvas canvas)
+        {
+            if(optimizedViewRotation == OptimizedRotation.NONE)
+            {
+                drawOptimizingEfficiency(canvas);
+                return;
+            }
+
+            canvas.rotate(optimizedViewRotation.val, canvas.getWidth()/2, canvas.getHeight()/2);
+
+            int origin_x = (canvas.getWidth()-canvas.getHeight())/2;
+            int origin_y = (canvas.getHeight()-canvas.getWidth())/2;
+
+            double canvasAspect = (float)canvas.getHeight()/(float)canvas.getWidth();
+
+            if(aspectRatio > canvasAspect)
+            {
+                canvas.drawBitmap(
+                        bitmapFromMat,
+                        null,
+                        createRect(origin_x, origin_y, canvas.getHeight(), (int) Math.round(canvas.getHeight() / aspectRatio)),
+                        null
+                );
+            }
+            else
+            {
+                canvas.drawBitmap(
+                        bitmapFromMat,
+                        null,
+                        createRect(origin_x, origin_y, (int) Math.round(canvas.getWidth() * aspectRatio), canvas.getWidth()),
+                        null
+                );
+            }
+
+            /*
+             * If we don't need to draw the statistics, get out of dodge
+             */
+            if(!fpsMeterEnabled)
+                return;
+
+            int statBoxW = 450;
+            int statBoxH = 120;
+
+            Rect rect = null;
+
+            if(optimizedViewRotation == OptimizedRotation.ROT_90_COUNTERCLOCWISE)
+            {
+                rect = createRect(
+                        origin_x+canvas.getHeight()-statBoxW,
+                        origin_y+canvas.getWidth()-statBoxH,
+                        statBoxW,
+                        statBoxH);
+            }
+            else if(optimizedViewRotation == OptimizedRotation.ROT_90_CLOCKWISE)
+            {
+                rect = createRect(
+                        origin_x+statBoxW-statBoxW,
+                        origin_y+canvas.getWidth()-statBoxH,
+                        statBoxW,
+                        statBoxH);
+            }
+
+            canvas.drawRect(rect, fpsMeterBgPaint);
+
+            int statBoxLTxtMargin = 5;
+            int statBoxLTxtStart = rect.left+statBoxLTxtMargin;
+
+            int textLineSpacing = 35;
+            int textLine1Y = rect.bottom - 80;
+            int textLine2Y = textLine1Y + textLineSpacing;
+            int textLine3Y = textLine2Y + textLineSpacing;
+
+            canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
+            canvas.drawText(getFpsString(), statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
+            canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
+        }
+
+        void drawOptimizingEfficiency(Canvas canvas)
+        {
+            //Landscape
+            if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
+            {
+                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                canvas.drawBitmap(
+                        bitmapFromMat,
+                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
+                        new Rect(0,0,(int) Math.round(canvas.getHeight() * aspectRatio), canvas.getHeight()),
+                        null);
+            }
+            //Portrait
+            else
+            {
+                //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                canvas.drawBitmap(
+                        bitmapFromMat,
+                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
+                        new Rect(0,0,canvas.getWidth(), (int) Math.round(canvas.getWidth() / aspectRatio)),
+                        null);
+            }
+
+            /*
+             * If we don't need to draw the statistics, get out of dodge
+             */
+            if(!fpsMeterEnabled)
+                return;
+
+            canvas.drawRect(0, canvas.getHeight()-120, 450, canvas.getHeight(), fpsMeterBgPaint);
+            canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, 5, canvas.getHeight() - 80, fpsMeterTextPaint);
+            canvas.drawText(getFpsString(), 5, canvas.getHeight() - 45, fpsMeterTextPaint);
+            canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", 5, canvas.getHeight() - 10, fpsMeterTextPaint);
+        }
     }
 
     @SuppressLint("DefaultLocale")
     public String getFpsString()
     {
         return String.format("FPS@%dx%d: %.2f", size.getWidth(), size.getHeight(), fps);
+    }
+
+    Rect createRect(int tlx, int tly, int w, int h)
+    {
+        return new Rect(tlx, tly, tlx+w, tly+h);
     }
 }
