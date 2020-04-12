@@ -21,13 +21,18 @@
 
 package org.openftc.easyopencv;
 
+import android.content.ComponentCallbacks;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.EventLoopManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
 import com.qualcomm.robotcore.robot.RobotState;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.MovingStatistics;
@@ -76,6 +81,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private Mat matToUseIfPipelineReturnedCropped;
     private Mat croppedColorCvtedMat = new Mat();
     private Scalar brown = new Scalar(82, 61, 46);
+    private OpModeNotificationsForOrientation opModeNotificationsForOrientation= new OpModeNotificationsForOrientation();
+    private ComponentCallbacksForRotation componentCallbacksForRotation = new ComponentCallbacksForRotation();
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -96,6 +103,9 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         this();
 
         setupViewport(containerLayoutId);
+
+        AppUtil.getInstance().getApplication().registerComponentCallbacks(componentCallbacksForRotation);
+        OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotificationsForOrientation);
     }
 
     public synchronized final void cleanupForClosingCamera()
@@ -117,6 +127,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         if(viewport != null)
         {
             viewport.setSize(getFrameSizeAfterRotation(width, height, rotation));
+            viewport.setOptimizedViewRotation(getOptimizedViewportRotation(rotation, AppUtil.getInstance().getActivity().getWindowManager().getDefaultDisplay().getRotation()));
             viewport.activate();
         }
 
@@ -540,6 +551,53 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
+    private class OpModeNotificationsForOrientation implements OpModeManagerNotifier.Notifications
+    {
+
+        @Override
+        public void onOpModePreInit(OpMode opMode)
+        {
+
+        }
+
+        @Override
+        public void onOpModePreStart(OpMode opMode)
+        {
+
+        }
+
+        @Override
+        public void onOpModePostStop(OpMode opMode)
+        {
+            AppUtil.getInstance().getApplication().unregisterComponentCallbacks(componentCallbacksForRotation);
+
+            OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(this);
+        }
+    }
+
+    private class ComponentCallbacksForRotation implements ComponentCallbacks
+    {
+        @Override
+        public void onConfigurationChanged(Configuration newConfig)
+        {
+            int displayRot = AppUtil.getInstance().getActivity().getWindowManager().getDefaultDisplay().getRotation();
+
+            synchronized (OpenCvCameraBase.this)
+            {
+                if(viewport != null)
+                {
+                    viewport.setOptimizedViewRotation(getOptimizedViewportRotation(rotation, displayRot));
+                }
+            }
+        }
+
+        @Override
+        public void onLowMemory()
+        {
+
+        }
+    }
+
     private class OpModeNotifications implements LIFO_OpModeCallbackDelegate.OnOpModeStoppedListener
     {
         @Override
@@ -579,6 +637,71 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
 
         return new Size(screenRenderedWidth, screenRenderedHeight);
+    }
+
+    protected OpenCvViewport.OptimizedRotation getOptimizedViewportRotation(OpenCvCameraRotation streamRotation, int windowRotation)
+    {
+        if(windowRotation == Surface.ROTATION_0)
+        {
+            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
+            }
+            else if(streamRotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
+            }
+            else if(streamRotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_180;
+            }
+            else
+            {
+                return OpenCvViewport.OptimizedRotation.NONE;
+            }
+        }
+        else if(windowRotation == Surface.ROTATION_90)
+        {
+            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_180;
+            }
+            else if(streamRotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
+            }
+            else if(streamRotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
+            }
+            else
+            {
+                return OpenCvViewport.OptimizedRotation.NONE;
+            }
+        }
+        else if(windowRotation == Surface.ROTATION_270)
+        {
+            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_180;
+            }
+            else if(streamRotation == OpenCvCameraRotation.UPRIGHT)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
+            }
+            else if(streamRotation == OpenCvCameraRotation.UPSIDE_DOWN)
+            {
+                return OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
+            }
+            else
+            {
+                return OpenCvViewport.OptimizedRotation.NONE;
+            }
+        }
+        else
+        {
+            return OpenCvViewport.OptimizedRotation.NONE;
+        }
     }
 
     protected abstract OpenCvCameraRotation getDefaultRotation();

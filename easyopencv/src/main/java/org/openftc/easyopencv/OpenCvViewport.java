@@ -118,7 +118,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     {
         NONE(0),
         ROT_90_COUNTERCLOCWISE(90),
-        ROT_90_CLOCKWISE(-90);
+        ROT_90_CLOCKWISE(-90),
+        ROT_180(180);
 
         int val;
 
@@ -553,13 +554,40 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
         void drawOptimizingView(Canvas canvas)
         {
-            if(optimizedViewRotation == OptimizedRotation.NONE)
+            /***
+             * WE CAN ONLY LOOK AT THIS VARIABLE ONCE BECAUSE IT CAN BE CHANGED BEHIND
+             * OUT BACKS FROM ANOTHER THREAD!
+             *
+             * Technically, we could synchronize with {@link #setOptimizedViewRotation(OptimizedRotation)}
+             * but drawing can sometimes take a long time (e.g. 30ms) so just caching seems to be better...
+             */
+            OptimizedRotation optimizedViewRotationLocalCache = optimizedViewRotation;
+
+            if(optimizedViewRotationLocalCache == OptimizedRotation.NONE)
             {
+                /*
+                 * Ignore this request to optimize the view, nothing to do
+                 */
+                drawOptimizingEfficiency(canvas);
+                return;
+            }
+            else if(optimizedViewRotationLocalCache == OptimizedRotation.ROT_180)
+            {
+                /*
+                 * If we're rotating by 180, then we can just re-use the drawing code
+                 * from the efficient method
+                 */
+                canvas.rotate(optimizedViewRotationLocalCache.val, canvas.getWidth()/2, canvas.getHeight()/2);
                 drawOptimizingEfficiency(canvas);
                 return;
             }
 
-            canvas.rotate(optimizedViewRotation.val, canvas.getWidth()/2, canvas.getHeight()/2);
+            drawOptimizingViewForQuarterRot(canvas, optimizedViewRotationLocalCache);
+        }
+
+        void drawOptimizingViewForQuarterRot(Canvas canvas, OptimizedRotation optimizedViewRotationLocalCache)
+        {
+            canvas.rotate(optimizedViewRotationLocalCache.val, canvas.getWidth()/2, canvas.getHeight()/2);
 
             int origin_x = (canvas.getWidth()-canvas.getHeight())/2;
             int origin_y = (canvas.getHeight()-canvas.getWidth())/2;
@@ -596,7 +624,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             Rect rect = null;
 
-            if(optimizedViewRotation == OptimizedRotation.ROT_90_COUNTERCLOCWISE)
+            if(optimizedViewRotationLocalCache == OptimizedRotation.ROT_90_COUNTERCLOCWISE)
             {
                 rect = createRect(
                         origin_x+canvas.getHeight()-statBoxW,
@@ -604,7 +632,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         statBoxW,
                         statBoxH);
             }
-            else if(optimizedViewRotation == OptimizedRotation.ROT_90_CLOCKWISE)
+            else if(optimizedViewRotationLocalCache == OptimizedRotation.ROT_90_CLOCKWISE)
             {
                 rect = createRect(
                         origin_x+statBoxW-statBoxW,
