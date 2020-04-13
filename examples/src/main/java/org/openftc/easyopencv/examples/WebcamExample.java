@@ -137,27 +137,6 @@ public class WebcamExample extends LinearOpMode
             }
 
             /*
-             * The viewport (if one was specified in the constructor) can also be dynamically "paused"
-             * and "resumed". The primary use case of this is to reduce CPU, memory, and power load
-             * when you need your vision pipeline running, but do not require a live preview on the
-             * robot controller screen. For instance, this could be useful if you wish to see the live
-             * camera preview as you are initializing your robot, but you no longer require the live
-             * preview after you have finished your initialization process; pausing the viewport does
-             * not stop running your pipeline.
-             *
-             * The "if" statements below will pause the viewport if the "X" button on gamepad1 is pressed,
-             * and resume the viewport if the "Y" button on gamepad1 is pressed.
-             */
-            else if(gamepad1.x)
-            {
-                webcam.pauseViewport();
-            }
-            else if(gamepad1.y)
-            {
-                webcam.resumeViewport();
-            }
-
-            /*
              * For the purposes of this sample, throttle ourselves to 10Hz loop to avoid burning
              * excess CPU cycles for no reason. (By default, telemetry is only sent to the DS at 4Hz
              * anyway). Of course in a real OpMode you will likely not want to do this.
@@ -183,6 +162,8 @@ public class WebcamExample extends LinearOpMode
      */
     class SamplePipeline extends OpenCvPipeline
     {
+        boolean viewportPaused;
+
         /*
          * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is
          * highly recommended to declare them here as instance variables and re-use them for
@@ -223,6 +204,33 @@ public class WebcamExample extends LinearOpMode
              */
 
             return input;
+        }
+
+        @Override
+        public void onViewportTapped()
+        {
+            /*
+             * The viewport (if one was specified in the constructor) can also be dynamically "paused"
+             * and "resumed". The primary use case of this is to reduce CPU, memory, and power load
+             * when you need your vision pipeline running, but do not require a live preview on the
+             * robot controller screen. For instance, this could be useful if you wish to see the live
+             * camera preview as you are initializing your robot, but you no longer require the live
+             * preview after you have finished your initialization process; pausing the viewport does
+             * not stop running your pipeline.
+             *
+             * Here we demonstrate dynamically pausing/resuming the viewport when the user taps it
+             */
+
+            viewportPaused = !viewportPaused;
+
+            if(viewportPaused)
+            {
+                webcam.pauseViewport();
+            }
+            else
+            {
+                webcam.resumeViewport();
+            }
         }
     }
 }
