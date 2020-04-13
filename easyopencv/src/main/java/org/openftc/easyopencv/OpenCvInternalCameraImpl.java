@@ -182,26 +182,6 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
          */
         prepareForStartStreaming(width, height, rotation);
 
-        if(viewport != null)
-        {
-            OpenCvViewport.OptimizedRotation optimizedRotation = null;
-
-            if(rotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
-            }
-            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
-            }
-            else
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.NONE;
-            }
-
-            viewport.setOptimizedViewRotation(optimizedRotation);
-        }
-
         rawSensorMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
         rgbMat = new Mat(height + (height/2), width, CvType.CV_8UC1);
 

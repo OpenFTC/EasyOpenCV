@@ -211,26 +211,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
          */
         prepareForStartStreaming(width, height, rotation);
 
-        if(viewport != null)
-        {
-            OpenCvViewport.OptimizedRotation optimizedRotation = null;
-
-            if(rotation == OpenCvCameraRotation.UPRIGHT)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
-            }
-            else if(rotation == OpenCvCameraRotation.UPSIDE_DOWN)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
-            }
-            else
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.NONE;
-            }
-
-            viewport.setOptimizedViewRotation(optimizedRotation);
-        }
-
         final CountDownLatch captureStartResult = new CountDownLatch(1);
 
         boolean sizeSupported = false;
@@ -270,7 +250,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
                                 cameraCharacteristics.getMaxFramesPerSecond(
                                         ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
                                         new Size(width, height)),
-                                        FrameFormat.YUYV);
+                                FrameFormat.YUYV);
 
                         //Indicate how we want to stream
                         final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(

@@ -13,10 +13,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.util.Range;
 import android.view.Surface;
-
-import com.qualcomm.robotcore.util.MovingStatistics;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Core;
@@ -212,26 +209,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         }
 
         prepareForStartStreaming(width, height, rotation);
-
-        if(viewport != null)
-        {
-            OpenCvViewport.OptimizedRotation optimizedRotation = null;
-
-            if(rotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
-            }
-            else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE;
-            }
-            else
-            {
-                optimizedRotation = OpenCvViewport.OptimizedRotation.NONE;
-            }
-
-            viewport.setOptimizedViewRotation(optimizedRotation);
-        }
 
         try
         {
