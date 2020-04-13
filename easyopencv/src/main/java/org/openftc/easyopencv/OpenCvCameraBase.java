@@ -323,7 +323,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         if(pipeline != null)
         {
             long pipelineStart = System.currentTimeMillis();
-            userProcessedFrame = pipeline.processFrame(frame);
+            userProcessedFrame = pipeline.processFrameInternal(frame);
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);
         }
 

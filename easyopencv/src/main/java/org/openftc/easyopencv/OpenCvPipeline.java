@@ -21,10 +21,58 @@
 
 package org.openftc.easyopencv;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+
+import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Mat;
 
 public abstract class OpenCvPipeline
 {
+    private boolean isFirstFrame = true;
+    private OpModeNotifications opModeNotifications = new OpModeNotifications();
+
+    public OpenCvPipeline()
+    {
+        OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotifications);
+    }
+
+    Mat processFrameInternal(Mat input)
+    {
+        if(isFirstFrame)
+        {
+            init(input);
+            isFirstFrame = false;
+        }
+
+        return processFrame(input);
+    }
+
     public abstract Mat processFrame(Mat input);
     public void onViewportTapped() {}
+
+    public void init(Mat mat) {}
+    public void cleanup() {}
+
+    private class OpModeNotifications implements OpModeManagerImpl.Notifications
+    {
+        @Override
+        public void onOpModePreInit(OpMode opMode)
+        {
+
+        }
+
+        @Override
+        public void onOpModePreStart(OpMode opMode)
+        {
+
+        }
+
+        @Override
+        public void onOpModePostStop(OpMode opMode)
+        {
+            OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(opModeNotifications);
+            cleanup();
+        }
+    }
 }
