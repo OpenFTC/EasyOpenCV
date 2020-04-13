@@ -26,15 +26,32 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
+
+import java.io.File;
+import java.util.concurrent.Semaphore;
 
 public abstract class OpenCvPipeline
 {
     private boolean isFirstFrame = true;
     private OpModeNotifications opModeNotifications = new OpModeNotifications();
+    private static final Semaphore saveSemaphore = new Semaphore(5);
+    private static final String savePath = "/sdcard/EasyOpenCV";
 
     public OpenCvPipeline()
     {
         OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotifications);
+
+        synchronized (saveSemaphore)
+        {
+            File saveDir = new File(savePath);
+
+            if(!saveDir.exists())
+            {
+                saveDir.mkdir();
+            }
+        }
     }
 
     Mat processFrameInternal(Mat input)
@@ -53,6 +70,43 @@ public abstract class OpenCvPipeline
 
     public void init(Mat mat) {}
     public void cleanup() {}
+
+    public void saveMatToDisk(Mat mat, final String filename)
+    {
+        try
+        {
+            saveSemaphore.acquire();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+            return;
+        }
+
+        final Mat clone = mat.clone();
+
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    Imgproc.cvtColor(clone, clone, Imgproc.COLOR_RGB2BGR);
+                    Imgcodecs.imwrite(String.format("%s/%s.png", savePath, filename), clone);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                finally
+                {
+                    clone.release();
+                    saveSemaphore.release();
+                }
+            }
+        }).start();
+    }
 
     private class OpModeNotifications implements OpModeManagerImpl.Notifications
     {
