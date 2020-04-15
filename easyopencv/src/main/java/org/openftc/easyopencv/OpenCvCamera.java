@@ -39,10 +39,63 @@ public interface OpenCvCamera extends CameraStreamSource
     void openCameraDevice();
 
     /***
+     * Performs the same thing as {@link #openCameraDevice()} except
+     * in a non-blocking fashion, with a callback delivered to you
+     * when the operation is complete. This can be particularly helpful
+     * if using a webcam, as opening/starting streaming on a webcam can
+     * be very expensive time-wise.
+     *
+     * It is reccommended to start streaming from your listener:
+     *
+     *      camera = OpenCvCameraFactory.create..............
+     *      camera.setPipeline(new SomePipeline());
+     *
+     *      camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+     *      {
+     *          @Override
+     *          public void onOpened()
+     *          {
+     *              camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
+     *          }
+     *      });
+     *
+     * NOTE: the operation performed in the background thread is synchronized
+     * with the main lock, so any calls to camera.XYZ() will block until the
+     * callback has been completed.
+     *
+     * @param cameraOpenListener the listener to which a callback will be
+     *                           delivered when the camera has been opened
+     */
+    void openCameraDeviceAsync(AsyncCameraOpenListener cameraOpenListener);
+
+    interface AsyncCameraOpenListener
+    {
+        void onOpened();
+    }
+
+    /***
      * Close the connection to the camera device. If the camera is
      * already closed, this will not do anything.
      */
     void closeCameraDevice();
+
+    /***
+     * Performs the same this as {@link #closeCameraDevice()} except
+     * in a non-blocking fashion.
+     *
+     * NOTE: the operation performed in the background thread is synchronized
+     * with the main lock, so any calls to camera.XYZ() will block until the
+     * callback has been completed.
+     *
+     * @param cameraCloseListener the listener to which a callback will be
+     *                            delivered when the camera has been closed
+     */
+    void closeCameraDeviceAsync(AsyncCameraCloseListener cameraCloseListener);
+
+    interface AsyncCameraCloseListener
+    {
+        void onClose();
+    }
 
     /***
      * If a viewport container ID was passed to the constructor of

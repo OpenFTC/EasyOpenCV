@@ -118,6 +118,11 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void openCameraDevice()
     {
+        if(hasBeenCleanedUp())
+        {
+            return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+        }
+
         if(!isOpen)
         {
             if(camera == null)
@@ -127,6 +132,38 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 
             isOpen = true;
         }
+    }
+
+    @Override
+    public void openCameraDeviceAsync(final AsyncCameraOpenListener asyncCameraOpenListener)
+    {
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                synchronized (OpenCvInternalCameraImpl.this)
+                {
+                    try
+                    {
+                        openCameraDevice();
+                        asyncCameraOpenListener.onOpened();
+                    }
+                    catch (Exception e)
+                    {
+                        if(!hasBeenCleanedUp())
+                        {
+                            emulateEStop(e);
+                        }
+                        else
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -146,6 +183,37 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
 
             isOpen = false;
         }
+    }
+
+    @Override
+    public void closeCameraDeviceAsync(final AsyncCameraCloseListener asyncCameraCloseListener)
+    {
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                synchronized (OpenCvInternalCameraImpl.this)
+                {
+                    try
+                    {
+                        closeCameraDevice();
+                        asyncCameraCloseListener.onClose();
+                    }
+                    catch (Exception e)
+                    {
+                        if(!hasBeenCleanedUp())
+                        {
+                            emulateEStop(e);
+                        }
+                        else
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }).start();
     }
 
     @Override

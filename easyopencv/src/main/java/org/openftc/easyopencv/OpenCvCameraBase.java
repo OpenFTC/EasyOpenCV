@@ -27,7 +27,6 @@ import android.graphics.Bitmap;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.EventLoopManager;
@@ -57,6 +56,7 @@ import org.opencv.imgproc.Imgproc;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource
 {
@@ -83,6 +83,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private Scalar brown = new Scalar(82, 61, 46);
     private OpModeNotificationsForOrientation opModeNotificationsForOrientation= new OpModeNotificationsForOrientation();
     private ComponentCallbacksForRotation componentCallbacksForRotation = new ComponentCallbacksForRotation();
+    private volatile boolean hasBeenCleanedUp = false;
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -114,6 +115,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         {
             removeViewportAsync();
         }
+    }
+
+    public synchronized boolean hasBeenCleanedUp()
+    {
+        return hasBeenCleanedUp;
     }
 
     public synchronized final void prepareForStartStreaming(int width, int height, OpenCvCameraRotation rotation)
@@ -471,7 +477,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    private void emulateEStop(Exception e)
+    protected void emulateEStop(Exception e)
     {
         RobotLog.ee("OpenCvCamera", e, "User code threw an uncaught exception");
 
@@ -607,12 +613,18 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
              * Closing the camera can take a while, so do it on another thread
              * so that there isn't visible "lag" when stopping an OpMode
              */
+
+            hasBeenCleanedUp = true;
+
             new Thread(new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    closeCameraDevice();
+                    synchronized (OpenCvCameraBase.this)
+                    {
+                        closeCameraDevice();
+                    }
                 }
             }).start();
         }

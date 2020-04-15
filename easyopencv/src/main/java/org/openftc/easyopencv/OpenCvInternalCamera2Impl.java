@@ -124,6 +124,11 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         sync.lock();
 
+        if(hasBeenCleanedUp())
+        {
+            return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+        }
+
         if(!isOpen && mCameraDevice == null)
         {
             try
@@ -165,6 +170,41 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    public void openCameraDeviceAsync(final AsyncCameraOpenListener asyncCameraOpenListener)
+    {
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                sync.lock();
+
+                try
+                {
+                    openCameraDevice();
+                    asyncCameraOpenListener.onOpened();
+                }
+                catch (Exception e)
+                {
+                    if(!hasBeenCleanedUp())
+                    {
+                        emulateEStop(e);
+                    }
+                    else
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+                finally
+                {
+                    sync.unlock();
+                }
+            }
+        }).start();
+    }
+
+    @Override
     public void closeCameraDevice()
     {
         sync.lock();
@@ -186,6 +226,40 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         }
 
         sync.unlock();
+    }
+
+    @Override
+    public void closeCameraDeviceAsync(final AsyncCameraCloseListener asyncCameraCloseListener)
+    {
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                sync.lock();
+
+                try
+                {
+                    closeCameraDevice();
+                    asyncCameraCloseListener.onClose();
+                }
+                catch (Exception e)
+                {
+                    if(!hasBeenCleanedUp())
+                    {
+                        emulateEStop(e);
+                    }
+                    else
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                finally
+                {
+                    sync.unlock();
+                }
+            }
+        }).start();
     }
 
     @Override
