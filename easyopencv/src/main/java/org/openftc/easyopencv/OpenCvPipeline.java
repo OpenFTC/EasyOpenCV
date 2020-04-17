@@ -21,7 +21,10 @@
 
 package org.openftc.easyopencv;
 
+import android.os.Debug;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.MovingStatistics;
 
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -38,6 +41,16 @@ public abstract class OpenCvPipeline
     private OpModeNotifications opModeNotifications = new OpModeNotifications();
     private static final Semaphore saveSemaphore = new Semaphore(5);
     private static final String savePath = "/sdcard/EasyOpenCV";
+
+    private long firstFrameTimestamp;
+    private boolean MEMLEAK_DETECTION_ENABLED = true;
+    private int MEMLEAK_THRESHOLD_MB = 100;
+    private int MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS = 4;
+    private long nativeAllocFirstMonitoredFrame;
+    private boolean settled = false;
+    private long currentAlloc;
+    private long firstMonitoredFrameTimestamp;
+    private String leakMsg = "";
 
     public OpenCvPipeline()
     {
@@ -59,10 +72,57 @@ public abstract class OpenCvPipeline
         if(isFirstFrame)
         {
             init(input);
+            firstFrameTimestamp = System.currentTimeMillis();
             isFirstFrame = false;
         }
 
-        return processFrame(input);
+        Mat ret = processFrame(input);
+        leakDetection();
+        return ret;
+    }
+
+    private void leakDetection()
+    {
+        if(!MEMLEAK_DETECTION_ENABLED)
+        {
+            return;
+        }
+
+        currentAlloc = Debug.getNativeHeapAllocatedSize();
+
+        if(!settled && System.currentTimeMillis() - firstFrameTimestamp < MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS*1000)
+        {
+            settled = true;
+            nativeAllocFirstMonitoredFrame = Debug.getNativeHeapAllocatedSize();
+            firstMonitoredFrameTimestamp = System.currentTimeMillis();
+            return;
+        }
+
+        if(!settled)
+        {
+            return;
+        }
+
+        long absoluteDeltaAlloc = currentAlloc - nativeAllocFirstMonitoredFrame;
+        double absoluteDeltaAllocMB = absoluteDeltaAlloc / (1024.0*1024.0);
+
+        double timeSinceStartedMonitoring = (System.currentTimeMillis() - firstMonitoredFrameTimestamp)/1000.0;
+
+        double leakRate = absoluteDeltaAllocMB / timeSinceStartedMonitoring;
+
+        if(absoluteDeltaAllocMB > MEMLEAK_THRESHOLD_MB)
+        {
+            leakMsg = String.format("User pipeline is likely leaking memory at %dMB/sec; since start of pipeline %dMB has been leaked", (int)leakRate, (int)absoluteDeltaAllocMB);
+        }
+        else
+        {
+            leakMsg = "";
+        }
+    }
+
+    String getLeakMsg()
+    {
+        return leakMsg;
     }
 
     public abstract Mat processFrame(Mat input);

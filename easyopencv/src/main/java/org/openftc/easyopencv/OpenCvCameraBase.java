@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
 import com.qualcomm.robotcore.robot.RobotState;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.GlobalWarningSource;
 import com.qualcomm.robotcore.util.MovingStatistics;
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -56,9 +57,8 @@ import org.opencv.imgproc.Imgproc;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.locks.ReentrantLock;
 
-public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource
+public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource, GlobalWarningSource
 {
 
     private OpenCvPipeline pipeline = null;
@@ -97,6 +97,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         frameCount = 0;
         LIFO_OpModeCallbackDelegate.getInstance().add(opModeNotifications);
+        RobotLog.registerGlobalWarningSource(this);
     }
 
     public OpenCvCameraBase(int containerLayoutId)
@@ -579,6 +580,37 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
             OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(this);
         }
+    }
+
+    @Override
+    public synchronized String getGlobalWarning()
+    {
+        if(pipeline != null)
+        {
+            return pipeline.getLeakMsg();
+        }
+        else
+        {
+            return "";
+        }
+    }
+
+    @Override
+    public void suppressGlobalWarning(boolean suppress)
+    {
+
+    }
+
+    @Override
+    public void setGlobalWarning(String warning)
+    {
+
+    }
+
+    @Override
+    public void clearGlobalWarning()
+    {
+
     }
 
     private class ComponentCallbacksForRotation implements ComponentCallbacks
