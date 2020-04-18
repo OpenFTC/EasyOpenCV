@@ -51,6 +51,11 @@ public abstract class OpenCvPipeline
     private long currentAlloc;
     private long firstMonitoredFrameTimestamp;
     private String leakMsg = "";
+    private long previousAbsoluteDeltaAlloc = Integer.MIN_VALUE;
+    private double gcLeakOffsetMb;
+    private int gcRuns = 0;
+    private String lastLeakMsg = "";
+    private long lastLeakMsgUpdateTime;
 
     public OpenCvPipeline()
     {
@@ -104,15 +109,32 @@ public abstract class OpenCvPipeline
         }
 
         long absoluteDeltaAlloc = currentAlloc - nativeAllocFirstMonitoredFrame;
+
+        if(previousAbsoluteDeltaAlloc == Integer.MIN_VALUE)
+        {
+            previousAbsoluteDeltaAlloc = absoluteDeltaAlloc;
+        }
+
+        double previousAbsoluteDeltaAllocMB = previousAbsoluteDeltaAlloc / (1024.0*1024.0);
+
         double absoluteDeltaAllocMB = absoluteDeltaAlloc / (1024.0*1024.0);
+
+        if((absoluteDeltaAllocMB-previousAbsoluteDeltaAllocMB) < -20)
+        {
+            System.out.println("GC probably ran");
+            gcLeakOffsetMb += previousAbsoluteDeltaAllocMB;
+            gcRuns++;
+        }
+
+        previousAbsoluteDeltaAlloc = absoluteDeltaAlloc;
 
         double timeSinceStartedMonitoring = (System.currentTimeMillis() - firstMonitoredFrameTimestamp)/1000.0;
 
-        double leakRate = absoluteDeltaAllocMB / timeSinceStartedMonitoring;
+        double leakRate = (absoluteDeltaAllocMB+gcLeakOffsetMb) / timeSinceStartedMonitoring;
 
-        if(absoluteDeltaAllocMB > MEMLEAK_THRESHOLD_MB)
+        if((absoluteDeltaAllocMB+gcLeakOffsetMb) > MEMLEAK_THRESHOLD_MB)
         {
-            leakMsg = String.format("User pipeline is likely leaking memory at %dMB/sec; since start of pipeline %dMB has been leaked", (int)leakRate, (int)absoluteDeltaAllocMB);
+            leakMsg = String.format("Pipeline likely leaking memory @ %dMB/sec; total of %dMB leaked; GC likely run %d times", (int)leakRate, (int)(absoluteDeltaAllocMB+gcLeakOffsetMb), gcRuns);
         }
         else
         {
@@ -122,7 +144,12 @@ public abstract class OpenCvPipeline
 
     String getLeakMsg()
     {
-        return leakMsg;
+        if(System.currentTimeMillis() - lastLeakMsgUpdateTime > 250)
+        {
+            lastLeakMsgUpdateTime = System.currentTimeMillis();
+            lastLeakMsg = leakMsg;
+        }
+        return lastLeakMsg;
     }
 
     public abstract Mat processFrame(Mat input);

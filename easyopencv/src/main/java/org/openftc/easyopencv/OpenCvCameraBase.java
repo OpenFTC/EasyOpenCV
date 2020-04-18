@@ -648,6 +648,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
             hasBeenCleanedUp = true;
 
+            RobotLog.unregisterGlobalWarningSource(OpenCvCameraBase.this);
+
             new Thread(new Runnable()
             {
                 @Override
