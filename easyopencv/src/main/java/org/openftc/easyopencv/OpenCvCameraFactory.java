@@ -54,6 +54,8 @@ public abstract class OpenCvCameraFactory
      */
     public abstract OpenCvCamera createWebcam(WebcamName cameraName);
     public abstract OpenCvCamera createWebcam(WebcamName cameraName, @IdRes int viewportContainerId);
+    public abstract OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names);
+    public abstract OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names);
 
     public enum ViewportSplitMethod
     {
