@@ -658,7 +658,9 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
         void drawOptimizingEfficiency(Canvas canvas)
         {
-            //Landscape
+            /*
+             * We need to draw minding the HEIGHT we have to work with; width is not an issue
+             */
             if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
             {
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
@@ -668,7 +670,10 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         new Rect(0,0,(int) Math.round(canvas.getHeight() * aspectRatio), canvas.getHeight()),
                         null);
             }
-            //Portrait
+
+            /*
+             * We need to draw minding the WIDTH we have to work with; height is not an issue
+             */
             else
             {
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
