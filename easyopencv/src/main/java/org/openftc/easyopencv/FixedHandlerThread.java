@@ -82,32 +82,23 @@ public class FixedHandlerThread extends Thread {
         if (!isAlive()) {
             return null;
         }
-
+        boolean wasInterrupted = false;
         // If the thread has been started, wait until the looper has been created.
         synchronized (this) {
-            while (isAlive() && mLooper == null)
-            {
-                boolean interrupted = false;
-
-                while (true)
-                {
-                    try
-                    {
-                        wait();
-                        break;
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                        interrupted = true;
-                    }
-                }
-
-                if(interrupted)
-                {
-                    Thread.currentThread().interrupt();
+            while (isAlive() && mLooper == null) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    wasInterrupted = true;
                 }
             }
+        }
+        /*
+         * We may need to restore the thread's interrupted flag, because it may
+         * have been cleared above since we eat InterruptedExceptions
+         */
+        if (wasInterrupted) {
+            Thread.currentThread().interrupt();
         }
         return mLooper;
     }
