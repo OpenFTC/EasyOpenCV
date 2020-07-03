@@ -84,6 +84,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private OpModeNotificationsForOrientation opModeNotificationsForOrientation= new OpModeNotificationsForOrientation();
     private ComponentCallbacksForRotation componentCallbacksForRotation = new ComponentCallbacksForRotation();
     private volatile boolean hasBeenCleanedUp = false;
+    private final Object pipelineChangeLock = new Object();
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -184,7 +185,10 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     @Override
     public synchronized final void setPipeline(OpenCvPipeline pipeline)
     {
-        this.pipeline = pipeline;
+        synchronized (pipelineChangeLock)
+        {
+            this.pipeline = pipeline;
+        }
     }
 
     private void setupViewport(final int containerLayoutId)
@@ -583,15 +587,18 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     }
 
     @Override
-    public synchronized String getGlobalWarning()
+    public String getGlobalWarning()
     {
-        if(pipeline != null)
+        synchronized (pipelineChangeLock)
         {
-            return pipeline.getLeakMsg();
-        }
-        else
-        {
-            return "";
+            if(pipeline != null)
+            {
+                return pipeline.getLeakMsg();
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 

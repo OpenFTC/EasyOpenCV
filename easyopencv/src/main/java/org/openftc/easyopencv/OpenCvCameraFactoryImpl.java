@@ -31,7 +31,9 @@ import com.qualcomm.robotcore.eventloop.opmode.AnnotatedOpModeManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.internal.camera.delegating.SwitchableCameraName;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.util.ArrayList;
@@ -84,6 +86,22 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     public OpenCvCamera createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
     {
         return new OpenCvWebcamImpl(webcamName, viewportContainerId);
+    }
+
+    @Override
+    public OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names)
+    {
+        SwitchableCameraName cameraName = ClassFactory.getInstance().getCameraManager().nameForSwitchableCamera(names);
+
+        return new OpenCvSwitchableWebcamImpl(cameraName);
+    }
+
+    @Override
+    public OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names)
+    {
+        SwitchableCameraName cameraName = ClassFactory.getInstance().getCameraManager().nameForSwitchableCamera(names);
+
+        return new OpenCvSwitchableWebcamImpl(cameraName, viewportContainerId);
     }
 
     @Override

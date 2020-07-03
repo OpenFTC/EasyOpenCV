@@ -78,12 +78,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     private final int secondsPermissionTimeout = 2;
     private final CameraName cameraName;
     private CameraCharacteristics cameraCharacteristics = null;
-    private Camera camera = null;
+    protected Camera camera = null;
     private CameraCaptureSession cameraCaptureSession = null;
     private Mat rawSensorMat;
     private Mat rgbMat;
     private byte[] imgDat;
-    private volatile boolean isOpen = false;
+    protected volatile boolean isOpen = false;
     private volatile boolean isStreaming = false;
 
     //----------------------------------------------------------------------------------------------
