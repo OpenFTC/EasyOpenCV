@@ -662,10 +662,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                 @Override
                 public void run()
                 {
-                    synchronized (OpenCvCameraBase.this)
-                    {
-                        closeCameraDevice();
-                    }
+                    closeCameraDevice();
                 }
             }).start();
         }

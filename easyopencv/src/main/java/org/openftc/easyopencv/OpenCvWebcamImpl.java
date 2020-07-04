@@ -35,7 +35,6 @@
 package org.openftc.easyopencv;
 
 import android.graphics.ImageFormat;
-import android.support.annotation.NonNull;
 
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -85,6 +84,9 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     private byte[] imgDat;
     protected volatile boolean isOpen = false;
     private volatile boolean isStreaming = false;
+    private final Object sync = new Object();
+    private final Object newFrameSync = new Object();
+    private boolean abortNewFrameCallback = false;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -109,63 +111,72 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     // Opening and closing
     //----------------------------------------------------------------------------------------------
 
-    public synchronized ExposureControl getExposureControl()
+    public ExposureControl getExposureControl()
     {
-        ExposureControl control = camera.getControl(ExposureControl.class);
-
-        if(control == null)
+        synchronized (sync)
         {
-            throw new RuntimeException("Exposure control not supported!");
-        }
+            ExposureControl control = camera.getControl(ExposureControl.class);
 
-        return control;
+            if(control == null)
+            {
+                throw new RuntimeException("Exposure control not supported!");
+            }
+
+            return control;
+        }
     }
 
-    public synchronized FocusControl getFocusControl()
+    public FocusControl getFocusControl()
     {
-        FocusControl control = camera.getControl(FocusControl.class);
-
-        if(control == null)
+        synchronized (sync)
         {
-            throw new RuntimeException("Focus control not supported!");
-        }
+            FocusControl control = camera.getControl(FocusControl.class);
 
-        return control;
+            if(control == null)
+            {
+                throw new RuntimeException("Focus control not supported!");
+            }
+
+            return control;
+        }
     }
 
-    public synchronized CameraCharacteristics getCameraCharacteristics()
+    public CameraCharacteristics getCameraCharacteristics()
     {
         return cameraCharacteristics;
     }
 
     @Override
-    public synchronized void openCameraDevice() /*throws CameraException*/
+    public void openCameraDevice() /*throws CameraException*/
     {
-        if(hasBeenCleanedUp())
+        synchronized (sync)
         {
-            return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
-        }
-
-        if(!isOpen)
-        {
-            try
+            if(hasBeenCleanedUp())
             {
-                camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
-
-                if (camera != null) //Opening succeeded!
-                {
-                    cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
-                    isOpen = true;
-                }
-                else //Opening failed! :(
-                {
-                    cameraCharacteristics = cameraName.getCameraCharacteristics();
-                }
+                return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
             }
-            catch (Exception e)
+
+            if(!isOpen)
             {
-                camera = null;
-                throw e;
+                try
+                {
+                    camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
+
+                    if (camera != null) //Opening succeeded!
+                    {
+                        cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
+                        isOpen = true;
+                    }
+                    else //Opening failed! :(
+                    {
+                        cameraCharacteristics = cameraName.getCameraCharacteristics();
+                    }
+                }
+                catch (Exception e)
+                {
+                    camera = null;
+                    throw e;
+                }
             }
         }
     }
@@ -178,7 +189,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
             @Override
             public void run()
             {
-                synchronized (OpenCvWebcamImpl.this)
+                synchronized (sync)
                 {
                     try
                     {
@@ -203,20 +214,23 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     }
 
     @Override
-    public synchronized void closeCameraDevice()
+    public void closeCameraDevice()
     {
-        cleanupForClosingCamera();
-
-        if(isOpen)
+        synchronized (sync)
         {
-            if (camera != null)
-            {
-                stopStreaming();
-                camera.close();
-                camera = null;
-            }
+            cleanupForClosingCamera();
 
-            isOpen = false;
+            if(isOpen)
+            {
+                if (camera != null)
+                {
+                    stopStreaming();
+                    camera.close();
+                    camera = null;
+                }
+
+                isOpen = false;
+            }
         }
     }
 
@@ -228,7 +242,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
             @Override
             public void run()
             {
-                synchronized (OpenCvWebcamImpl.this)
+                synchronized (sync)
                 {
                     try
                     {
@@ -252,133 +266,136 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     }
 
     @Override
-    public synchronized void startStreaming(int width, int height)
+    public void startStreaming(int width, int height)
     {
         startStreaming(width, height, getDefaultRotation());
     }
 
     @Override
-    public synchronized void startStreaming(final int width, final int height, OpenCvCameraRotation rotation)
+    public void startStreaming(final int width, final int height, OpenCvCameraRotation rotation)
     {
-        if(!isOpen)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
-        }
-
-        /*
-         * If we're already streaming, then that's OK, but we need to stop
-         * streaming in the old mode before we can restart in the new one.
-         */
-        if(isStreaming)
-        {
-            stopStreaming();
-        }
-
-        /*
-         * Prep the viewport
-         */
-        prepareForStartStreaming(width, height, rotation);
-
-        final CountDownLatch captureStartResult = new CountDownLatch(1);
-
-        boolean sizeSupported = false;
-        for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
-        {
-            if(s.getHeight() == height && s.getWidth() == width)
+            if(!isOpen)
             {
-                sizeSupported = true;
-                break;
+                throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
             }
-        }
 
-        if(!sizeSupported)
-        {
-            StringBuilder supportedSizesBuilder = new StringBuilder();
+            /*
+             * If we're already streaming, then that's OK, but we need to stop
+             * streaming in the old mode before we can restart in the new one.
+             */
+            if(isStreaming)
+            {
+                stopStreaming();
+            }
 
+            /*
+             * Prep the viewport
+             */
+            prepareForStartStreaming(width, height, rotation);
+
+            final CountDownLatch captureStartResult = new CountDownLatch(1);
+
+            boolean sizeSupported = false;
             for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
             {
-                supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
+                if(s.getHeight() == height && s.getWidth() == width)
+                {
+                    sizeSupported = true;
+                    break;
+                }
             }
 
-            throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
-        }
-
-        try
-        {
-            camera.createCaptureSession(Continuation.create(serialThreadPool, new CameraCaptureSession.StateCallback()
+            if(!sizeSupported)
             {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession session)
+                StringBuilder supportedSizesBuilder = new StringBuilder();
+
+                for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
                 {
-                    try
+                    supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
+                }
+
+                throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
+            }
+
+            try
+            {
+                camera.createCaptureSession(Continuation.create(serialThreadPool, new CameraCaptureSession.StateCallback()
+                {
+                    @Override
+                    public void onConfigured( CameraCaptureSession session)
                     {
-                        CameraMode streamingMode = new CameraMode(
-                                width,
-                                height,
-                                cameraCharacteristics.getMaxFramesPerSecond(
-                                        ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
-                                        new Size(width, height)),
-                                FrameFormat.YUYV);
+                        try
+                        {
+                            CameraMode streamingMode = new CameraMode(
+                                    width,
+                                    height,
+                                    cameraCharacteristics.getMaxFramesPerSecond(
+                                            ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
+                                            new Size(width, height)),
+                                    FrameFormat.YUYV);
 
-                        //Indicate how we want to stream
-                        final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(
-                                streamingMode.getAndroidFormat(),
-                                streamingMode.getSize(),
-                                streamingMode.getFramesPerSecond());
+                            //Indicate how we want to stream
+                            final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(
+                                    streamingMode.getAndroidFormat(),
+                                    streamingMode.getSize(),
+                                    streamingMode.getFramesPerSecond());
 
-                        // Start streaming!
-                        session.startCapture(cameraCaptureRequest,
-                                OpenCvWebcamImpl.this,
-                                Continuation.create(serialThreadPool, new CameraCaptureSession.StatusCallback()
-                                {
-                                    @Override
-                                    public void onCaptureSequenceCompleted(
-                                            @NonNull CameraCaptureSession session,
-                                            CameraCaptureSequenceId cameraCaptureSequenceId,
-                                            long lastFrameNumber)
+                            // Start streaming!
+                            session.startCapture(cameraCaptureRequest,
+                                    OpenCvWebcamImpl.this,
+                                    Continuation.create(serialThreadPool, new CameraCaptureSession.StatusCallback()
                                     {
-                                        RobotLog.d("capture sequence %s reports completed: lastFrame=%d", cameraCaptureSequenceId, lastFrameNumber);
-                                    }
-                                }));
+                                        @Override
+                                        public void onCaptureSequenceCompleted(
+                                                CameraCaptureSession session,
+                                                CameraCaptureSequenceId cameraCaptureSequenceId,
+                                                long lastFrameNumber)
+                                        {
+                                            RobotLog.d("capture sequence %s reports completed: lastFrame=%d", cameraCaptureSequenceId, lastFrameNumber);
+                                        }
+                                    }));
+                        }
+                        catch (CameraException | RuntimeException e)
+                        {
+                            e.printStackTrace();
+                            RobotLog.e("exception setting repeat capture request: closing session: %s", session);
+                            session.close();
+                            session = null;
+                        }
+
+                        System.out.println("OpenCvWebcam: onConfigured");
+                        cameraCaptureSession = session;
+                        captureStartResult.countDown();
                     }
-                    catch (CameraException | RuntimeException e)
+
+                    @Override
+                    public void onClosed( CameraCaptureSession session)
                     {
-                        e.printStackTrace();
-                        RobotLog.e("exception setting repeat capture request: closing session: %s", session);
-                        session.close();
-                        session = null;
+
                     }
+                }));
+            }
+            catch (CameraException | RuntimeException e)
+            {
+                System.out.println("OpenCvWebcam: exception starting capture");
+                captureStartResult.countDown();
+            }
 
-                    System.out.println("OpenCvWebcam: onConfigured");
-                    cameraCaptureSession = session;
-                    captureStartResult.countDown();
-                }
+            // Wait for the above to complete
+            try
+            {
+                captureStartResult.await(1, TimeUnit.SECONDS);
+                System.out.println("OpenCvWebcam: streaming started");
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
 
-                @Override
-                public void onClosed(@NonNull CameraCaptureSession session)
-                {
-
-                }
-            }));
+            isStreaming = true;
         }
-        catch (CameraException | RuntimeException e)
-        {
-            System.out.println("OpenCvWebcam: exception starting capture");
-            captureStartResult.countDown();
-        }
-
-        // Wait for the above to complete
-        try
-        {
-            captureStartResult.await(1, TimeUnit.SECONDS);
-            System.out.println("OpenCvWebcam: streaming started");
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-        }
-
-        isStreaming = true;
     }
 
     @Override
@@ -421,80 +438,98 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
      * anything at all here.
      */
     @Override
-    public synchronized void stopStreaming()
+    public void stopStreaming()
     {
-        if(!isOpen)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
+            if(!isOpen)
+            {
+                throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
+            }
+
+            synchronized (newFrameSync)
+            {
+                abortNewFrameCallback = true;
+
+                cleanupForEndStreaming();
+
+                imgDat = null;
+                rgbMat = null;
+                rawSensorMat = null;
+            }
+
+            if (cameraCaptureSession != null)
+            {
+                cameraCaptureSession.stopCapture();
+                cameraCaptureSession.close();
+                cameraCaptureSession = null;
+            }
+
+            isStreaming = false;
         }
-
-        cleanupForEndStreaming();
-
-        imgDat = null;
-        rgbMat = null;
-        rawSensorMat = null;
-
-        if (cameraCaptureSession != null)
-        {
-            cameraCaptureSession.stopCapture();
-            cameraCaptureSession.close();
-            cameraCaptureSession = null;
-        }
-
-        isStreaming = false;
     }
 
-    /*
-     * This needs to be synchronized with stopStreamingImplSpecific()
-     * because we touch objects that are destroyed in that method.
-     */
     @Override
-    public synchronized void onNewFrame(@NonNull CameraCaptureSession session, @NonNull CameraCaptureRequest request, @NonNull CameraFrame cameraFrame)
+    public void onNewFrame( CameraCaptureSession session,  CameraCaptureRequest request,  CameraFrame cameraFrame)
     {
-        notifyStartOfFrameProcessing();
-
-        if(imgDat == null)
+        synchronized (newFrameSync)
         {
-            imgDat = new byte[cameraFrame.getImageSize()];
-        }
-        if(rgbMat == null)
-        {
-            rgbMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC1);
-        }
-        if(rawSensorMat == null)
-        {
-            rawSensorMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC2);
-        }
+            if(abortNewFrameCallback)
+            {
+                /*
+                 * Get out of dodge NOW. nativeStopStreaming() can deadlock with nativeCopyImageData(),
+                 * so we use this flag to avoid that happening. But also, it can make stopping slightly
+                 * more responsive if the user pipeline is particularly expensive.
+                 */
+                return;
+            }
 
-        try
-        {
-            /*
-             * v1.2 HOTFIX for renderscript crashes on some devices when using frame.copyToBitmap()
-             *
-             * Is it pretty? Heck no. Does it work? Yes! :)
-             * Also it seems to be *considerably* more efficient than copyToBitmap(). Not entirely
-             * sure why because one would think renderscript would be faster since it can run on
-             * the GPU...
-             */
-            RenumberedCameraFrame renumberedCameraFrame = (RenumberedCameraFrame) cameraFrame;
-            Field innerFrameField = RenumberedCameraFrame.class.getDeclaredField("innerFrame");
-            innerFrameField.setAccessible(true);
-            CameraFrame innerFrame = (CameraFrame) innerFrameField.get(renumberedCameraFrame);
-            UvcApiCameraFrame uvcApiCameraFrame = (UvcApiCameraFrame) innerFrame;
-            Field uvcFrameField = UvcApiCameraFrame.class.getDeclaredField("uvcFrame");
-            uvcFrameField.setAccessible(true);
-            UvcFrame uvcFrame = (UvcFrame) uvcFrameField.get(uvcApiCameraFrame);
+            notifyStartOfFrameProcessing();
 
-            uvcFrame.getImageData(imgDat);
-            rawSensorMat.put(0,0,imgDat);
-            Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_YUY2, 4);
+            if(imgDat == null)
+            {
+                imgDat = new byte[cameraFrame.getImageSize()];
+            }
+            if(rgbMat == null)
+            {
+                rgbMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC1);
+            }
+            if(rawSensorMat == null)
+            {
+                rawSensorMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC2);
+            }
 
-            handleFrame(rgbMat);
+            try
+            {
+                /*
+                 * v1.2 HOTFIX for renderscript crashes on some devices when using frame.copyToBitmap()
+                 *
+                 * Is it pretty? Heck no. Does it work? Yes! :)
+                 * Also it seems to be *considerably* more efficient than copyToBitmap(). Not entirely
+                 * sure why because one would think renderscript would be faster since it can run on
+                 * the GPU...
+                 */
 
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+                RenumberedCameraFrame renumberedCameraFrame = (RenumberedCameraFrame) cameraFrame;
+                Field innerFrameField = RenumberedCameraFrame.class.getDeclaredField("innerFrame");
+                innerFrameField.setAccessible(true);
+                CameraFrame innerFrame = (CameraFrame) innerFrameField.get(renumberedCameraFrame);
+                UvcApiCameraFrame uvcApiCameraFrame = (UvcApiCameraFrame) innerFrame;
+                Field uvcFrameField = UvcApiCameraFrame.class.getDeclaredField("uvcFrame");
+                uvcFrameField.setAccessible(true);
+                UvcFrame uvcFrame = (UvcFrame) uvcFrameField.get(uvcApiCameraFrame);
+
+                uvcFrame.getImageData(imgDat);
+                rawSensorMat.put(0,0,imgDat);
+                Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_YUY2, 4);
+
+                handleFrame(rgbMat);
+
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 }
