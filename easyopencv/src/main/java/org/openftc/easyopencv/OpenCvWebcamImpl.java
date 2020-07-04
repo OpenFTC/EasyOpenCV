@@ -87,6 +87,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     private final Object sync = new Object();
     private final Object newFrameSync = new Object();
     private boolean abortNewFrameCallback = false;
+    private volatile boolean hasSeenFrame = false;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -460,6 +461,23 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
 
             if (cameraCaptureSession != null)
             {
+                /*
+                 * Testing has shown that if we try to close too quickly,
+                 * (i.e. before we've even gotten a frame) then while the
+                 * close DOES go OK, we cannot subsequently re-open.
+                 */
+                while (!hasSeenFrame)
+                {
+                    try
+                    {
+                        Thread.sleep(10);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+
                 cameraCaptureSession.stopCapture();
                 cameraCaptureSession.close();
                 cameraCaptureSession = null;
@@ -472,6 +490,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     @Override
     public void onNewFrame( CameraCaptureSession session,  CameraCaptureRequest request,  CameraFrame cameraFrame)
     {
+        hasSeenFrame = true;
+
         synchronized (newFrameSync)
         {
             if(abortNewFrameCallback)
