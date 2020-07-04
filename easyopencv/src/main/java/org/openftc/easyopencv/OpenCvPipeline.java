@@ -38,7 +38,6 @@ import java.util.concurrent.Semaphore;
 public abstract class OpenCvPipeline
 {
     private boolean isFirstFrame = true;
-    private OpModeNotifications opModeNotifications = new OpModeNotifications();
     private static final Semaphore saveSemaphore = new Semaphore(5);
     private static final String savePath = "/sdcard/EasyOpenCV";
 
@@ -59,8 +58,6 @@ public abstract class OpenCvPipeline
 
     public OpenCvPipeline()
     {
-        OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotifications);
-
         synchronized (saveSemaphore)
         {
             File saveDir = new File(savePath);
@@ -156,7 +153,6 @@ public abstract class OpenCvPipeline
     public void onViewportTapped() {}
 
     public void init(Mat mat) {}
-    public void cleanup() {}
 
     public void saveMatToDisk(Mat mat, final String filename)
     {
@@ -193,27 +189,5 @@ public abstract class OpenCvPipeline
                 }
             }
         }).start();
-    }
-
-    private class OpModeNotifications implements OpModeManagerImpl.Notifications
-    {
-        @Override
-        public void onOpModePreInit(OpMode opMode)
-        {
-
-        }
-
-        @Override
-        public void onOpModePreStart(OpMode opMode)
-        {
-
-        }
-
-        @Override
-        public void onOpModePostStop(OpMode opMode)
-        {
-            OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).unregisterListener(opModeNotifications);
-            cleanup();
-        }
     }
 }
