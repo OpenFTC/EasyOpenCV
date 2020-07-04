@@ -99,6 +99,17 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         frameCount = 0;
         LIFO_OpModeCallbackDelegate.getInstance().add(opModeNotifications);
         RobotLog.registerGlobalWarningSource(this);
+
+
+        /*
+         * For preview on DS
+         *
+         * Note: this used to be done in prepareForStartStreaming() but now that we
+         * close syncronously in the opmode listener, this could cause a deadlock
+         * there if the opmode was asyncronously opening and starting streaming while
+         * the user pressed the stop button.
+         */
+        CameraStreamServer.getInstance().setSource(this);
     }
 
     public OpenCvCameraBase(int containerLayoutId)
@@ -138,11 +149,6 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             viewport.setOptimizedViewRotation(getOptimizedViewportRotation(rotation, AppUtil.getInstance().getActivity().getWindowManager().getDefaultDisplay().getRotation()));
             viewport.activate();
         }
-
-        /*
-         * For preview on DS
-         */
-        CameraStreamServer.getInstance().setSource(this);
     }
 
     public synchronized final void cleanupForEndStreaming()
@@ -648,23 +654,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         @Override
         public void onOpModePostStop(OpMode opMode)
         {
-            /*
-             * Closing the camera can take a while, so do it on another thread
-             * so that there isn't visible "lag" when stopping an OpMode
-             */
-
             hasBeenCleanedUp = true;
 
             RobotLog.unregisterGlobalWarningSource(OpenCvCameraBase.this);
 
-            new Thread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    closeCameraDevice();
-                }
-            }).start();
+            closeCameraDevice();
         }
     }
 
