@@ -57,11 +57,6 @@ public class InternalCameraExample extends LinearOpMode
         //phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK);
 
         /*
-         * Open the connection to the camera device
-         */
-        phoneCam.openCameraDevice();
-
-        /*
          * Specify the image processing pipeline we wish to invoke upon receipt
          * of a frame from the camera. Note that switching pipelines on-the-fly
          * (while a streaming session is in flight) *IS* supported.
@@ -69,17 +64,36 @@ public class InternalCameraExample extends LinearOpMode
         phoneCam.setPipeline(new SamplePipeline());
 
         /*
-         * Tell the camera to start streaming images to us! Note that you must make sure
-         * the resolution you specify is supported by the camera. If it is not, an exception
-         * will be thrown.
+         * Open the connection to the camera device. New in v1.4.0 is the ability
+         * to open the camera asynchronously, and this is now the recommended way
+         * to do it. The benefits of opening async include faster init time, and
+         * better behavior when pressing stop during init (i.e. less of a chance
+         * of tripping the stuck watchdog)
          *
-         * Also, we specify the rotation that the camera is used in. This is so that the image
-         * from the camera sensor can be rotated such that it is always displayed with the image upright.
-         * For a front facing camera, rotation is defined assuming the user is looking at the screen.
-         * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
-         * away from the user.
+         * If you really want to open synchronously, the old method is still available.
          */
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                /*
+                 * Tell the camera to start streaming images to us! Note that you must make sure
+                 * the resolution you specify is supported by the camera. If it is not, an exception
+                 * will be thrown.
+                 *
+                 * Also, we specify the rotation that the camera is used in. This is so that the image
+                 * from the camera sensor can be rotated such that it is always displayed with the image upright.
+                 * For a front facing camera, rotation is defined assuming the user is looking at the screen.
+                 * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
+                 * away from the user.
+                 */
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+        });
+
+        telemetry.addLine("Waiting for start");
+        telemetry.update();
 
         /*
          * Wait for the user to press start on the Driver Station
