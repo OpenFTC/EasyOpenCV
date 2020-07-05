@@ -120,6 +120,12 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    protected boolean cameraOrientationIsTiedToDeviceOrientation()
+    {
+        return true;
+    }
+
+    @Override
     public void openCameraDevice()
     {
         sync.lock();

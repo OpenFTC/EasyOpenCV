@@ -685,6 +685,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     protected OpenCvViewport.OptimizedRotation getOptimizedViewportRotation(OpenCvCameraRotation streamRotation, int windowRotation)
     {
+        if(!cameraOrientationIsTiedToDeviceOrientation())
+        {
+            throw new OpenCvCameraException("Setting viewport rendering policy is not applicable for this type of camera");
+        }
+
         if(windowRotation == Surface.ROTATION_0)
         {
             if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
@@ -750,4 +755,5 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     protected abstract OpenCvCameraRotation getDefaultRotation();
     protected abstract int mapRotationEnumToOpenCvRotateCode(OpenCvCameraRotation rotation);
+    protected abstract boolean cameraOrientationIsTiedToDeviceOrientation();
 }

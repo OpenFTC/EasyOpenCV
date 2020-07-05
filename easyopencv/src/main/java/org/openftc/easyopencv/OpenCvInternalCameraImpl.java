@@ -116,6 +116,12 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     }
 
     @Override
+    protected boolean cameraOrientationIsTiedToDeviceOrientation()
+    {
+        return true;
+    }
+
+    @Override
     public synchronized void openCameraDevice()
     {
         if(hasBeenCleanedUp())

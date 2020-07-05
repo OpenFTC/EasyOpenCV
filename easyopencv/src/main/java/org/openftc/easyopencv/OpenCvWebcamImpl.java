@@ -433,6 +433,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
         }
     }
 
+    @Override
+    protected boolean cameraOrientationIsTiedToDeviceOrientation()
+    {
+        return false;
+    }
+
     /***
      * Stop streaming frames from the webcam, if we were
      * streaming in the first place. If not, we don't do
