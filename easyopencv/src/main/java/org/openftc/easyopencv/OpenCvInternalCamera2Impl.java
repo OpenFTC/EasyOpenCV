@@ -637,6 +637,65 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    public void setWhiteBalanceMode(WhiteBalanceMode whiteBalanceMode)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setWhiteBalanceMode() called, but camera is not opened!");
+            }
+
+            switch (whiteBalanceMode)
+            {
+                case AUTO:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
+                    break;
+
+                case MANUAL:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
+                    break;
+
+                case SHADE:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_SHADE);
+                    break;
+
+                case DAYLIGHT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
+                    break;
+
+                case TWILIGHT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_TWILIGHT);
+                    break;
+
+                case FLUORESCENT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_FLUORESCENT);
+                    break;
+
+                case INCANDESCENT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_INCANDESCENT);
+                    break;
+
+                case CLOUDY_DAYLIGHT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT);
+                    break;
+
+                case WARM_FLUORESCENT:
+                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_WARM_FLUORESCENT);
+                    break;
+            }
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
     public void setExposureMode(ExposureMode exposureMode)
     {
         sync.lock();

@@ -45,6 +45,25 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
     void setSensorGain(int iso);
 
     //-----------------------------------------------------------------------
+    // White Balance
+    //-----------------------------------------------------------------------
+
+    enum WhiteBalanceMode
+    {
+        MANUAL,
+        AUTO,
+        CLOUDY_DAYLIGHT,
+        DAYLIGHT,
+        FLUORESCENT,
+        INCANDESCENT,
+        SHADE,
+        TWILIGHT,
+        WARM_FLUORESCENT
+    }
+
+    void setWhiteBalanceMode(WhiteBalanceMode whiteBalanceMode);
+
+    //-----------------------------------------------------------------------
     // Exposure
     //-----------------------------------------------------------------------
 
