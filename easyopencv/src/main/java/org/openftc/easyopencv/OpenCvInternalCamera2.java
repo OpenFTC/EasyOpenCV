@@ -125,7 +125,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
 
     enum FocusMode
     {
-        AUTO,
+        CONTINUOUS_AUTO_PICTURE,
+        CONTINUOUS_AUTO_VIDEO,
         MANUAL
     }
 

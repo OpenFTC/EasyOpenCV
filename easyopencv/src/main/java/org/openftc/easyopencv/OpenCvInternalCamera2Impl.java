@@ -938,9 +938,13 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             {
                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
             }
-            else if(focusMode == FocusMode.AUTO)
+            else if(focusMode == FocusMode.CONTINUOUS_AUTO_PICTURE)
             {
                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            }
+            else if(focusMode == FocusMode.CONTINUOUS_AUTO_VIDEO)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
             }
 
             apply();
