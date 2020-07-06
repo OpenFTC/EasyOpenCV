@@ -48,6 +48,14 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
     // Exposure
     //-----------------------------------------------------------------------
 
+    enum ExposureMode
+    {
+        AUTO,
+        MANUAL
+    }
+
+    void setExposureMode(ExposureMode exposureMode);
+
     /***
      * Get the maximum exposure compensation value
      * supported by the auto exposure routine.
@@ -91,6 +99,14 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
     //-----------------------------------------------------------------------
     // Focus
     //-----------------------------------------------------------------------
+
+    enum FocusMode
+    {
+        AUTO,
+        MANUAL
+    }
+
+    void setFocusMode(FocusMode focusMode);
 
     /***
      * The minimum distance the camera can focus at, in diopters.

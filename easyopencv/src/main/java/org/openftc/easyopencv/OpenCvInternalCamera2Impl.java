@@ -12,7 +12,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.view.Surface;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -309,7 +308,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             CameraCaptureSession.StateCallback callback = new CameraCaptureSession.StateCallback()
             {
                 @Override
-                public void onConfigured(@NonNull CameraCaptureSession session)
+                public void onConfigured( CameraCaptureSession session)
                 {
                     try
                     {
@@ -319,13 +318,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                         }
                         cameraCaptureSession = session;
 
-                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-//                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(60,60));
-//                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, (long)16666666);
-
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 250);
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long)(exposureTime*1000*1000*1000));
 
                         cameraCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, cameraHardwareHandler);
                     }
@@ -340,7 +332,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 }
 
                 @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession session)
+                public void onConfigureFailed( CameraCaptureSession session)
                 {
                 }
             };
@@ -645,6 +637,35 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    public void setExposureMode(ExposureMode exposureMode)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setExposureMode() called, but camera is not opened!");
+            }
+
+            if(exposureMode == ExposureMode.MANUAL)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+            }
+            else if(exposureMode == ExposureMode.AUTO)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
     public void setSensorFps(int sensorFps)
     {
         sync.lock();
@@ -790,6 +811,35 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             }
 
             mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, nanos);
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setFocusMode(FocusMode focusMode)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setFocusMode() called, but camera is not opened!");
+            }
+
+            if(focusMode == FocusMode.MANUAL)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+            }
+            else if(focusMode == FocusMode.AUTO)
+            {
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            }
+
             apply();
         }
         finally
