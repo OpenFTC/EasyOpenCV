@@ -696,6 +696,28 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
+    public void setAutoWhiteBalanceLocked(boolean locked)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setAutoWhiteBalanceLocked() called, but camera is not opened!");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_LOCK, locked);
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
     public void setExposureMode(ExposureMode exposureMode)
     {
         sync.lock();
@@ -715,6 +737,28 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             {
                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             }
+
+            apply();
+        }
+        finally
+        {
+            sync.unlock();
+        }
+    }
+
+    @Override
+    public void setAutoExposureLocked(boolean locked)
+    {
+        sync.lock();
+
+        try
+        {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("setAutoExposureLocked() called, but camera is not opened!");
+            }
+
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, locked);
 
             apply();
         }

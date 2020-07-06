@@ -63,6 +63,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
 
     void setWhiteBalanceMode(WhiteBalanceMode whiteBalanceMode);
 
+    void setAutoWhiteBalanceLocked(boolean locked);
+
     //-----------------------------------------------------------------------
     // Exposure
     //-----------------------------------------------------------------------
@@ -74,6 +76,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
     }
 
     void setExposureMode(ExposureMode exposureMode);
+
+    void setAutoExposureLocked(boolean locked);
 
     /***
      * Get the maximum exposure compensation value
