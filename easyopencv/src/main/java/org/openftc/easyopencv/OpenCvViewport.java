@@ -435,7 +435,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             Log.d(TAG, "I am alive!");
 
-            bitmapFromMat = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.RGB_565);
+            bitmapFromMat = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.ARGB_8888);
 
             canvas = getHolder().lockCanvas();
             canvas.drawColor(Color.BLUE);
