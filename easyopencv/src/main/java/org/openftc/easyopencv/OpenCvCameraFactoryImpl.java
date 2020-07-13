@@ -77,13 +77,13 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     }
 
     @Override
-    public OpenCvCamera createWebcam(WebcamName webcamName)
+    public OpenCvWebcam createWebcam(WebcamName webcamName)
     {
         return new OpenCvWebcamImpl(webcamName);
     }
 
     @Override
-    public OpenCvCamera createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
+    public OpenCvWebcam createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
     {
         return new OpenCvWebcamImpl(webcamName, viewportContainerId);
     }

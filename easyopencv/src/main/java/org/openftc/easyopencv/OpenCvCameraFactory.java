@@ -52,8 +52,8 @@ public abstract class OpenCvCameraFactory
     /*
      * Webcam
      */
-    public abstract OpenCvCamera createWebcam(WebcamName cameraName);
-    public abstract OpenCvCamera createWebcam(WebcamName cameraName, @IdRes int viewportContainerId);
+    public abstract OpenCvWebcam createWebcam(WebcamName cameraName);
+    public abstract OpenCvWebcam createWebcam(WebcamName cameraName, @IdRes int viewportContainerId);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names);
 

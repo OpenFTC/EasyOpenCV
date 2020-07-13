@@ -49,6 +49,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraCharacteri
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraException;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraFrame;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.CameraControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
@@ -70,7 +71,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("WeakerAccess")
-class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.CaptureCallback
+class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraCaptureSession.CaptureCallback
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
@@ -88,6 +89,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     private final Object newFrameSync = new Object();
     private boolean abortNewFrameCallback = false;
     private volatile boolean hasSeenFrame = false;
+    private ExposureControl exposureControl;
+    private FocusControl focusControl;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -111,36 +114,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
     //----------------------------------------------------------------------------------------------
     // Opening and closing
     //----------------------------------------------------------------------------------------------
-
-    public ExposureControl getExposureControl()
-    {
-        synchronized (sync)
-        {
-            ExposureControl control = camera.getControl(ExposureControl.class);
-
-            if(control == null)
-            {
-                throw new RuntimeException("Exposure control not supported!");
-            }
-
-            return control;
-        }
-    }
-
-    public FocusControl getFocusControl()
-    {
-        synchronized (sync)
-        {
-            FocusControl control = camera.getControl(FocusControl.class);
-
-            if(control == null)
-            {
-                throw new RuntimeException("Focus control not supported!");
-            }
-
-            return control;
-        }
-    }
 
     public CameraCharacteristics getCameraCharacteristics()
     {
@@ -167,6 +140,9 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
                     {
                         cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
                         isOpen = true;
+
+                        exposureControl = camera.getControl(ExposureControl.class);
+                        focusControl = camera.getControl(FocusControl.class);
                     }
                     else //Opening failed! :(
                     {
@@ -557,5 +533,44 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements CameraCaptureSession.
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void setExposureMode(ExposureMode exposureMode)
+    {
+        exposureControl.setMode(ExposureControl.Mode.valueOf(exposureMode.toString()));
+    }
+
+    @Override
+    public void setExposureFractional(int denominator)
+    {
+        double exposureTimeSeconds = 1.0/denominator;
+        long exposureTimeNanos = (long) (exposureTimeSeconds * (int) 1e9);
+
+        setExposureNanos(exposureTimeNanos);
+    }
+
+    @Override
+    public void setExposureNanos(long nanos)
+    {
+        exposureControl.setExposure(nanos, TimeUnit.NANOSECONDS);
+    }
+
+    @Override
+    public void setFocusMode(FocusMode focusMode)
+    {
+        focusControl.setMode(FocusControl.Mode.valueOf(focusMode.toString()));
+    }
+
+    @Override
+    public double getMinFocusDistance()
+    {
+        return focusControl.getMinFocusLength();
+    }
+
+    @Override
+    public void setFocusDistance(double dist)
+    {
+        focusControl.setFocusLength(dist);
     }
 }
