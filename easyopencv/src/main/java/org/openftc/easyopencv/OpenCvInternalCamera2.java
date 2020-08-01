@@ -61,8 +61,19 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
         WARM_FLUORESCENT
     }
 
+    /***
+     * Gives the camera's auto white balance routine a hint about
+     * what type of scene is being worked with
+     *
+     * @param whiteBalanceMode the type of scene being worked with
+     */
     void setWhiteBalanceMode(WhiteBalanceMode whiteBalanceMode);
 
+    /***
+     * Locks the camera's auto white balance routine right where it is
+     *
+     * @param locked whether or not the auto white balance routine should be locked
+     */
     void setAutoWhiteBalanceLocked(boolean locked);
 
     //-----------------------------------------------------------------------
@@ -75,8 +86,22 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
         MANUAL
     }
 
+    /***
+     * Sets the exposure mode the image sensor should operate in
+     *
+     * @param exposureMode the exposure mode the image sensor should operate in
+     */
     void setExposureMode(ExposureMode exposureMode);
 
+    /***
+     * Locks / unlocks the auto exposure routine. Changes
+     * to exposure compensation will still take effect if
+     * the exposure has been locked.
+     *
+     * Note: this setting only applies in {@link ExposureMode#AUTO}
+     *
+     * @param locked whether the auto exposure routine should be locked
+     */
     void setAutoExposureLocked(boolean locked);
 
     /***
@@ -100,12 +125,16 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
      * routine. This can allow for (limited) relative exposure
      * adjustment from the automatically determined value.
      *
+     * NOTE: this setting only applies in {@link ExposureMode#AUTO}
+     *
      * @param aeCompensation see above
      */
     void setAutoExposureCompensation(int aeCompensation);
 
     /***
      * Set the exposure time the image sensor should use when capturing images.
+     *
+     * NOTE: this setting only applies in {@link ExposureMode#MANUAL}
      *
      * @param denominator the denominator of a traditional fractional exposure time notation
      *                    e.g. if you want to set exposure to 1/250s, this param should be 250
@@ -114,6 +143,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
 
     /***
      * Set the exposure time the image sensor should use when capturing images.
+     *
+     * NOTE: this setting only applies in {@link ExposureMode#MANUAL}
      *
      * @param nanos the amount of time the sensor should expose for, in nanoseconds
      */
@@ -130,6 +161,11 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
         MANUAL
     }
 
+    /***
+     * Sets the focus mode the image sensor should operate in
+     *
+     * @param focusMode the focus mode the image sensor should operate in
+     */
     void setFocusMode(FocusMode focusMode);
 
     /***
@@ -146,6 +182,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
      *
      * The reason for this is that it makes representing focusing at infinity very easy
      * (to focus at infinity just set 0 diopters)
+     *
+     * NOTE: this setting only applies in {@link FocusMode#MANUAL}
      *
      * @param diopters See above. Must be between 0 and {@link #getMinFocusDistance()}
      */
@@ -167,6 +205,8 @@ public interface OpenCvInternalCamera2 extends OpenCvCamera
      *
      * Conversely, if your pipeline is capable of processing 100 frames per second, but
      * you request only 15FPS from the sensor, your pipeline will run at 15FPS.
+     *
+     * NOTE: this setting only applies in {@link ExposureMode#MANUAL}
      *
      * @param sensorFps see above
      */
