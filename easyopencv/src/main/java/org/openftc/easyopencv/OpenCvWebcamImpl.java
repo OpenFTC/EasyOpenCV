@@ -449,6 +449,9 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                  * (i.e. before we've even gotten a frame) then while the
                  * close DOES go OK, we cannot subsequently re-open.
                  */
+
+                boolean wasInterrupted = false;
+
                 while (!hasSeenFrame)
                 {
                     try
@@ -458,12 +461,18 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     catch (InterruptedException e)
                     {
                         e.printStackTrace();
+                        wasInterrupted = true;
                     }
                 }
 
                 cameraCaptureSession.stopCapture();
                 cameraCaptureSession.close();
                 cameraCaptureSession = null;
+
+                if(wasInterrupted)
+                {
+                    Thread.currentThread().interrupt();
+                }
             }
 
             isStreaming = false;
