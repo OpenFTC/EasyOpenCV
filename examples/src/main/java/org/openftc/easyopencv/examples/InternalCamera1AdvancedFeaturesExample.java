@@ -39,7 +39,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
  * by the {@link OpenCvInternalCamera} interface
  */
 @TeleOp
-public class InternalCameraAdvancedFeaturesExample extends LinearOpMode
+public class InternalCamera1AdvancedFeaturesExample extends LinearOpMode
 {
     /**
      * NB: we declare our camera as the {@link OpenCvInternalCamera} type,
