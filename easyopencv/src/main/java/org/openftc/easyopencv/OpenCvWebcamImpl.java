@@ -526,6 +526,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                 Field innerFrameField = RenumberedCameraFrame.class.getDeclaredField("innerFrame");
                 innerFrameField.setAccessible(true);
                 CameraFrame innerFrame = (CameraFrame) innerFrameField.get(renumberedCameraFrame);
+
+                if(innerFrame instanceof RenumberedCameraFrame) //switchable
+                {
+                    innerFrame = (CameraFrame) innerFrameField.get(innerFrame);
+                }
+
                 UvcApiCameraFrame uvcApiCameraFrame = (UvcApiCameraFrame) innerFrame;
                 Field uvcFrameField = UvcApiCameraFrame.class.getDeclaredField("uvcFrame");
                 uvcFrameField.setAccessible(true);
