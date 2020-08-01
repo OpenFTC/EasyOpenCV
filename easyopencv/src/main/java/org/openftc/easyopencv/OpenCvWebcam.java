@@ -1,70 +1,49 @@
+/*
+ * Copyright (c) 2020 OpenFTC Team
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.openftc.easyopencv;
 
-public interface OpenCvWebcam extends OpenCvCamera
+import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraControls;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
+
+public interface OpenCvWebcam extends OpenCvCamera, CameraControls
 {
-    //-----------------------------------------------------------------------
-    // Exposure
-    //-----------------------------------------------------------------------
-
-    enum ExposureMode
-    {
-        Unknown,
-        Auto,               // single trigger auto exposure
-        ContinuousAuto,     // continuous auto exposure
-        Manual,
-        ShutterPriority,
-        AperturePriority,   // Not in Vuforia
-    }
-
-    void setExposureMode(ExposureMode exposureMode);
+    /***
+     * Gets the {@link ExposureControl} for this webcam.
+     * Please see that interface's javadoc for how to use
+     * it. It is an interface provided directly by the SDK
+     * UVC driver, not EasyOpenCV.
+     *
+     * @return the ExposureControl for this webcam
+     */
+    ExposureControl getExposureControl();
 
     /***
-     * Set the exposure time the image sensor should use when capturing images.
+     * Gets the {@link FocusControl} for this webcam.
+     * Please see that interface's javadoc for how to use
+     * it. It is an interface provided directly by the SDK
+     * UVC driver, not EasyOpenCV.
      *
-     * @param denominator the denominator of a traditional fractional exposure time notation
-     *                    e.g. if you want to set exposure to 1/250s, this param should be 250
+     * @return the FocusControl for this webcam
      */
-    void setExposureFractional(int denominator);
-
-    /***
-     * Set the exposure time the image sensor should use when capturing images.
-     *
-     * @param nanos the amount of time the sensor should expose for, in nanoseconds
-     */
-    void setExposureNanos(long nanos);
-
-    //-----------------------------------------------------------------------
-    // Focus
-    //-----------------------------------------------------------------------
-
-    enum FocusMode
-    {
-        Unknown,
-        Auto,
-        ContinuousAuto,
-        Macro,
-        Infinity,
-        Fixed
-    }
-
-    void setFocusMode(FocusMode focusMode);
-
-    /***
-     * The minimum distance the camera can focus at, in diopters.
-     * See {@link #setFocusDistance(double)}
-     *
-     * @return The minimum distance the camera can focus at, in diopters
-     */
-    double getMinFocusDistance();
-
-    /***
-     * Set the distance the camera should focus at in diopters. A diopter is 1/meters.
-     * For instance to focus at 13cm, you want to focus at 1/0.13 diopters.
-     *
-     * The reason for this is that it makes representing focusing at infinity very easy
-     * (to focus at infinity just set 0 diopters)
-     *
-     * @param diopters See above. Must be between 0 and {@link #getMinFocusDistance()}
-     */
-    void setFocusDistance(double diopters);
+    FocusControl getFocusControl();
 }

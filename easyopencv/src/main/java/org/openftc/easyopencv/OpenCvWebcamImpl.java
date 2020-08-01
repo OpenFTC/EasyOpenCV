@@ -35,6 +35,7 @@
 package org.openftc.easyopencv;
 
 import android.graphics.ImageFormat;
+import android.support.annotation.Nullable;
 
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -535,42 +536,22 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
     }
 
+    @Nullable
     @Override
-    public void setExposureMode(ExposureMode exposureMode)
+    public <T extends CameraControl> T getControl(Class<T> controlType)
     {
-        exposureControl.setMode(ExposureControl.Mode.valueOf(exposureMode.toString()));
+        return camera.getControl(controlType);
     }
 
     @Override
-    public void setExposureFractional(int denominator)
+    public ExposureControl getExposureControl()
     {
-        double exposureTimeSeconds = 1.0/denominator;
-        long exposureTimeNanos = (long) (exposureTimeSeconds * (int) 1e9);
-
-        setExposureNanos(exposureTimeNanos);
+        return exposureControl;
     }
 
     @Override
-    public void setExposureNanos(long nanos)
+    public FocusControl getFocusControl()
     {
-        exposureControl.setExposure(nanos, TimeUnit.NANOSECONDS);
-    }
-
-    @Override
-    public void setFocusMode(FocusMode focusMode)
-    {
-        focusControl.setMode(FocusControl.Mode.valueOf(focusMode.toString()));
-    }
-
-    @Override
-    public double getMinFocusDistance()
-    {
-        return focusControl.getMinFocusLength();
-    }
-
-    @Override
-    public void setFocusDistance(double dist)
-    {
-        focusControl.setFocusLength(dist);
+        return focusControl;
     }
 }
