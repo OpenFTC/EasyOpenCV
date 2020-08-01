@@ -26,7 +26,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
@@ -61,7 +60,7 @@ public class MultipleCameraExampleOpenCvAlongsideVuforia extends LinearOpMode
         /**
          * NOTE: Many comments have been omitted from this sample for the
          * sake of conciseness. If you're just starting out with EasyOpenCV,
-         * you should take a look at {@link InternalCameraExample} or its
+         * you should take a look at {@link InternalCamera1Example} or its
          * cam2 counterpart, {@link WebcamExample} first.
          *
          * Also check out {@link MultipleCameraExample}

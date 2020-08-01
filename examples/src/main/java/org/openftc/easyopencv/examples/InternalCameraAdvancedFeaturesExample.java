@@ -54,7 +54,7 @@ public class InternalCameraAdvancedFeaturesExample extends LinearOpMode
         /**
          * NOTE: Many comments have been omitted from this sample for the
          * sake of conciseness. If you're just starting out with EasyOpenCV,
-         * you should take a look at {@link InternalCameraExample} or its
+         * you should take a look at {@link InternalCamera1Example} or its
          * webcam counterpart, {@link WebcamExample} first.
          */
 

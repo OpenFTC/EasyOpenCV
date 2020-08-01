@@ -24,9 +24,7 @@ package org.openftc.easyopencv.examples;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -34,12 +32,8 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
-import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvTracker;
 import org.openftc.easyopencv.OpenCvTrackerApiPipeline;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * In this sample, we demonstrate how to use the {@link OpenCvTrackerApiPipeline()}
@@ -58,7 +52,7 @@ public class TrackerApiExample extends LinearOpMode
         /**
          * NOTE: Many comments have been omitted from this sample for the
          * sake of conciseness. If you're just starting out with EasyOpenCV,
-         * you should take a look at {@link InternalCameraExample} or its
+         * you should take a look at {@link InternalCamera1Example} or its
          * webcam counterpart, {@link WebcamExample} first.
          */
 
