@@ -225,7 +225,14 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
          */
         if(!userRequestedActive || needToDeactivateRegardlessOfUser)
         {
-            Log.d(TAG, "CheckState(): user requested that we deactivate");
+            if(needToDeactivateRegardlessOfUser)
+            {
+                Log.d(TAG, "CheckState(): lifecycle mandates deactivation regardless of user");
+            }
+            else
+            {
+                Log.d(TAG, "CheckState(): user requested that we deactivate");
+            }
 
             /*
              * We only need to stop the render thread if it's not
