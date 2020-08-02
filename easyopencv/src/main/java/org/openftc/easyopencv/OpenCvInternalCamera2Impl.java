@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2020 OpenFTC Team
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.openftc.easyopencv;
 
 import android.annotation.SuppressLint;
@@ -427,6 +448,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         ByteBuffer y_plane = planes[0].getBuffer();
         ByteBuffer uv_plane1 = planes[1].getBuffer();
         ByteBuffer uv_plane2 = planes[2].getBuffer();
+
+        //You might this is inefficient, but actually
+        //it seems that OpenCV directly references the target
+        //buffer data instead of copying it, in this case
         Mat y_mat = new Mat(h, w, CvType.CV_8UC1, y_plane);
         Mat uv_mat1 = new Mat(h / 2, w / 2, CvType.CV_8UC2, uv_plane1);
         Mat uv_mat2 = new Mat(h / 2, w / 2, CvType.CV_8UC2, uv_plane2);
@@ -440,6 +465,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             //assert(addr_diff == -1);
             Imgproc.cvtColorTwoPlane(y_mat, uv_mat2, rgbMat, Imgproc.COLOR_YUV2RGBA_NV21);
         }
+
+        y_mat.release();
+        uv_mat1.release();
+        uv_mat2.release();
 
         image.close();
 
