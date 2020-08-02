@@ -154,6 +154,7 @@ public abstract class OpenCvPipeline
 
     public void init(Mat mat) {}
 
+    // example usage: saveMatToDisk(input, "EOCV_frame");
     public void saveMatToDisk(Mat mat, final String filename)
     {
         try
