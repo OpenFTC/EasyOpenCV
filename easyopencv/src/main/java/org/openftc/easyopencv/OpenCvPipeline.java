@@ -42,9 +42,9 @@ public abstract class OpenCvPipeline
     private static final String savePath = "/sdcard/EasyOpenCV";
 
     private long firstFrameTimestamp;
-    private boolean MEMLEAK_DETECTION_ENABLED = true;
-    private int MEMLEAK_THRESHOLD_MB = 100;
-    private int MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS = 4;
+    protected boolean MEMLEAK_DETECTION_ENABLED = true;
+    protected int MEMLEAK_THRESHOLD_MB = 100;
+    protected int MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS = 4;
     private long nativeAllocFirstMonitoredFrame;
     private boolean settled = false;
     private long currentAlloc;
