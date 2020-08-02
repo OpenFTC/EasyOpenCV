@@ -66,6 +66,39 @@ Feel free to submit a pull request if you know how to fix any of these!
 
 ## Changelog:
 
+### v1.4.0
+
+ - Adds support for Android Camera2 API
+     - New `OpenCvInternalCamera2` interface. Camera2 instances can be obtained from `OpenCvCameraFactory`, just like other types
+     - Supports manual control over sensor parameters:
+         - ISO (gain)
+         - Exposure
+         - Focus
+         - White balance
+         - Frame interval (FPS)
+ - Make `OpenCvCamera` interface extend `CameraStreamSource` so that casting to implementation objects isn't required to use a camera as a stream source for something other than the DS
+ - Adds `setViewportRenderingPolicy()` API to `OpenCvCamera interface`, provides option to:
+     - `MAXIMIZE_EFFICIENCY` Keep viewport behavior as it always has been, OR
+     - `OPTIMIZE_VIEW` At the expense of CPU time (and viewport smoothness), automatically orient preview image such that it's not constantly 90 degrees out from expected with an internal camera when the physical device orientation does not match the streaming orientation
+ - Add memory leak detector for pipelines
+     - Not 100% accurate but, seems to be fairly effective
+     - Has a crude garbage collector run detector
+     - Can be enabled/disabled or have parameters tweaked by modifying superclass variables from your pipeline constructor
+ - Add `init(Mat m)` method to pipeline class, which will be called with the first frame from the camera, allowing you to initialize submats and the like for your pipeline
+ - Adds pipeline utility function for saving Mats to disk.
+     - Save function clones input mat and writes to disk asynchronously to prevent stalling pipeline
+     - Up to 5 save operations can be running simultaneously; once this limit is reached, the pipeline will be stalled until one has completed
+ - Adds APIs for closing and opening the camera asynchronously. This is now the recommended way to open and close, as it can help to prevent `stuckInXYZ()` issues and the like. Please consult the `OpenCvCamera` interface javadoc for details
+ - Adds support for switchable webcams
+     - New `OpenCvSwitchableWebcam` interface. Instances can be obtained from `OpenCvCameraFactory`, just like other types
+ - Fix deadlock when closing webcams
+ - Increase webcam open timeout to 2 seconds. This increases compatibility with random nobrand cameras.
+ - Adds new `OpenCvWebcam` interface which exposes some additional functionality for webcams
+     - Instances can be obtained from `OpenCvCameraFactory`, just like other types
+     - Support for exposure control & focus control, using the SDK UVC driver's built-in interfaces
+ - Adds new samples demonstrating some of the new functionality
+ - Library version now printed to logcat when creating camera instance
+ - Misc. bug fixes
 
 ### v1.3.2
 
