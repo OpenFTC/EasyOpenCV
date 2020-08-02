@@ -57,11 +57,6 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 8. Congrats, you're ready to go! Now check out the [example OpModes](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples).
 
-## Known Issues:
-
-Feel free to submit a pull request if you know how to fix any of these!
-
- - Currently, this library uses the SDK's built-in UVC driver for webcam support. Unfortunately, the SDK's UVC driver is a buggy mess. This can cause all sorts of undesirable things to happen, such as crashes on USB disconnection, (or, if it survived the USB disconnection, hanging/deadlock when trying to stop the OpMode after the connection was restored), crashing of the Linux kernel if run too many times in a row, etc. However, the architecture of this library has been designed such that it would be straightforward to integrate an alternate implementation that would use a 3rd party UVC driver.
 
 ## Changelog:
 
