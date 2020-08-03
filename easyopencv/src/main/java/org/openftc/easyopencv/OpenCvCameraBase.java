@@ -566,6 +566,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         if(viewport != null)
         {
+            if(!cameraOrientationIsTiedToDeviceOrientation())
+            {
+                throw new OpenCvCameraException("Setting viewport rendering policy is not applicable for this type of camera");
+            }
+
             viewport.setRenderingPolicy(policy);
         }
     }
@@ -689,7 +694,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         if(!cameraOrientationIsTiedToDeviceOrientation())
         {
-            throw new OpenCvCameraException("Setting viewport rendering policy is not applicable for this type of camera");
+            return OpenCvViewport.OptimizedRotation.NONE;
         }
 
         if(windowRotation == Surface.ROTATION_0)
