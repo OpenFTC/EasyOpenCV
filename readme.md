@@ -46,7 +46,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.4.0'
+            implementation 'org.openftc:easyopencv:1.4.1'
          }
          
 6. Open the `build.common.gradle` file, and find the line `minSdkVersion 19`, and replace it with `minSdkVersion 23`
@@ -61,6 +61,11 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.4.1
+
+ - Transitive dependency on OpenCV-Repackged updated to 4.1.0-C, which specifically handles error case of failure to load 32-bit library when FTC Robot Controller app has already loaded another native library as 64-bit
+ - Fixes issue which prevented webcams from initializing in v1.4.0 which was found in prerelease testing, fixed, and yet somehow didn't make it into git...
 
 ### v1.4.0
 
