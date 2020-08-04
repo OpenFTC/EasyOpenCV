@@ -551,13 +551,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
     }
 
-    @Nullable
-    @Override
-    public <T extends CameraControl> T getControl(Class<T> controlType)
-    {
-        return camera.getControl(controlType);
-    }
-
     @Override
     public ExposureControl getExposureControl()
     {

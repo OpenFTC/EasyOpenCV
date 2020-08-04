@@ -25,7 +25,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraControls;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 
-public interface OpenCvWebcam extends OpenCvCamera, CameraControls
+public interface OpenCvWebcam extends OpenCvCamera
 {
     /***
      * Gets the {@link ExposureControl} for this webcam.
