@@ -44,7 +44,7 @@ public abstract class OpenCvPipeline
     private long firstFrameTimestamp;
     protected boolean MEMLEAK_DETECTION_ENABLED = true;
     protected int MEMLEAK_THRESHOLD_MB = 100;
-    protected int MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS = 4;
+    protected int MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS = 2;
     private long nativeAllocFirstMonitoredFrame;
     private boolean settled = false;
     private long currentAlloc;
@@ -92,7 +92,7 @@ public abstract class OpenCvPipeline
 
         currentAlloc = Debug.getNativeHeapAllocatedSize();
 
-        if(!settled && System.currentTimeMillis() - firstFrameTimestamp < MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS*1000)
+        if(!settled && (System.currentTimeMillis() - firstFrameTimestamp) > MEMLEAK_DETECTION_PIPELINE_SETTLE_DELAY_SECONDS*1000)
         {
             settled = true;
             nativeAllocFirstMonitoredFrame = Debug.getNativeHeapAllocatedSize();
