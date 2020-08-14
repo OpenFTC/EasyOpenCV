@@ -64,7 +64,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     CameraCaptureSession cameraCaptureSession;
     Mat rgbMat;
     OpenCvInternalCamera2.CameraDirection direction;
-    private volatile boolean isOpen = false;
     public float exposureTime = 1/50f;
     private volatile boolean isStreaming = false;
     Surface surface;
@@ -155,7 +154,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
         }
 
-        if(!isOpen && mCameraDevice == null)
+        if(mCameraDevice == null)
         {
             try
             {
@@ -179,7 +178,6 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 cameraManager.openCamera(camId, mStateCallback, cameraHardwareHandler);
 
                 cameraOpenedLatch.await();
-                isOpen = true;
             }
             catch (CameraAccessException e)
             {
@@ -237,18 +235,13 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         cleanupForClosingCamera();
 
-        if(isOpen)
+        if(mCameraDevice != null)
         {
-            if(mCameraDevice != null)
-            {
-                stopStreaming();
+            stopStreaming();
 
-                mCameraDevice.close();
-                stopCameraHardwareHandlerThread();
-                mCameraDevice = null;
-            }
-
-            isOpen = false;
+            mCameraDevice.close();
+            stopCameraHardwareHandlerThread();
+            mCameraDevice = null;
         }
 
         sync.unlock();
