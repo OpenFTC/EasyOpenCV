@@ -84,7 +84,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private Mat rawSensorMat;
     private Mat rgbMat;
     private byte[] imgDat;
-    protected volatile boolean isOpen = false;
     private volatile boolean isStreaming = false;
     private final Object sync = new Object();
     private final Object newFrameSync = new Object();
@@ -131,7 +130,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                 return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
             }
 
-            if(!isOpen)
+            if(camera == null)
             {
                 try
                 {
@@ -140,7 +139,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     if (camera != null) //Opening succeeded!
                     {
                         cameraCharacteristics = camera.getCameraName().getCameraCharacteristics();
-                        isOpen = true;
 
                         exposureControl = camera.getControl(ExposureControl.class);
                         focusControl = camera.getControl(FocusControl.class);
@@ -198,16 +196,11 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         {
             cleanupForClosingCamera();
 
-            if(isOpen)
+            if(camera != null)
             {
-                if (camera != null)
-                {
-                    stopStreaming();
-                    camera.close();
-                    camera = null;
-                }
-
-                isOpen = false;
+                stopStreaming();
+                camera.close();
+                camera = null;
             }
         }
     }
@@ -254,7 +247,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     {
         synchronized (sync)
         {
-            if(!isOpen)
+            if(camera == null)
             {
                 throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
             }
@@ -426,7 +419,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     {
         synchronized (sync)
         {
-            if(!isOpen)
+            if(camera == null)
             {
                 throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
             }
@@ -554,12 +547,22 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public ExposureControl getExposureControl()
     {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("getExposureControl() called, but camera is not opened!");
+        }
+
         return exposureControl;
     }
 
     @Override
     public FocusControl getFocusControl()
     {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("getFocusControl() called, but camera is not opened!");
+        }
+
         return focusControl;
     }
 }
