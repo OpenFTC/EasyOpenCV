@@ -44,7 +44,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     private Mat rgbMat;
     private SurfaceTexture bogusSurfaceTexture;
     private int maxZoom = -1;
-    private volatile boolean isOpen = false;
+
     private volatile boolean isStreaming = false;
 
     public OpenCvInternalCameraImpl(OpenCvInternalCamera.CameraDirection direction)
@@ -129,14 +129,9 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
         }
 
-        if(!isOpen)
+        if(camera == null)
         {
-            if(camera == null)
-            {
-                camera = Camera.open(direction.id);
-            }
-
-            isOpen = true;
+            camera = Camera.open(direction.id);
         }
     }
 
@@ -177,17 +172,12 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     {
         cleanupForClosingCamera();
 
-        if(isOpen)
+        if(camera != null)
         {
-            if(camera != null)
-            {
-                stopStreaming();
-                camera.stopPreview();
-                camera.release();
-                camera = null;
-            }
-
-            isOpen = false;
+            stopStreaming();
+            camera.stopPreview();
+            camera.release();
+            camera = null;
         }
     }
 
@@ -237,7 +227,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void startStreaming(int width, int height, OpenCvCameraRotation rotation, BufferMethod bufferMethod)
     {
-        if(!isOpen)
+        if(camera == null)
         {
             throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
         }
@@ -351,7 +341,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void stopStreaming()
     {
-        if(!isOpen)
+        if(camera == null)
         {
             throw new OpenCvCameraException("stopStreaming() called, but camera is not opened!");
         }
@@ -416,7 +406,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setFlashlightEnabled(boolean enabled)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot control flash until camera is opened!");
         }
@@ -451,7 +441,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setExposureLocked(boolean lock)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot lock exposure until camera is opened");
         }
@@ -470,7 +460,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setExposureCompensation(int exposureCompensation)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot set exposure compensation until camera is opened!");
         }
@@ -498,7 +488,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized int getMaxSupportedExposureCompensation()
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot get max supported exposure compensation until camera is opened");
         }
@@ -511,7 +501,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized int getMinSupportedExposureCompensation()
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot get min supported exposure compensation until camera is opened");
         }
@@ -524,7 +514,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized int getMaxSupportedZoom()
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot get supported zooms until camera is opened and streaming is started");
         }
@@ -542,7 +532,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setZoom(int zoom)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot set zoom until camera is opened and streaming is started");
         }
@@ -569,7 +559,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setRecordingHint(boolean hint)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot set recording hint until camera is opened");
         }
@@ -584,7 +574,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void setHardwareFrameTimingRange(FrameTimingRange frameTiming)
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot set hardware frame timing range until camera is opened");
         }
@@ -599,7 +589,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized FrameTimingRange[] getFrameTimingRangesSupportedByHardware()
     {
-        if(!isOpen || camera == null)
+        if(camera == null)
         {
             throw new OpenCvCameraException("Cannot get frame timing ranges until camera is opened");
         }
