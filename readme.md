@@ -28,6 +28,8 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
  - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.4.1/index.html)
  - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples)
+ 
+ **IMPORTANT NOTE:** EasyOpenCV delivers RGB frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
 ## Installation instructions:
 
