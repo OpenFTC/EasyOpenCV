@@ -252,6 +252,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public void startStreaming(final int width, final int height, OpenCvCameraRotation rotation)
     {
+        final int fps = cameraCharacteristics.getMaxFramesPerSecond(
+                ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
+                new Size(width, height));
+        startStreaming(width, height, fps, rotation);
+    }
+
+    public void startStreaming(final int width, final int height, final int fps, OpenCvCameraRotation rotation) {
         synchronized (sync)
         {
             if(!isOpen)
@@ -309,9 +316,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                             CameraMode streamingMode = new CameraMode(
                                     width,
                                     height,
-                                    cameraCharacteristics.getMaxFramesPerSecond(
-                                            ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
-                                            new Size(width, height)),
+                                    fps,
                                     FrameFormat.YUYV);
 
                             //Indicate how we want to stream
