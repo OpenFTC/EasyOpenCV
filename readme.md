@@ -31,6 +31,10 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
  
  **IMPORTANT NOTE:** EasyOpenCV delivers RGB frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
+## Note about OnBotJava:
+
+While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much more difficult, and makes upgrading to newer releases a pain. Additionally, if you're advanced enough to be writing custom OpenCV code, the better programming experience Android Studio offers will likely benefit you greatly. For these reasons we do not officially support using EasyOpenCV with OnBotJava.
+
 ## Installation instructions:
 
 **IMPORTANT NOTE: This tutorial assumes you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
