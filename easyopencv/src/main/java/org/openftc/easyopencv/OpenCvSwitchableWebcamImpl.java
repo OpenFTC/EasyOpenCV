@@ -40,14 +40,9 @@ class OpenCvSwitchableWebcamImpl extends OpenCvWebcamImpl implements OpenCvSwitc
     @Override
     public synchronized void setActiveCamera(WebcamName cameraName)
     {
-        if(!isOpen)
-        {
-            throw new OpenCvCameraException("setActiveCamera() called, but camera device is not opened!");
-        }
-
         if(camera == null)
         {
-            throw new OpenCvCameraException("setActiveCamera(): Internal error");
+            throw new OpenCvCameraException("setActiveCamera() called, but camera device is not opened!");
         }
 
         ((SwitchableCamera)camera).setActiveCamera(cameraName);
@@ -56,14 +51,9 @@ class OpenCvSwitchableWebcamImpl extends OpenCvWebcamImpl implements OpenCvSwitc
     @Override
     public synchronized WebcamName getActiveCamera()
     {
-        if(!isOpen)
-        {
-            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
-        }
-
         if(camera == null)
         {
-            throw new OpenCvCameraException("getActiveCamera(): Internal error");
+            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
         }
 
         return (WebcamName) ((SwitchableCamera)camera).getActiveCamera();
@@ -72,14 +62,9 @@ class OpenCvSwitchableWebcamImpl extends OpenCvWebcamImpl implements OpenCvSwitc
     @Override
     public synchronized WebcamName[] getMembers()
     {
-        if(!isOpen)
-        {
-            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
-        }
-
         if(camera == null)
         {
-            throw new OpenCvCameraException("getActiveCamera(): Internal error");
+            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
         }
 
         return (WebcamName[]) ((SwitchableCamera)camera).getMembers();
