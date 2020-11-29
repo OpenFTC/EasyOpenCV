@@ -30,9 +30,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
+import android.util.Size;
 import android.view.Surface;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -305,6 +307,32 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         try
         {
+            StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            Size[] sizes = streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888);
+
+            boolean isRequestedSizeSupported = false;
+
+            for(Size size : sizes)
+            {
+                if(size.getWidth() == width && size.getHeight() == height)
+                {
+                    isRequestedSizeSupported = true;
+                    break;
+                }
+            }
+
+            if(!isRequestedSizeSupported)
+            {
+                StringBuilder supportedSizesBuilder = new StringBuilder();
+
+                for(Size s : sizes)
+                {
+                    supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
+                }
+
+                throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
+            }
+
             rgbMat = new Mat(height, width, CvType.CV_8UC3);
 
             startFrameWorkerHandlerThread();
