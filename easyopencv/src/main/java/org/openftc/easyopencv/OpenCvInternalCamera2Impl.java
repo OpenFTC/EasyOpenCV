@@ -366,8 +366,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             e.printStackTrace();
             Thread.currentThread().interrupt();
         }
-
-        sync.unlock();
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     @Override
@@ -541,30 +543,35 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
              */
             sync.lockInterruptibly();
 
-            Image image = reader.acquireLatestImage();
-
-            if(image != null)
+            try
             {
-                /*
-                 * For some reason, when we restart the streaming while live,
-                 * the image returned from the image reader is somehow
-                 * already closed and so onPreviewFrame() dies. Therefore,
-                 * until we can figure out what's going on here, we simply
-                 * catch and ignore the exception.
-                 */
-                try
-                {
-                    onPreviewFrame(image);
-                }
-                catch (IllegalStateException e)
-                {
-                    e.printStackTrace();
-                }
+                Image image = reader.acquireLatestImage();
 
-                image.close();
+                if(image != null)
+                {
+                    /*
+                     * For some reason, when we restart the streaming while live,
+                     * the image returned from the image reader is somehow
+                     * already closed and so onPreviewFrame() dies. Therefore,
+                     * until we can figure out what's going on here, we simply
+                     * catch and ignore the exception.
+                     */
+                    try
+                    {
+                        onPreviewFrame(image);
+                    }
+                    catch (IllegalStateException e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                    image.close();
+                }
             }
-
-            sync.unlock();
+            finally
+            {
+                sync.unlock();
+            }
         }
         catch (InterruptedException e)
         {
