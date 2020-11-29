@@ -294,19 +294,24 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         sync.lock();
 
-        /*
-         * If we're already streaming, then that's OK, but we need to stop
-         * streaming in the old mode before we can restart in the new one.
-         */
-        if(isStreaming)
-        {
-            stopStreaming();
-        }
-
-        prepareForStartStreaming(width, height, rotation);
-
         try
         {
+            if(mCameraDevice == null)
+            {
+                throw new OpenCvCameraException("startStreaming() called, but camera is not opened!");
+            }
+
+            /*
+             * If we're already streaming, then that's OK, but we need to stop
+             * streaming in the old mode before we can restart in the new one.
+             */
+            if(isStreaming)
+            {
+                stopStreaming();
+            }
+
+            prepareForStartStreaming(width, height, rotation);
+
             StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size[] sizes = streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888);
 
