@@ -34,6 +34,7 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.PreviewCallback, OpenCvInternalCamera
@@ -401,6 +402,54 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
                 camera.addCallbackBuffer(data);
             }
         }
+    }
+
+    @Override
+    public synchronized void setFocusMode(FocusMode focusMode)
+    {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("Cannot set focus mode until camera is opened!");
+        }
+        else
+        {
+            Camera.Parameters parameters = camera.getParameters();
+
+            ArrayList<FocusMode> supportedModes = getEocvCameraApiFocusModes(parameters.getSupportedFocusModes());
+
+            if(!supportedModes.contains(focusMode))
+            {
+                StringBuilder supportedSizesBuilder = new StringBuilder();
+
+                for(FocusMode f : supportedModes)
+                {
+                    supportedSizesBuilder.append(String.format("%s, ", f.toString()));
+                }
+
+                throw new OpenCvCameraException(String.format("Focus mode %s is not supported on this camera. Supported focus modes are %s", focusMode.toString(), supportedSizesBuilder.toString()));
+            }
+            else
+            {
+                parameters.setFocusMode(focusMode.android_string);
+            }
+        }
+    }
+
+    private ArrayList<FocusMode> getEocvCameraApiFocusModes(List<String> focusModes)
+    {
+        ArrayList<FocusMode> ret = new ArrayList<>(focusModes.size());
+
+        for(String s : focusModes)
+        {
+            FocusMode m = FocusMode.fromAndroidString(s);
+
+            if(m != null)
+            {
+                ret.add(m);
+            }
+        }
+
+        return ret;
     }
 
     @Override

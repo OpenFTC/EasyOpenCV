@@ -78,6 +78,80 @@ public interface OpenCvInternalCamera extends OpenCvCamera
      */
     void startStreaming(int width, int height, OpenCvCameraRotation rotation, BufferMethod bufferMethod);
 
+    enum FocusMode
+    {
+        /**
+         *  Auto-focus mode
+         */
+        AUTO("auto"),
+
+        /**
+         * Focus is fixed. The camera is always in this mode if the focus is not
+         * adjustable. If the camera has auto-focus, this mode can fix the
+         * focus, which is usually at hyperfocal distance.
+         */
+        FIXED("fixed"),
+
+        /**
+         * Focus is set at infinity
+         */
+        INFINITY("infinity"),
+
+        /**
+         * Macro (close-up) focus mode.
+         */
+        MACRO("macro"),
+
+        /**
+         * Extended depth of field (EDOF). Focusing is done digitally and
+         * continuously.
+         */
+        EDOF("edof"),
+
+        /**
+         * Continuous auto focus mode intended for video recording. The camera
+         * continuously tries to focus. This is the best choice for video
+         * recording because the focus changes smoothly
+         */
+        CONTINUOUS_VIDEO("continuous-video"),
+
+        /**
+         * Continuous auto focus mode intended for taking pictures. The camera
+         * continuously tries to focus. The speed of focus change is more
+         * aggressive than {@link #CONTINUOUS_VIDEO}
+         */
+        CONTINUOUS_PICTURE("continuous-picture");
+
+        final String android_string;
+
+        FocusMode(String android_string)
+        {
+            this.android_string = android_string;
+        }
+
+        static final FocusMode[] members = FocusMode.values();
+
+        static FocusMode fromAndroidString(String s)
+        {
+            for(FocusMode f : members)
+            {
+                if(f.android_string.equals(s))
+                {
+                    return f;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /***
+     * Set the focus mode the image sensor should operate in
+     *
+     * @param focusMode the focus mode the image sensor should operate in
+     */
+    void setFocusMode(FocusMode focusMode);
+
     /***
      * Set whether or not the camera's flash should be
      * put into flashlight ("torch") mode, i.e. where
