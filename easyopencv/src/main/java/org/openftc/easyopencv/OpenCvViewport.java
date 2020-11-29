@@ -60,6 +60,10 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private EvictingBlockingQueue<MatRecycler.RecyclableMat> visionPreviewFrameQueue = new EvictingBlockingQueue<>(new ArrayBlockingQueue<MatRecycler.RecyclableMat>(VISION_PREVIEW_FRAME_QUEUE_CAPACITY));
     private MatRecycler framebufferRecycler;
     private volatile RenderingState internalRenderingState = RenderingState.STOPPED;
+    private int statBoxW = 450;
+    private int statBoxH = 120;
+    private int statBoxTextLineSpacing = 35;
+    private int statBoxLTxtMargin = 5;
     private final Object syncObj = new Object();
     private volatile boolean userRequestedActive = false;
     private volatile boolean userRequestedPause = false;
@@ -596,26 +600,65 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         {
             canvas.rotate(optimizedViewRotationLocalCache.val, canvas.getWidth()/2, canvas.getHeight()/2);
 
-            int origin_x = (canvas.getWidth()-canvas.getHeight())/2;
-            int origin_y = (canvas.getHeight()-canvas.getWidth())/2;
+            // Swapped because of 90deg rotation
+            int canvasWidth = canvas.getHeight();
+            int canvasHeight = canvas.getWidth();
 
-            double canvasAspect = (float)canvas.getHeight()/(float)canvas.getWidth();
+            // Calculate the new origin (top left) that will be visible onscreen
+            int origin_x = (canvasHeight-canvasWidth)/2;
+            int origin_y = (canvasWidth-canvasHeight)/2;
 
+            // Calculate the aspect ratio of the canvas
+            double canvasAspect = (float) canvasWidth/canvasHeight;
+
+            int y_offset_statbox = 0;
+
+            // Image width is the factor we need to consider
             if(aspectRatio > canvasAspect)
             {
+                // Width: we use the max we have, since horizontal bounds are hit before vertical bounds
+                int scaledWidth = canvasWidth;
+
+                // Height: calculate a scaled height assuming width is maxed for the canvas
+                int scaledHeight = (int) Math.round(canvasWidth / aspectRatio);
+
+                // We want to center the image in the viewport
+                int topLeftX = origin_x;
+                int topLeftY = origin_y + Math.abs(canvasHeight-scaledHeight)/2;
+                y_offset_statbox = Math.abs(canvasHeight-scaledHeight)/2;
+
                 canvas.drawBitmap(
                         bitmapFromMat,
                         null,
-                        createRect(origin_x, origin_y, canvas.getHeight(), (int) Math.round(canvas.getHeight() / aspectRatio)),
+                        createRect(
+                                topLeftX,
+                                topLeftY,
+                                scaledWidth,
+                                scaledHeight),
                         null
                 );
             }
+            // Image height is the factor we need to consider
             else
             {
+                // Height: we use the max we have, since vertical bounds are hit before horizontal bounds
+                int scaledHeight = canvasHeight;
+
+                // Width: calculate a scaled width assuming height is maxed for the canvas
+                int scaledWidth = (int) Math.round(canvasHeight * aspectRatio);
+
+                // We want to center the image in the viewport
+                int topLeftY = origin_y;
+                int topLeftX = origin_x + Math.abs(canvasWidth-scaledWidth)/2;
+
                 canvas.drawBitmap(
                         bitmapFromMat,
                         null,
-                        createRect(origin_x, origin_y, (int) Math.round(canvas.getWidth() * aspectRatio), canvas.getWidth()),
+                        createRect(
+                                topLeftX,
+                                topLeftY,
+                                scaledWidth,
+                                scaledHeight),
                         null
                 );
             }
@@ -626,55 +669,54 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             if(!fpsMeterEnabled)
                 return;
 
-            int statBoxW = 450;
-            int statBoxH = 120;
-
             Rect rect = null;
 
             if(optimizedViewRotationLocalCache == OptimizedRotation.ROT_90_COUNTERCLOCWISE)
             {
                 rect = createRect(
-                        origin_x+canvas.getHeight()-statBoxW,
-                        origin_y+canvas.getWidth()-statBoxH,
+                        origin_x+canvasWidth-statBoxW,
+                        origin_y+canvasHeight-statBoxH-y_offset_statbox,
                         statBoxW,
                         statBoxH);
             }
             else if(optimizedViewRotationLocalCache == OptimizedRotation.ROT_90_CLOCKWISE)
             {
                 rect = createRect(
-                        origin_x+statBoxW-statBoxW,
-                        origin_y+canvas.getWidth()-statBoxH,
+                        origin_x,
+                        origin_y+canvasHeight-statBoxH-y_offset_statbox,
                         statBoxW,
                         statBoxH);
             }
 
-            canvas.drawRect(rect, fpsMeterBgPaint);
-
-            int statBoxLTxtMargin = 5;
-            int statBoxLTxtStart = rect.left+statBoxLTxtMargin;
-
-            int textLineSpacing = 35;
-            int textLine1Y = rect.bottom - 80;
-            int textLine2Y = textLine1Y + textLineSpacing;
-            int textLine3Y = textLine2Y + textLineSpacing;
-
-            canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
-            canvas.drawText(getFpsString(), statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
-            canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
+            drawStats(canvas, rect);
         }
 
         void drawOptimizingEfficiency(Canvas canvas)
         {
+            int x_offset_statbox = 0;
+            int y_offset_statbox = 0;
+
             /*
              * We need to draw minding the HEIGHT we have to work with; width is not an issue
              */
             if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
             {
+                // Height: we use the max we have, since vertical bounds are hit before horizontal bounds
+                int scaledHeight = canvas.getHeight();
+
+                // Width: calculate a scaled width assuming height is maxed for the canvas
+                int scaledWidth = (int) Math.round(canvas.getHeight() * aspectRatio);
+
+                // We want to center the image in the viewport
+                x_offset_statbox = Math.abs(canvas.getWidth()-scaledWidth)/2;
+                int topLeftY = 0;
+                int topLeftX = 0 + Math.abs(canvas.getWidth()-scaledWidth)/2;
+
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
                 canvas.drawBitmap(
                         bitmapFromMat,
-                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
-                        new Rect(0,0,(int) Math.round(canvas.getHeight() * aspectRatio), canvas.getHeight()),
+                        null,
+                        createRect(topLeftX,topLeftY,scaledWidth, scaledHeight),
                         null);
             }
 
@@ -683,11 +725,22 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
              */
             else
             {
+                // Width: we use the max we have, since horizontal bounds are hit before vertical bounds
+                int scaledWidth = canvas.getWidth();
+
+                // Height: calculate a scaled height assuming width is maxed for the canvas
+                int scaledHeight = (int) Math.round(canvas.getWidth() / aspectRatio);
+
+                // We want to center the image in the viewport
+                int topLeftY = Math.abs(canvas.getHeight()-scaledHeight)/2;
+                int topLeftX = 0;
+                y_offset_statbox = Math.abs(canvas.getHeight()-scaledHeight)/2;
+
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
                 canvas.drawBitmap(
                         bitmapFromMat,
-                        new Rect(0,0,bitmapFromMat.getWidth(), bitmapFromMat.getHeight()),
-                        new Rect(0,0,canvas.getWidth(), (int) Math.round(canvas.getWidth() / aspectRatio)),
+                        null,
+                        createRect(topLeftX,topLeftY, scaledWidth, scaledHeight),
                         null);
             }
 
@@ -697,17 +750,32 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             if(!fpsMeterEnabled)
                 return;
 
-            canvas.drawRect(0, canvas.getHeight()-120, 450, canvas.getHeight(), fpsMeterBgPaint);
-            canvas.drawText("OpenFTC EasyOpenCV v" + BuildConfig.VERSION_NAME, 5, canvas.getHeight() - 80, fpsMeterTextPaint);
-            canvas.drawText(getFpsString(), 5, canvas.getHeight() - 45, fpsMeterTextPaint);
-            canvas.drawText("Pipeline: " + pipelineMs + "ms" + " - Overhead: " + overheadMs + "ms", 5, canvas.getHeight() - 10, fpsMeterTextPaint);
+            Rect rect = createRect(
+                    x_offset_statbox,
+                    canvas.getHeight()-statBoxH-y_offset_statbox,
+                    statBoxW,
+                    statBoxH
+            );
+
+            drawStats(canvas, rect);
         }
     }
 
-    @SuppressLint("DefaultLocale")
-    public String getFpsString()
+    void drawStats(Canvas canvas, Rect rect)
     {
-        return String.format("FPS@%dx%d: %.2f", size.getWidth(), size.getHeight(), fps);
+        // Draw the purple rectangle
+        canvas.drawRect(rect, fpsMeterBgPaint);
+
+        // Some formatting stuff
+        int statBoxLTxtStart = rect.left+statBoxLTxtMargin;
+        int textLine1Y = rect.bottom - 80;
+        int textLine2Y = textLine1Y + statBoxTextLineSpacing;
+        int textLine3Y = textLine2Y + statBoxTextLineSpacing;
+
+        // Draw the 3 text lines
+        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig.VERSION_NAME),        statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
+        canvas.drawText(String.format("FPS@%dx%d: %.2f", size.getWidth(), size.getHeight(), fps), statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
+        canvas.drawText(String.format("Pipeline: %dms - Overhead: %dms", pipelineMs, overheadMs), statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
     }
 
     Rect createRect(int tlx, int tly, int w, int h)
