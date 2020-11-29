@@ -81,9 +81,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private CameraCharacteristics cameraCharacteristics = null;
     protected Camera camera = null;
     private CameraCaptureSession cameraCaptureSession = null;
-    private Mat rawSensorMat;
+    private long ptrNativeExtSourceRawSensorMat;
     private Mat rgbMat;
-    private byte[] imgDat;
     private volatile boolean isStreaming = false;
     private final Object sync = new Object();
     private final Object newFrameSync = new Object();
@@ -430,9 +429,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
                 cleanupForEndStreaming();
 
-                imgDat = null;
+                if(ptrNativeExtSourceRawSensorMat != 0)
+                {
+                    freeExtImgDatMat(ptrNativeExtSourceRawSensorMat);
+                    ptrNativeExtSourceRawSensorMat = 0;
+                }
+
                 rgbMat = null;
-                rawSensorMat = null;
             }
 
             if (cameraCaptureSession != null)
@@ -491,56 +494,19 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
             notifyStartOfFrameProcessing();
 
-            if(imgDat == null)
-            {
-                imgDat = new byte[cameraFrame.getImageSize()];
-            }
             if(rgbMat == null)
             {
                 rgbMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC1);
             }
-            if(rawSensorMat == null)
+            if(ptrNativeExtSourceRawSensorMat == 0)
             {
-                rawSensorMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC2);
+                ptrNativeExtSourceRawSensorMat = allocExtImgDatMat(cameraFrame.getSize().getWidth(), cameraFrame.getSize().getHeight(),  CvType.CV_8UC2);
             }
 
-            try
-            {
-                /*
-                 * v1.2 HOTFIX for renderscript crashes on some devices when using frame.copyToBitmap()
-                 *
-                 * Is it pretty? Heck no. Does it work? Yes! :)
-                 * Also it seems to be *considerably* more efficient than copyToBitmap(). Not entirely
-                 * sure why because one would think renderscript would be faster since it can run on
-                 * the GPU...
-                 */
+            setMatDataPtr(ptrNativeExtSourceRawSensorMat, cameraFrame.getImageBuffer());
+            colorConversion(ptrNativeExtSourceRawSensorMat, rgbMat.nativeObj);
 
-                RenumberedCameraFrame renumberedCameraFrame = (RenumberedCameraFrame) cameraFrame;
-                Field innerFrameField = RenumberedCameraFrame.class.getDeclaredField("innerFrame");
-                innerFrameField.setAccessible(true);
-                CameraFrame innerFrame = (CameraFrame) innerFrameField.get(renumberedCameraFrame);
-
-                if(innerFrame instanceof RenumberedCameraFrame) //switchable
-                {
-                    innerFrame = (CameraFrame) innerFrameField.get(innerFrame);
-                }
-
-                UvcApiCameraFrame uvcApiCameraFrame = (UvcApiCameraFrame) innerFrame;
-                Field uvcFrameField = UvcApiCameraFrame.class.getDeclaredField("uvcFrame");
-                uvcFrameField.setAccessible(true);
-                UvcFrame uvcFrame = (UvcFrame) uvcFrameField.get(uvcApiCameraFrame);
-
-                uvcFrame.getImageData(imgDat);
-                rawSensorMat.put(0,0,imgDat);
-                Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_YUY2, 4);
-
-                handleFrame(rgbMat);
-
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            handleFrame(rgbMat);
         }
     }
 
@@ -564,5 +530,15 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
 
         return focusControl;
+    }
+
+    public static native void setMatDataPtr(long matPtr, long dataPtr);
+    public static native void colorConversion(long rawDataPtr, long rgbPtr);
+    public static native long allocExtImgDatMat(int width, int height, int type);
+    public static native void freeExtImgDatMat(long ptr);
+
+    static
+    {
+        System.loadLibrary("EasyOpenCV");
     }
 }

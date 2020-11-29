@@ -34,6 +34,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -64,6 +65,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     ImageReader imageReader;
     CaptureRequest.Builder mPreviewRequestBuilder;
     CameraCaptureSession cameraCaptureSession;
+    long ptrNativeContext;
     Mat rgbMat;
     OpenCvInternalCamera2.CameraDirection direction;
     public float exposureTime = 1/50f;
@@ -73,7 +75,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     CameraCharacteristics cameraCharacteristics;
 
     ReentrantLock sync = new ReentrantLock();
-
+    final static String TAG = "OpenCvInternalCamera2";
 
 
     @SuppressLint("WrongConstant")
@@ -408,19 +410,27 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     public void stopStreaming()
     {
+        Log.d(TAG, "stopStreaming()");
+
         sync.lock();
 
         cleanupForEndStreaming();
 
-        try {
-
-            if (null != cameraCaptureSession) {
+        try
+        {
+            if (null != cameraCaptureSession)
+            {
                 cameraCaptureSession.close();
                 cameraCaptureSession = null;
                 isStreaming = false;
             }
         }
-        finally
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        try
         {
             //stopCameraHardwareHandlerThread();
             //stopFrameWorkerHandlerThread();
@@ -430,9 +440,27 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 imageReader = null;
 
                 stopFrameWorkerHandlerThread();
-            }
 
+                // Only release the native context after the frame worker has stopped.
+                // That guarantees that onPreviewFrame() won't be called again. Although
+                // since onPreviewFrame() is called with 'sync' held, I guess we could do
+                // it earlier up. But here seems like a logical place. *shrug*
+                if(ptrNativeContext != 0)
+                {
+                    Log.d(TAG, "Releasing native context");
+                    releaseNativeContext(ptrNativeContext);
+                    ptrNativeContext = 0;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
             sync.unlock();
+            Log.d(TAG, "...stopStreaming()");
         }
     }
 
@@ -462,42 +490,19 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
     };
 
+    /* CALLED WITH 'sync' held!! */
     private void onPreviewFrame(Image image)
     {
         notifyStartOfFrameProcessing();
 
-        int w = image.getWidth();
-        int h = image.getHeight();
-
-        Image.Plane[] planes = image.getPlanes();
-
-        //assert(planes[0].getPixelStride() == 1);
-        //assert(planes[2].getPixelStride() == 2);
-        ByteBuffer y_plane = planes[0].getBuffer();
-        ByteBuffer uv_plane1 = planes[1].getBuffer();
-        ByteBuffer uv_plane2 = planes[2].getBuffer();
-
-        //You might this is inefficient, but actually
-        //it seems that OpenCV directly references the target
-        //buffer data instead of copying it, in this case
-        Mat y_mat = new Mat(h, w, CvType.CV_8UC1, y_plane);
-        Mat uv_mat1 = new Mat(h / 2, w / 2, CvType.CV_8UC2, uv_plane1);
-        Mat uv_mat2 = new Mat(h / 2, w / 2, CvType.CV_8UC2, uv_plane2);
-        long addr_diff = uv_mat2.dataAddr() - uv_mat1.dataAddr();
-        if (addr_diff > 0)
+        if(ptrNativeContext == 0)
         {
-            //assert(addr_diff == 1);
-            Imgproc.cvtColorTwoPlane(y_mat, uv_mat1, rgbMat, Imgproc.COLOR_YUV2RGBA_NV12);
-        } else
-        {
-            //assert(addr_diff == -1);
-            Imgproc.cvtColorTwoPlane(y_mat, uv_mat2, rgbMat, Imgproc.COLOR_YUV2RGBA_NV21);
+            Log.d(TAG, "Creating native context");
+            ptrNativeContext = createNativeContext(image.getWidth(), image.getHeight());
         }
 
-        y_mat.release();
-        uv_mat1.release();
-        uv_mat2.release();
-
+        Image.Plane[] planes = image.getPlanes();
+        colorConversion(planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
         image.close();
 
         handleFrame(rgbMat);
@@ -1076,5 +1081,14 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         {
             e.printStackTrace();
         }
+    }
+
+    private native long createNativeContext(int width, int height);
+    private native void releaseNativeContext(long ptr);
+    private native void colorConversion(ByteBuffer plane0, ByteBuffer plane1, ByteBuffer plane2, long ptrContext, long ptrRgbFrame);
+
+    static
+    {
+        System.loadLibrary("EasyOpenCV");
     }
 }

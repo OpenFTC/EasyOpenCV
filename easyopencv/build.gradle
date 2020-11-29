@@ -17,9 +17,31 @@ android {
     }
 
     buildTypes {
+
+        debug {
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+        }
+    }
+
+    // Encapsulates your external native build configurations.
+    externalNativeBuild {
+
+        // Encapsulates your CMake build configurations.
+        cmake {
+
+            // Provides a relative path to your CMake build script.
+            path "CMakeLists.txt"
         }
     }
 
@@ -30,6 +52,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
     }
+    ndkVersion '21.0.6113669'
 }
 
 dependencies {
