@@ -161,6 +161,40 @@ public interface OpenCvCamera extends CameraStreamSource
     void setViewportRenderingPolicy(ViewportRenderingPolicy policy);
 
     /***
+     * The renderer the viewport will use to render the live preview
+     * NOTE: this is different than {@link ViewportRenderingPolicy}.
+     * The rendering policy controls how the preview will look, but
+     * this controls how the rendering is *actually done*
+     */
+    enum ViewportRenderer
+    {
+        /**
+         * Default, if not otherwise specified. Historically this was the only option
+         * (Well, technically there wasn't an option for this at all before, but you get the idea)
+         */
+        SOFTWARE,
+
+        /**
+         * Can provide a much smoother live preview at higher resolutions, especially if
+         * you're using {@link ViewportRenderingPolicy#OPTIMIZE_VIEW}.
+         * However, using GPU acceleration has been observed to occasionally cause crashes
+         * in libgles.so / libutils.so on some devices, if the activity orientation is changed
+         * (i.e. you rotate the device) while a streaming session is in flight. Caveat emptor.
+         */
+        GPU_ACCELERATED
+    }
+
+    /***
+     * Set the viewport renderer for this camera
+     * NOTE: This may ONLY be called if there is not currently a streaming session in
+     * flight for this camera.
+     *
+     * @param renderer see {@link ViewportRenderer}
+     * @throws IllegalStateException if called while a streaming session is in flight
+     */
+    void setViewportRenderer(ViewportRenderer renderer);
+
+    /***
      * Tell the camera to start streaming images to us! Note that you must make sure
      * the resolution you specify is supported by the camera. If it is not, an exception
      * will be thrown.

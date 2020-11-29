@@ -575,6 +575,22 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
+    @Override
+    public synchronized void setViewportRenderer(ViewportRenderer renderer)
+    {
+        if(viewport != null)
+        {
+            try
+            {
+                viewport.setRenderer(renderer);
+            }
+            catch (IllegalStateException e)
+            {
+                throw new IllegalStateException("setViewportRenderer() may only be called BEFORE a streaming session has been started!");
+            }
+        }
+    }
+
     private class OpModeNotificationsForOrientation implements OpModeManagerNotifier.Notifications
     {
 

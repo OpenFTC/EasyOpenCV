@@ -24,25 +24,20 @@
 
 package org.openftc.easyopencv;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.qualcomm.robotcore.util.MovingStatistics;
-
 import org.firstinspires.ftc.robotcore.external.android.util.Size;
 import org.firstinspires.ftc.robotcore.external.function.Consumer;
 import org.firstinspires.ftc.robotcore.internal.collections.EvictingBlockingQueue;
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -78,7 +73,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private String TAG = "OpenCvViewport";
     private ReentrantLock renderThreadAliveLock = new ReentrantLock();
     private volatile OptimizedRotation optimizedViewRotation;
-
+    private volatile OpenCvCamera.ViewportRenderer renderer = OpenCvCamera.ViewportRenderer.SOFTWARE;
     private volatile OpenCvCamera.ViewportRenderingPolicy renderingPolicy = OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY;
 
     public OpenCvViewport(Context context, OnClickListener onClickListener)
@@ -136,6 +131,21 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     public void setRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy policy)
     {
         renderingPolicy = policy;
+    }
+
+    public void setRenderer(OpenCvCamera.ViewportRenderer renderer) throws IllegalStateException
+    {
+        synchronized (syncObj)
+        {
+            if(internalRenderingState != RenderingState.STOPPED)
+            {
+                throw new IllegalStateException();
+            }
+            else
+            {
+                this.renderer = renderer;
+            }
+        }
     }
 
     public void setSize(Size size)
@@ -355,7 +365,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     /***
      * Deactivate the render thread
      */
-    public synchronized void deactivate()
+    public void deactivate()
     {
         synchronized (syncObj)
         {
@@ -364,7 +374,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         }
     }
 
-    public synchronized void resume()
+    public void resume()
     {
         synchronized (syncObj)
         {
@@ -373,7 +383,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         }
     }
 
-    public synchronized void pause()
+    public void pause()
     {
         synchronized (syncObj)
         {
@@ -385,12 +395,15 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     @Override
     public void surfaceCreated(SurfaceHolder holder)
     {
-
+        Log.d(TAG, "surfaceCreated()");
+        Log.d(TAG, "...surfaceCreated()");
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
     {
+        Log.d(TAG, "surfaceChanged()");
+
         synchronized (syncObj)
         {
             needToDeactivateRegardlessOfUser = false;
@@ -398,11 +411,25 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             checkState();
         }
+
+        Log.d(TAG, "...surfaceChanged()");
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder)
     {
+        /*
+         * NOTE: The docs for this method speak thusly:
+         *     if you have a rendering thread that directly accesses the surface,
+         *     you must ensure that thread is no longer touching the Surface before
+         *     returning from this function.
+         *
+         * We handle this by waiting UNINTERRUPTIBLY for the render thread to exit
+         * in checkState().
+         */
+
+        Log.d(TAG, "surfaceDestroyed()");
+
         synchronized (syncObj)
         {
             needToDeactivateRegardlessOfUser = true;
@@ -410,6 +437,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             surfaceExistsAndIsReady = false;
         }
 
+        Log.d(TAG, "...surfaceDestroyed()");
     }
 
     public void setFpsMeterEnabled(boolean fpsMeterEnabled)
@@ -435,6 +463,36 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             exitRequested = true;
         }
 
+        private Canvas lockCanvas()
+        {
+            if(renderer == OpenCvCamera.ViewportRenderer.SOFTWARE)
+            {
+                return getHolder().lockCanvas();
+            }
+            else if(renderer == OpenCvCamera.ViewportRenderer.GPU_ACCELERATED)
+            {
+                return getHolder().getSurface().lockHardwareCanvas();
+            }
+
+            throw new IllegalStateException();
+        }
+
+        private void swapBuffer(Canvas canvas)
+        {
+            if(renderer == OpenCvCamera.ViewportRenderer.SOFTWARE)
+            {
+                getHolder().unlockCanvasAndPost(canvas);
+            }
+            else if(renderer == OpenCvCamera.ViewportRenderer.GPU_ACCELERATED)
+            {
+                getHolder().getSurface().unlockCanvasAndPost(canvas);
+            }
+            else
+            {
+                throw new IllegalStateException();
+            }
+        }
+
         @Override
         public void run()
         {
@@ -444,24 +502,16 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             //from when we might have been running before
             visionPreviewFrameQueue.clear();
 
-            Log.d(TAG, "I am alive!");
+            Log.d(TAG, "Render thread is up!");
 
             bitmapFromMat = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.ARGB_8888);
 
-            canvas = getHolder().lockCanvas();
+            canvas = lockCanvas();
             canvas.drawColor(Color.BLUE);
-            getHolder().unlockCanvasAndPost(canvas);
+            swapBuffer(canvas);
 
-            while (true)
+            while (!exitRequested)
             {
-                /*
-                 * Do we need to exit?
-                 */
-                if(exitRequested)
-                {
-                    break;
-                }
-
                 switch (internalRenderingState)
                 {
                     case ACTIVE:
@@ -478,11 +528,16 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         catch (InterruptedException e)
                         {
                             e.printStackTrace();
+                            //Note: we actually don't re-interrupt ourselves here, because interrupts are also
+                            //used to simply make sure we properly pick up a transition to the PAUSED state, not
+                            //just when we're trying to close. If we're trying to close, then exitRequested will
+                            //be set, and since we break immediately right here, the close will be handled cleanly.
+                            //Thread.currentThread().interrupt();
                             break;
                         }
 
                         //Get canvas object for rendering on
-                        canvas = getHolder().lockCanvas();
+                        canvas = lockCanvas();
 
                         /*
                          * For some reason, the canvas will very occasionally be null upon closing.
@@ -508,7 +563,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                                 drawOptimizingView(canvas);
                             }
 
-                            getHolder().unlockCanvasAndPost(canvas);
+                            swapBuffer(canvas);
                         }
                         else
                         {
@@ -527,7 +582,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         {
                             shouldPaintOrange = false;
 
-                            canvas = getHolder().lockCanvas();
+                            canvas = lockCanvas();
 
                             /*
                              * For some reason, the canvas will very occasionally be null upon closing.
@@ -541,7 +596,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                                 canvas.drawColor(Color.rgb(255, 166, 0));
                                 canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterBgPaint);
                                 canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
-                                getHolder().unlockCanvasAndPost(canvas);
+                                swapBuffer(canvas);
                             }
                         }
 
@@ -552,6 +607,11 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                         catch (InterruptedException e)
                         {
                             e.printStackTrace();
+                            //Note: we actually don't re-interrupt ourselves here, because interrupts are also
+                            //used to simply make sure we properly pick up a transition to the PAUSED state, not
+                            //just when we're trying to close. If we're trying to close, then exitRequested will
+                            //be set, and since we break immediately right here, the close will be handled cleanly.
+                            //Thread.currentThread().interrupt();
                         }
                         break;
                     }
