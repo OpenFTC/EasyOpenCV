@@ -496,8 +496,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                             //Convert that Mat to a bitmap we can render
                             Utils.matToBitmap(mat, bitmapFromMat);
 
-                            //Draw the background black each time to prevent double buffering problems
-                            canvas.drawColor(Color.BLACK);
+                            //Draw the background each time to prevent double buffering problems
+                            canvas.drawColor(Color.rgb(239,239,239)); // RC activity background color
 
                             if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY)
                             {
