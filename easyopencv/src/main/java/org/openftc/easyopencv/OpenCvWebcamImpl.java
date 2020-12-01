@@ -408,6 +408,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         return false;
     }
 
+    @Override
+    protected boolean isStreaming()
+    {
+        return isStreaming;
+    }
+
     /***
      * Stop streaming frames from the webcam, if we were
      * streaming in the first place. If not, we don't do

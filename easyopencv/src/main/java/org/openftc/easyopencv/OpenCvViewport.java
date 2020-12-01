@@ -64,7 +64,8 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private volatile boolean userRequestedPause = false;
     private boolean needToDeactivateRegardlessOfUser = false;
     private boolean surfaceExistsAndIsReady = false;
-    private Paint fpsMeterBgPaint;
+    private Paint fpsMeterNormalBgPaint;
+    private Paint fpsMeterRecordingPaint;
     private Paint fpsMeterTextPaint;
     private boolean fpsMeterEnabled = true;
     private float fps = 0;
@@ -75,14 +76,19 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private volatile OptimizedRotation optimizedViewRotation;
     private volatile OpenCvCamera.ViewportRenderer renderer = OpenCvCamera.ViewportRenderer.SOFTWARE;
     private volatile OpenCvCamera.ViewportRenderingPolicy renderingPolicy = OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY;
+    private volatile boolean isRecording;
 
     public OpenCvViewport(Context context, OnClickListener onClickListener)
     {
         super(context);
 
-        fpsMeterBgPaint = new Paint();
-        fpsMeterBgPaint.setColor(Color.rgb(102, 20, 68));
-        fpsMeterBgPaint.setStyle(Paint.Style.FILL);
+        fpsMeterNormalBgPaint = new Paint();
+        fpsMeterNormalBgPaint.setColor(Color.rgb(102, 20, 68));
+        fpsMeterNormalBgPaint.setStyle(Paint.Style.FILL);
+
+        fpsMeterRecordingPaint = new Paint();
+        fpsMeterRecordingPaint.setColor(Color.rgb(255, 0, 0));
+        fpsMeterRecordingPaint.setStyle(Paint.Style.FILL);
 
         fpsMeterTextPaint = new Paint();
         fpsMeterTextPaint.setColor(Color.WHITE);
@@ -145,6 +151,14 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
             {
                 this.renderer = renderer;
             }
+        }
+    }
+
+    public void setRecording(boolean recording)
+    {
+        synchronized (syncObj)
+        {
+            isRecording = recording;
         }
     }
 
@@ -594,7 +608,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                             if(canvas != null)
                             {
                                 canvas.drawColor(Color.rgb(255, 166, 0));
-                                canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterBgPaint);
+                                canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterNormalBgPaint);
                                 canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
                                 swapBuffer(canvas);
                             }
@@ -824,7 +838,14 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     void drawStats(Canvas canvas, Rect rect)
     {
         // Draw the purple rectangle
-        canvas.drawRect(rect, fpsMeterBgPaint);
+        if(isRecording)
+        {
+            canvas.drawRect(rect, fpsMeterRecordingPaint);
+        }
+        else
+        {
+            canvas.drawRect(rect, fpsMeterNormalBgPaint);
+        }
 
         // Some formatting stuff
         int statBoxLTxtStart = rect.left+statBoxLTxtMargin;

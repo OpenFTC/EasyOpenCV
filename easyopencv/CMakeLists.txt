@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+set (CMAKE_CXX_STANDARD 11)
+
 # Specifies a library name, specifies whether the library is STATIC or
 # SHARED, and provides relative paths to the source code. You can
 # define multiple libraries by adding multiple add_library() commands,
@@ -18,7 +20,8 @@ add_library( # Specifies the name of the library.
 
              # Provides a relative path to your source file(s).
              src/main/cpp/webcam_jni.cpp
-             src/main/cpp/camera2_jni.cpp        )
+             src/main/cpp/camera2_jni.cpp
+             src/main/cpp/camera_base_jni.cpp)
 
 #########################################################
 # You must clone OpenCv-Repackaged into the same parent #
@@ -40,4 +43,6 @@ set_target_properties(openCvNative PROPERTIES IMPORTED_LOCATION
 # linking libs
 target_link_libraries(
         EasyOpenCV
-        openCvNative)
+        openCvNative
+        log
+        android)

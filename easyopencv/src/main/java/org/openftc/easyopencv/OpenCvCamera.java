@@ -296,4 +296,25 @@ public interface OpenCvCamera extends CameraStreamSource
      *         could achieve.
      */
     int getCurrentPipelineMaxFps();
+
+    /***
+     * Start recording the output of the camera's current pipeline
+     * (If no pipeline is set, then the plain camera image is recorded)
+     * A streaming session must be in flight before this can be called.
+     * The recording will be automatically stopped when the streaming
+     * session is stopped (whether that be manually or automatically at
+     * the end of the OpMode), but can also be stopped independently by
+     * calling {@link #stopRecordingPipeline()}
+     *
+     * @param parameters the parameters which define how the recording should done
+     * @throws IllegalStateException if called before streaming is started
+     * @throws IllegalStateException if recording was started previously
+     */
+    void startRecordingPipeline(PipelineRecordingParameters parameters);
+
+    /***
+     * Stops recording the output of the camera's current pipeline,
+     * if a recording session is currently active.
+     */
+    void stopRecordingPipeline();
 }

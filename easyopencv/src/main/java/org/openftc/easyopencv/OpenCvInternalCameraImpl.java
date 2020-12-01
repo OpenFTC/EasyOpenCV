@@ -123,6 +123,12 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     }
 
     @Override
+    protected boolean isStreaming()
+    {
+        return isStreaming;
+    }
+
+    @Override
     public synchronized void openCameraDevice()
     {
         if(hasBeenCleanedUp())
