@@ -83,7 +83,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private Mat rotatedMat = new Mat();
     private Mat matToUseIfPipelineReturnedCropped;
     private Mat croppedColorCvtedMat = new Mat();
-    private Scalar brown = new Scalar(82, 61, 46);
+    private Scalar brown = new Scalar(82, 61, 46, 255);
     private OpModeNotificationsForOrientation opModeNotificationsForOrientation= new OpModeNotificationsForOrientation();
     private ComponentCallbacksForRotation componentCallbacksForRotation = new ComponentCallbacksForRotation();
     private volatile boolean hasBeenCleanedUp = false;
