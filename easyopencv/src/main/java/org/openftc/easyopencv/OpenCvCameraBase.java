@@ -694,10 +694,12 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         {
             if(!cameraOrientationIsTiedToDeviceOrientation())
             {
-                throw new OpenCvCameraException("Setting viewport rendering policy is not applicable for this type of camera");
+                RobotLog.addGlobalWarningMessage("Setting viewport rendering policy is not applicable for this type of camera - ignoring.");
             }
-
-            viewport.setRenderingPolicy(policy);
+            else
+            {
+                viewport.setRenderingPolicy(policy);
+            }
         }
     }
 
