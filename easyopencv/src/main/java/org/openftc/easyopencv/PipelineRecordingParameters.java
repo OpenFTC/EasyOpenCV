@@ -41,7 +41,6 @@ public class PipelineRecordingParameters
     {
         H264(MediaRecorder.VideoEncoder.H264),
         H263(MediaRecorder.VideoEncoder.H263),
-        HEVC(MediaRecorder.VideoEncoder.HEVC),
         VP8(MediaRecorder.VideoEncoder.VP8),
         MPEG_4_SP(MediaRecorder.VideoEncoder.MPEG_4_SP);
 
@@ -56,7 +55,6 @@ public class PipelineRecordingParameters
     public enum OutputFormat
     {
         MPEG_4(MediaRecorder.OutputFormat.MPEG_4),
-        MPEG_2_TS(MediaRecorder.OutputFormat.MPEG_2_TS),
         THREE_GPP(MediaRecorder.OutputFormat.THREE_GPP),
         WEBM(MediaRecorder.OutputFormat.WEBM);
 
