@@ -59,7 +59,7 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.4.1'
+            implementation 'org.openftc:easyopencv:1.4.2'
          }
          
 6. Open the `build.common.gradle` file, and find the line `minSdkVersion 19`, and replace it with `minSdkVersion 23`
@@ -74,6 +74,24 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 
 ## Changelog:
+
+### v1.4.2
+
+ - Add ability to set FocusMode to Internal camera v1 API
+ - General improvements to Internal camera v2 API
+     - Make startStreaming() check to make sure camera is opened
+     - Make startStreaming() check to make sure requested resolution is supported
+     - Fix potential failure to release mutex
+     - Cleaned up the conversion of raw camera data into the Mat by using some native C++ code
+ - Viewport improvements
+     - Image is now centered inside the SurfaceView
+     - Unused space of the surface view is set to the same color as the activity background color
+     - Added optional GPU-accelerated rendering mode for viewport
+     - Warn instead of throwing when setting viewport rendering policy for webcams
+ - Optimized webcam frame delivery by using some native C++ code to avoid unnecessary hidden `memcpy` operations
+ - Add API for recording pipelines to a video file
+     - This is a **BETA** API and may be unstable, and subject to change! Caveat emptor.
+ - Fix memory leak detector to trip only after settle delay, instead of only before settle delay.
 
 ### v1.4.1
 
