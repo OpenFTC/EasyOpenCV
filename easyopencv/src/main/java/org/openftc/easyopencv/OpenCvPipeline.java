@@ -39,8 +39,8 @@ public abstract class OpenCvPipeline
 {
     private boolean isFirstFrame = true;
     private static final Semaphore saveSemaphore = new Semaphore(5);
-    private static final String savePath = "/sdcard/EasyOpenCV";
-
+    private static final String defaultSavePath = "/sdcard/EasyOpenCV";
+    private final String savePath;
     private long firstFrameTimestamp;
     protected boolean MEMLEAK_DETECTION_ENABLED = true;
     protected int MEMLEAK_THRESHOLD_MB = 100;
@@ -56,19 +56,26 @@ public abstract class OpenCvPipeline
     private String lastLeakMsg = "";
     private long lastLeakMsgUpdateTime;
 
-    public OpenCvPipeline()
+    public GameChangersPipeline(String savePath)
     {
+        this.savePath = savePath;
+
         synchronized (saveSemaphore)
         {
-            File saveDir = new File(savePath);
+            File saveDir = new File(this.savePath);
 
             if(!saveDir.exists())
             {
-                saveDir.mkdir();
+                saveDir.mkdirs();
             }
         }
     }
 
+    public GameChangersPipeline()
+    {
+        this(defaultSavePath);
+    }
+    
     Mat processFrameInternal(Mat input)
     {
         if(isFirstFrame)
