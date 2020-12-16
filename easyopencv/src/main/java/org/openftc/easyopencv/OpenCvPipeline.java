@@ -56,7 +56,7 @@ public abstract class OpenCvPipeline
     private String lastLeakMsg = "";
     private long lastLeakMsgUpdateTime;
 
-    public OpenCVPipeline(String savePath)
+    public OpenCvPipeline(String savePath)
     {
         this.savePath = savePath;
 
@@ -71,7 +71,7 @@ public abstract class OpenCvPipeline
         }
     }
 
-    public OpenCVPipeline()
+    public OpenCvPipeline()
     {
         this(defaultSavePath);
     }
