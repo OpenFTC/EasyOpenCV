@@ -24,6 +24,8 @@ package org.openftc.easyopencv;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraControls;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
 
 public interface OpenCvWebcam extends OpenCvCamera
 {
@@ -46,4 +48,24 @@ public interface OpenCvWebcam extends OpenCvCamera
      * @return the FocusControl for this webcam
      */
     FocusControl getFocusControl();
+
+    /***
+     * Gets the {@link PtzControl} for this webcam.
+     * Please see that interface's javadoc for how to use
+     * it. It is an interface provided directly by the SDK
+     * UVC driver, not EasyOpenCV.
+     *
+     * @return the PtzControl for this webcam
+     */
+    PtzControl getPtzControl();
+
+    /***
+     * Gets the {@link GainControl} for this webcam.
+     * Please see that interface's javadoc for how to use
+     * it. It is an interface provided directly by the SDK
+     * UVC driver, not EasyOpenCV.
+     *
+     * @return the GainControl for this webcam
+     */
+    GainControl getGainControl();
 }

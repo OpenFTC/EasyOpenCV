@@ -53,6 +53,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.CameraControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
 import org.firstinspires.ftc.robotcore.internal.camera.ImageFormatMapper;
 import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
@@ -90,6 +92,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private volatile boolean hasSeenFrame = false;
     private ExposureControl exposureControl;
     private FocusControl focusControl;
+    private PtzControl ptzControl;
+    private GainControl gainControl;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -141,6 +145,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
                         exposureControl = camera.getControl(ExposureControl.class);
                         focusControl = camera.getControl(FocusControl.class);
+                        ptzControl = camera.getControl(PtzControl.class);
+                        gainControl = camera.getControl(GainControl.class);
                     }
                     else //Opening failed! :(
                     {
@@ -536,6 +542,28 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
 
         return focusControl;
+    }
+
+    @Override
+    public PtzControl getPtzControl()
+    {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("getPtzControl() called, but camera is not opened!");
+        }
+
+        return ptzControl;
+    }
+
+    @Override
+    public GainControl getGainControl()
+    {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("getGainControl() called, but camera is not opened!");
+        }
+
+        return gainControl;
     }
 
     public static native void setMatDataPtr(long matPtr, long dataPtr);
