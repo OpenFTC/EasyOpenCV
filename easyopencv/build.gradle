@@ -58,7 +58,7 @@ android {
 dependencies {
     //compileOnly fileTree(include: ['*.aar'], dir: '../libs')
     api 'org.openftc:opencv-repackaged:4.1.0-C'
-    compileOnly 'org.firstinspires.ftc:RobotCore:6.0.1'
+    compileOnly 'org.firstinspires.ftc:RobotCore:6.1.1'
     compileOnly 'com.android.support:support-annotations:28.0.0'
 }
 
