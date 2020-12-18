@@ -518,7 +518,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             setMatDataPtr(ptrNativeExtSourceRawSensorMat, cameraFrame.getImageBuffer());
             colorConversion(ptrNativeExtSourceRawSensorMat, rgbMat.nativeObj);
 
-            handleFrame(rgbMat);
+            handleFrame(rgbMat, cameraFrame.getCaptureTime());
         }
     }
 

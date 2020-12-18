@@ -405,11 +405,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    protected synchronized void handleFrame(Mat frame)
+    protected synchronized void handleFrame(Mat frame, long timestamp)
     {
         try
         {
-            handleFrameUserCrashable(frame);
+            handleFrameUserCrashable(frame, timestamp);
         }
         catch (Exception e)
         {
@@ -417,7 +417,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    protected synchronized void handleFrameUserCrashable(Mat frame)
+    protected synchronized void handleFrameUserCrashable(Mat frame, long timestamp)
     {
         msFrameIntervalRollingAverage.add(timer.milliseconds());
         timer.reset();
@@ -453,6 +453,11 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
         if(pipeline != null)
         {
+            if(pipeline instanceof TimestampedOpenCvPipeline)
+            {
+                ((TimestampedOpenCvPipeline) pipeline).setTimestamp(timestamp);
+            }
+
             long pipelineStart = System.currentTimeMillis();
             userProcessedFrame = pipeline.processFrameInternal(frame);
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);

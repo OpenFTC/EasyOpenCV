@@ -38,6 +38,8 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import com.qualcomm.robotcore.util.RobotLog;
+
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -77,6 +79,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     ReentrantLock sync = new ReentrantLock();
     final static String TAG = "OpenCvInternalCamera2";
 
+    private boolean sensorTimestampsAreRealtime = false;
 
     @SuppressLint("WrongConstant")
     public OpenCvInternalCamera2Impl(OpenCvInternalCamera2.CameraDirection direction)
@@ -186,6 +189,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                 cameraOpenedLatch = new CountDownLatch(1);
                 cameraCharacteristics = cameraManager.getCameraCharacteristics(camId);
                 cameraManager.openCamera(camId, mStateCallback, cameraHardwareHandler);
+                sensorTimestampsAreRealtime = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) == CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME;
+                RobotLog.vv("OpenCvInternalCamera2Impl", "Camera sensor timestamps are realtime: %b", sensorTimestampsAreRealtime);
 
                 cameraOpenedLatch.await();
             }
@@ -497,7 +502,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     };
 
     /* CALLED WITH 'sync' held!! */
-    private void onPreviewFrame(Image image)
+    private void onPreviewFrame(Image image, long callbackTimestamp)
     {
         notifyStartOfFrameProcessing();
 
@@ -511,7 +516,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         colorConversion(planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
         image.close();
 
-        handleFrame(rgbMat);
+        handleFrame(rgbMat, sensorTimestampsAreRealtime ? image.getTimestamp() : callbackTimestamp);
     }
 
     private void startFrameWorkerHandlerThread()
@@ -575,6 +580,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     public void onImageAvailable(ImageReader reader)
     {
+        long callbackTimestamp = System.nanoTime();
+
         try
         {
             /*
@@ -602,7 +609,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
                      */
                     try
                     {
-                        onPreviewFrame(image);
+                        onPreviewFrame(image, callbackTimestamp);
                     }
                     catch (IllegalStateException e)
                     {

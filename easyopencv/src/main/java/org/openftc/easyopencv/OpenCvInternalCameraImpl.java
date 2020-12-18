@@ -385,6 +385,8 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     @Override
     public synchronized void onPreviewFrame(byte[] data, Camera camera)
     {
+        long callbackTimestamp = System.nanoTime();
+
         notifyStartOfFrameProcessing();
 
         /*
@@ -401,7 +403,7 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             rawSensorMat.put(0,0,data);
 
             Imgproc.cvtColor(rawSensorMat, rgbMat, Imgproc.COLOR_YUV2RGBA_NV21, 4);
-            handleFrame(rgbMat);
+            handleFrame(rgbMat, callbackTimestamp);
 
             if(camera != null)
             {
