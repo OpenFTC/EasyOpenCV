@@ -23,11 +23,6 @@ package org.openftc.easyopencv;
 
 import android.os.Debug;
 
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.util.MovingStatistics;
-
-import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
-import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -39,7 +34,7 @@ public abstract class OpenCvPipeline
 {
     private boolean isFirstFrame = true;
     private static final Semaphore saveSemaphore = new Semaphore(5);
-    private static final String savePath = "/sdcard/EasyOpenCV";
+    private static final String defaultSavePath = "/sdcard/EasyOpenCV";
 
     private long firstFrameTimestamp;
     protected boolean MEMLEAK_DETECTION_ENABLED = true;
@@ -60,7 +55,7 @@ public abstract class OpenCvPipeline
     {
         synchronized (saveSemaphore)
         {
-            File saveDir = new File(savePath);
+            File saveDir = new File(defaultSavePath);
 
             if(!saveDir.exists())
             {
@@ -154,8 +149,7 @@ public abstract class OpenCvPipeline
 
     public void init(Mat mat) {}
 
-    // example usage: saveMatToDisk(input, "EOCV_frame");
-    public void saveMatToDisk(Mat mat, final String filename)
+    public void saveMatToDiskFullPath(Mat mat, final String fullPath)
     {
         try
         {
@@ -177,7 +171,7 @@ public abstract class OpenCvPipeline
                 try
                 {
                     Imgproc.cvtColor(clone, clone, Imgproc.COLOR_RGB2BGR);
-                    Imgcodecs.imwrite(String.format("%s/%s.png", savePath, filename), clone);
+                    Imgcodecs.imwrite(fullPath, clone);
                 }
                 catch (Exception e)
                 {
@@ -190,5 +184,11 @@ public abstract class OpenCvPipeline
                 }
             }
         }).start();
+    }
+
+    // example usage: saveMatToDisk(input, "EOCV_frame");
+    public void saveMatToDisk(Mat mat, final String filename)
+    {
+        saveMatToDiskFullPath(mat, String.format("%s/%s.png", defaultSavePath, filename));
     }
 }
