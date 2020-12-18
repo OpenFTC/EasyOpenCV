@@ -22,6 +22,7 @@
 package org.openftc.easyopencv;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.support.annotation.IdRes;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,9 +42,22 @@ import java.util.concurrent.CountDownLatch;
 
 class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
 {
+    private static int appVersion = -1;
+    private static int sdk6_1_versionCode = 39;
+    private static String sdk_6_1 = "6.1";
+
     static void init()
     {
         OpenCvCameraFactory.theInstance = new OpenCvCameraFactoryImpl();
+
+        try
+        {
+            appVersion = AppUtil.getDefContext().getPackageManager().getPackageInfo(AppUtil.getDefContext().getPackageName(), 0).versionCode;
+        }
+        catch (PackageManager.NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @OpModeRegistrar
@@ -52,45 +66,60 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
         init();
     }
 
+    private void throwIfIncompatibleSdkVersion()
+    {
+        if(appVersion < sdk6_1_versionCode)
+        {
+            throw new RuntimeException(String.format("EasyOpenCV v%s is only compatible with SDK v%s or greater!", BuildConfig.VERSION_NAME, sdk_6_1));
+        }
+    }
+
     @Override
     public OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvInternalCameraImpl(direction);
     }
 
     @Override
     public OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, int containerId)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvInternalCameraImpl(direction, containerId);
     }
 
     @Override
     public OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvInternalCamera2Impl(direction);
     }
 
     @Override
     public OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction, int containerId)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvInternalCamera2Impl(direction, containerId);
     }
 
     @Override
     public OpenCvWebcam createWebcam(WebcamName webcamName)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvWebcamImpl(webcamName);
     }
 
     @Override
     public OpenCvWebcam createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
     {
+        throwIfIncompatibleSdkVersion();
         return new OpenCvWebcamImpl(webcamName, viewportContainerId);
     }
 
     @Override
     public OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names)
     {
+        throwIfIncompatibleSdkVersion();
         SwitchableCameraName cameraName = ClassFactory.getInstance().getCameraManager().nameForSwitchableCamera(names);
 
         return new OpenCvSwitchableWebcamImpl(cameraName);
@@ -99,6 +128,7 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     @Override
     public OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names)
     {
+        throwIfIncompatibleSdkVersion();
         SwitchableCameraName cameraName = ClassFactory.getInstance().getCameraManager().nameForSwitchableCamera(names);
 
         return new OpenCvSwitchableWebcamImpl(cameraName, viewportContainerId);
@@ -107,6 +137,8 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     @Override
     public int[] splitLayoutForMultipleViewports(final int containerId, final int numViewports, final ViewportSplitMethod viewportSplitMethod)
     {
+        throwIfIncompatibleSdkVersion();
+
         if(numViewports < 2)
         {
             throw new IllegalArgumentException("Layout requested to be split for <2 viewports!");
