@@ -1,6 +1,6 @@
 # EasyOpenCV
 
-NOTE: SDK v5.1+ is required to use this
+NOTE: SDK v6.1+ is required to use this
 
 NOTE: an OpenRC-based SDK is NOT required to use this
 
@@ -59,7 +59,7 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.4.2'
+            implementation 'org.openftc:easyopencv:1.4.3'
          }
          
 6. Open the `build.common.gradle` file, and find the line `minSdkVersion 19`, and replace it with `minSdkVersion 23`
@@ -74,6 +74,13 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 
 ## Changelog:
+
+### v1.4.3
+
+ - **IMPORTANT NOTE:** SDK v6.1 or higher is now required!
+ - Add support for additional webcam controls introduced in SDK v6.1
+ - Add `saveMatToDiskFullPath()` method to pipeline class
+ - Add `TimestampedOpenCvPipeline` class which extends `OpenCvPipeline` and delivers capture time timestamps along with frames. See new `TimestampedPipelineExample` file.
 
 ### v1.4.2
 
