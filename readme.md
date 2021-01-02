@@ -66,12 +66,11 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 7. In the same file, `build.common.gradle`, scroll down until you find this part:
 
-    ![img-here](doc/images/build-common-gradle-buildscript.png)
+    <img src="doc/images/build-common-gradle-buildscript.png" width="50%" height="50%">
 
 8. Remove both references to `"arm64-v8a"` described in debug and release blocks, leaving `"armeabi-v7a"` untouched:
 
     ![img-here](doc/images/build-common-gradle-buildscript-remove-arm64.png)
-
 
 \**If you already had arm64 removed no further changes are needed*
 
