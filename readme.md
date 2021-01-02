@@ -72,9 +72,9 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
     ![img-here](doc/images/build-common-gradle-buildscript-remove-arm64.png)
 
-\**If you already had arm64 removed no further changes are needed*
+\**If you already had `"arm64-v8a"` removed, no further changes are needed*
 
-\*\**This step is needed since the OpenCV native library is 32-bits, and by modifying this file will make the application run in 32-bit mode. Otherwise, EasyOpenCV won't be able to load the libary and a warning will be shown when opening the app indicating that OpenCV-enabled OpModes will crash.*
+\*\**This step is needed because the OpenCV native library is compiled for 32-bit, and Android applications cannot load both 32-bit and 64-bit libraries at the same time. Otherwise, EasyOpenCV won't be able to load the libary and a warning will be shown when opening the app indicating that OpenCV-enabled OpModes will crash.*
 
 9. Now perform a Gradle Sync:
 
