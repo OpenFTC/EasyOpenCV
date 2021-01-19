@@ -59,7 +59,7 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 5. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.4.3'
+            implementation 'org.openftc:easyopencv:1.4.4'
          }
          
 6. Open the `build.common.gradle` file, and find the line `minSdkVersion 19`, and replace it with `minSdkVersion 23`
@@ -86,6 +86,10 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 
 ## Changelog:
+
+### v1.4.4
+
+ - Add support for Vuforia passthrough mode, which allows running Vuforia and OpenCV simultaneously on the same camera. Please see [OpenCvAndVuforiaOnSameCameraExample](https://github.com/OpenFTC/EasyOpenCV/blob/master/examples/src/main/java/org/openftc/easyopencv/examples/OpenCvAndVuforiaOnSameCameraExample.java).
 
 ### v1.4.3
 
