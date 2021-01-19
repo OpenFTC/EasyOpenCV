@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 OpenFTC Team
+ * Copyright (c) 2021 OpenFTC Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,7 @@ public class OpenCvAndVuforiaOnSameCameraExample extends LinearOpMode
         parameters.vuforiaLicenseKey = "YOUR VUFORIA KEY HERE";
         parameters.cameraDirection   = VuforiaLocalizer.CameraDirection.BACK;
         // Uncomment this line below to use a webcam
-        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        //parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         // Create a Vuforia passthrough "virtual camera"
