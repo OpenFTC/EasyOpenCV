@@ -19,13 +19,10 @@ allprojects {
     repositories {
         google()
         jcenter()
+        mavenCentral()
 
         maven {
             url 'https://dl.bintray.com/openftc/maven';
-        }
-
-        maven {
-            url 'https://dl.bintray.com/first-tech-challenge/ftcsdk/';
         }
     }
 }
