@@ -136,7 +136,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         if(viewport != null)
         {
-            removeViewportAsync();
+            removeViewportAsync(viewport);
+            viewport = null;
         }
     }
 
@@ -292,7 +293,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    private void removeViewportAsync()
+    private void removeViewportAsync(final View viewport)
     {
         AppUtil.getInstance().runOnUiThread(new Runnable()
         {
@@ -300,7 +301,6 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             public void run()
             {
                 viewportContainerLayout.removeView(viewport);
-                viewport = null;
                 viewportContainerLayout.setVisibility(View.GONE);
             }
         });
