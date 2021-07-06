@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 OpenFTC Team
+ * Copyright (c) 2020 OpenFTC Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,83 +19,84 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
+import org.openftc.easyopencv.OpenCvSwitchableWebcam;
+import org.openftc.easyopencv.OpenCvCamera;
 
-/**
- * In this sample, we demonstrate how to use the {@link OpenCvCameraFactory#splitLayoutForMultipleViewports(int, int, OpenCvCameraFactory.ViewportSplitMethod)}
- * method in order to concurrently display the preview of two cameras, using
- * OpenCV on both.
- */
-@TeleOp
-public class MultipleCameraExample extends LinearOpMode
+public class SwitchableWebcamExample extends LinearOpMode
 {
-    OpenCvCamera phoneCam;
-    OpenCvCamera webcam;
+    WebcamName webcam1;
+    WebcamName webcam2;
+    OpenCvSwitchableWebcam switchableWebcam;
 
     @Override
-    public void runOpMode()
+    public void runOpMode() throws InterruptedException
     {
         /**
          * NOTE: Many comments have been omitted from this sample for the
-         * sake of conciseness. If you're just starting out with EasyOpenCV,
+         * sake of conciseness. If you're just starting out with EasyOpenCv,
          * you should take a look at {@link InternalCamera1Example} or its
          * webcam counterpart, {@link WebcamExample} first.
          */
 
+        webcam1 = hardwareMap.get(WebcamName.class, "Webcam 1");
+        webcam2 = hardwareMap.get(WebcamName.class, "Webcam 2");
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
         /**
-         * This is the only thing you need to do differently when using multiple cameras.
-         * Instead of obtaining the camera monitor view and directly passing that to the
-         * camera constructor, we invoke {@link OpenCvCameraFactory#splitLayoutForMultipleViewports(int, int, OpenCvCameraFactory.ViewportSplitMethod)}
-         * on that view in order to split that view into multiple equal-sized child views,
-         * and then pass those child views to the constructor.
+         * Here we use a special factory method that accepts multiple WebcamName arguments. It returns an
+         * {@link OpenCvSwitchableWebcam} which contains a couple extra methods over simply an {@link OpenCvCamera}.
          */
-        int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
-                .splitLayoutForMultipleViewports(
-                        cameraMonitorViewId, //The container we're splitting
-                        2, //The number of sub-containers to create
-                        OpenCvCameraFactory.ViewportSplitMethod.VERTICALLY); //Whether to split the container vertically or horizontally
+        switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, webcam1, webcam2);
 
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, viewportContainerIds[0]);
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[1]);
-
-        phoneCam.openCameraDevice();
-        webcam.openCameraDevice();
-
-        phoneCam.setPipeline(new UselessGreenBoxDrawingPipeline());
-        webcam.setPipeline(new UselessGreenBoxDrawingPipeline());
-
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-        webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        switchableWebcam.openCameraDevice();
+        switchableWebcam.setPipeline(new SamplePipeline());
+        switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
         waitForStart();
 
         while (opModeIsActive())
         {
-            telemetry.addData("Internal cam FPS", phoneCam.getFps());
-            telemetry.addData("Webcam FPS", webcam.getFps());
+            telemetry.addLine("PRESS A/B TO SWITCH CAMERA\n");
+            telemetry.addData("Frame Count", switchableWebcam.getFrameCount());
+            telemetry.addData("FPS", String.format("%.2f", switchableWebcam.getFps()));
+            telemetry.addData("Total frame time ms", switchableWebcam.getTotalFrameTimeMs());
+            telemetry.addData("Pipeline time ms", switchableWebcam.getPipelineTimeMs());
+            telemetry.addData("Overhead time ms", switchableWebcam.getOverheadTimeMs());
+            telemetry.addData("Theoretical max FPS", switchableWebcam.getCurrentPipelineMaxFps());
             telemetry.update();
+
+            /**
+             * To switch the active camera, simply call
+             * {@link OpenCvSwitchableWebcam#setActiveCamera(WebcamName)}
+             */
+            if(gamepad1.a)
+            {
+                switchableWebcam.setActiveCamera(webcam1);
+            }
+            else if(gamepad1.b)
+            {
+                switchableWebcam.setActiveCamera(webcam2);
+            }
 
             sleep(100);
         }
     }
 
-    class UselessGreenBoxDrawingPipeline extends OpenCvPipeline
+    class SamplePipeline extends OpenCvPipeline
     {
         @Override
         public Mat processFrame(Mat input)

@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;

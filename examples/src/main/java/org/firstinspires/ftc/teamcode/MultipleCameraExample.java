@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 OpenFTC Team
+ * Copyright (c) 2019 OpenFTC Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,11 +19,12 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -31,22 +32,19 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera2;
+import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 /**
- * In this sample, we demonstrate how to use the advanced features provided
- * by the {@link OpenCvInternalCamera2} interface
+ * In this sample, we demonstrate how to use the {@link OpenCvCameraFactory#splitLayoutForMultipleViewports(int, int, OpenCvCameraFactory.ViewportSplitMethod)}
+ * method in order to concurrently display the preview of two cameras, using
+ * OpenCV on both.
  */
 @TeleOp
-public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
+public class MultipleCameraExample extends LinearOpMode
 {
-    /**
-     * NB: we declare our camera as the {@link OpenCvInternalCamera2} type,
-     * as opposed to simply {@link OpenCvCamera}. This allows us to access
-     * the advanced features supported only by the internal camera.
-     */
-    OpenCvInternalCamera2 phoneCam;
+    OpenCvCamera phoneCam;
+    OpenCvCamera webcam;
 
     @Override
     public void runOpMode()
@@ -59,52 +57,46 @@ public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
          */
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera2(OpenCvInternalCamera2.CameraDirection.BACK, cameraMonitorViewId);
+
+        /**
+         * This is the only thing you need to do differently when using multiple cameras.
+         * Instead of obtaining the camera monitor view and directly passing that to the
+         * camera constructor, we invoke {@link OpenCvCameraFactory#splitLayoutForMultipleViewports(int, int, OpenCvCameraFactory.ViewportSplitMethod)}
+         * on that view in order to split that view into multiple equal-sized child views,
+         * and then pass those child views to the constructor.
+         */
+        int[] viewportContainerIds = OpenCvCameraFactory.getInstance()
+                .splitLayoutForMultipleViewports(
+                        cameraMonitorViewId, //The container we're splitting
+                        2, //The number of sub-containers to create
+                        OpenCvCameraFactory.ViewportSplitMethod.VERTICALLY); //Whether to split the container vertically or horizontally
+
+        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, viewportContainerIds[0]);
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[1]);
+
         phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
+        webcam.openCameraDevice();
 
-        /*
-         * Start streaming
-         */
+        phoneCam.setPipeline(new UselessGreenBoxDrawingPipeline());
+        webcam.setPipeline(new UselessGreenBoxDrawingPipeline());
+
         phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-
-        /*
-         * Demonstrate how to turn on the flashlight
-         */
-        phoneCam.setFlashlightEnabled(true);
-
-        /*
-         * Demonstrate how to lock the camera hardware to sending frames at 30FPS
-         */
-        phoneCam.setSensorFps(30);
-
-        /*
-         * Demonstrate how to set some manual sensor controls
-         */
-        phoneCam.setExposureMode(OpenCvInternalCamera2.ExposureMode.MANUAL);
-        phoneCam.setFocusMode(OpenCvInternalCamera2.FocusMode.MANUAL);
-        phoneCam.setFocusDistance(phoneCam.getMinFocusDistance());
-        phoneCam.setExposureFractional(60);
-        phoneCam.setSensorGain(400);
-        phoneCam.setWhiteBalanceMode(OpenCvInternalCamera2.WhiteBalanceMode.INCANDESCENT);
+        webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
         waitForStart();
 
         while (opModeIsActive())
         {
+            telemetry.addData("Internal cam FPS", phoneCam.getFps());
+            telemetry.addData("Webcam FPS", webcam.getFps());
+            telemetry.update();
+
             sleep(100);
         }
     }
 
-    class UselessColorBoxDrawingPipeline extends OpenCvPipeline
+    class UselessGreenBoxDrawingPipeline extends OpenCvPipeline
     {
-        Scalar color;
-
-        UselessColorBoxDrawingPipeline(Scalar color)
-        {
-            this.color = color;
-        }
-
         @Override
         public Mat processFrame(Mat input)
         {
@@ -116,7 +108,7 @@ public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
                     new Point(
                             input.cols()*(3f/4f),
                             input.rows()*(3f/4f)),
-                    color, 4);
+                    new Scalar(0, 255, 0), 4);
 
             return input;
         }

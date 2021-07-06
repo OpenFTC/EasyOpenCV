@@ -19,85 +19,92 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvInternalCamera2;
 import org.openftc.easyopencv.OpenCvPipeline;
-import org.openftc.easyopencv.OpenCvSwitchableWebcam;
-import org.openftc.easyopencv.OpenCvCamera;
 
-public class SwitchableWebcamExample extends LinearOpMode
+/**
+ * In this sample, we demonstrate how to use the advanced features provided
+ * by the {@link OpenCvInternalCamera2} interface
+ */
+@TeleOp
+public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
 {
-    WebcamName webcam1;
-    WebcamName webcam2;
-    OpenCvSwitchableWebcam switchableWebcam;
+    /**
+     * NB: we declare our camera as the {@link OpenCvInternalCamera2} type,
+     * as opposed to simply {@link OpenCvCamera}. This allows us to access
+     * the advanced features supported only by the internal camera.
+     */
+    OpenCvInternalCamera2 phoneCam;
 
     @Override
-    public void runOpMode() throws InterruptedException
+    public void runOpMode()
     {
         /**
          * NOTE: Many comments have been omitted from this sample for the
-         * sake of conciseness. If you're just starting out with EasyOpenCv,
+         * sake of conciseness. If you're just starting out with EasyOpenCV,
          * you should take a look at {@link InternalCamera1Example} or its
          * webcam counterpart, {@link WebcamExample} first.
          */
 
-        webcam1 = hardwareMap.get(WebcamName.class, "Webcam 1");
-        webcam2 = hardwareMap.get(WebcamName.class, "Webcam 2");
-
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera2(OpenCvInternalCamera2.CameraDirection.BACK, cameraMonitorViewId);
+        phoneCam.openCameraDevice();
+        phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
 
-        /**
-         * Here we use a special factory method that accepts multiple WebcamName arguments. It returns an
-         * {@link OpenCvSwitchableWebcam} which contains a couple extra methods over simply an {@link OpenCvCamera}.
+        /*
+         * Start streaming
          */
-        switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, webcam1, webcam2);
+        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
-        switchableWebcam.openCameraDevice();
-        switchableWebcam.setPipeline(new SamplePipeline());
-        switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        /*
+         * Demonstrate how to turn on the flashlight
+         */
+        phoneCam.setFlashlightEnabled(true);
+
+        /*
+         * Demonstrate how to lock the camera hardware to sending frames at 30FPS
+         */
+        phoneCam.setSensorFps(30);
+
+        /*
+         * Demonstrate how to set some manual sensor controls
+         */
+        phoneCam.setExposureMode(OpenCvInternalCamera2.ExposureMode.MANUAL);
+        phoneCam.setFocusMode(OpenCvInternalCamera2.FocusMode.MANUAL);
+        phoneCam.setFocusDistance(phoneCam.getMinFocusDistance());
+        phoneCam.setExposureFractional(60);
+        phoneCam.setSensorGain(400);
+        phoneCam.setWhiteBalanceMode(OpenCvInternalCamera2.WhiteBalanceMode.INCANDESCENT);
 
         waitForStart();
 
         while (opModeIsActive())
         {
-            telemetry.addLine("PRESS A/B TO SWITCH CAMERA\n");
-            telemetry.addData("Frame Count", switchableWebcam.getFrameCount());
-            telemetry.addData("FPS", String.format("%.2f", switchableWebcam.getFps()));
-            telemetry.addData("Total frame time ms", switchableWebcam.getTotalFrameTimeMs());
-            telemetry.addData("Pipeline time ms", switchableWebcam.getPipelineTimeMs());
-            telemetry.addData("Overhead time ms", switchableWebcam.getOverheadTimeMs());
-            telemetry.addData("Theoretical max FPS", switchableWebcam.getCurrentPipelineMaxFps());
-            telemetry.update();
-
-            /**
-             * To switch the active camera, simply call
-             * {@link OpenCvSwitchableWebcam#setActiveCamera(WebcamName)}
-             */
-            if(gamepad1.a)
-            {
-                switchableWebcam.setActiveCamera(webcam1);
-            }
-            else if(gamepad1.b)
-            {
-                switchableWebcam.setActiveCamera(webcam2);
-            }
-
             sleep(100);
         }
     }
 
-    class SamplePipeline extends OpenCvPipeline
+    class UselessColorBoxDrawingPipeline extends OpenCvPipeline
     {
+        Scalar color;
+
+        UselessColorBoxDrawingPipeline(Scalar color)
+        {
+            this.color = color;
+        }
+
         @Override
         public Mat processFrame(Mat input)
         {
@@ -109,7 +116,7 @@ public class SwitchableWebcamExample extends LinearOpMode
                     new Point(
                             input.cols()*(3f/4f),
                             input.rows()*(3f/4f)),
-                    new Scalar(0, 255, 0), 4);
+                    color, 4);
 
             return input;
         }
