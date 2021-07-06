@@ -67,6 +67,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private Paint fpsMeterNormalBgPaint;
     private Paint fpsMeterRecordingPaint;
     private Paint fpsMeterTextPaint;
+    private Paint paintBlackBackground;
     private boolean fpsMeterEnabled = true;
     private float fps = 0;
     private int pipelineMs = 0;
@@ -93,6 +94,10 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
         fpsMeterTextPaint = new Paint();
         fpsMeterTextPaint.setColor(Color.WHITE);
         fpsMeterTextPaint.setTextSize(30);
+
+        paintBlackBackground = new Paint();
+        paintBlackBackground.setColor(Color.BLACK);
+        paintBlackBackground.setStyle(Paint.Style.FILL);
 
         getHolder().addCallback(this);
 
@@ -701,14 +706,22 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 int topLeftY = origin_y + Math.abs(canvasHeight-scaledHeight)/2;
                 y_offset_statbox = Math.abs(canvasHeight-scaledHeight)/2;
 
-                canvas.drawBitmap(
-                        bitmapFromMat,
-                        null,
-                        createRect(
+                Rect rect = createRect(
                                 topLeftX,
                                 topLeftY,
                                 scaledWidth,
-                                scaledHeight),
+                                scaledHeight);
+
+                // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
+                // annotations and doesn't specify alpha 255. This wasn't an issue when we just
+                // painted black behind the entire view, but now that we paint the RC background
+                // color, it is an issue...
+                canvas.drawRect(rect, paintBlackBackground);
+
+                canvas.drawBitmap(
+                        bitmapFromMat,
+                        null,
+                        rect,
                         null
                 );
             }
@@ -725,14 +738,22 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 int topLeftY = origin_y;
                 int topLeftX = origin_x + Math.abs(canvasWidth-scaledWidth)/2;
 
+                Rect rect = createRect(
+                        topLeftX,
+                        topLeftY,
+                        scaledWidth,
+                        scaledHeight);
+
+                // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
+                // annotations and doesn't specify alpha 255. This wasn't an issue when we just
+                // painted black behind the entire view, but now that we paint the RC background
+                // color, it is an issue...
+                canvas.drawRect(rect, paintBlackBackground);
+
                 canvas.drawBitmap(
                         bitmapFromMat,
                         null,
-                        createRect(
-                                topLeftX,
-                                topLeftY,
-                                scaledWidth,
-                                scaledHeight),
+                        rect,
                         null
                 );
             }
@@ -787,11 +808,24 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 int topLeftX = 0 + Math.abs(canvas.getWidth()-scaledWidth)/2;
 
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                Rect rect = createRect(
+                        topLeftX,
+                        topLeftY,
+                        scaledWidth,
+                        scaledHeight);
+
+                // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
+                // annotations and doesn't specify alpha 255. This wasn't an issue when we just
+                // painted black behind the entire view, but now that we paint the RC background
+                // color, it is an issue...
+                canvas.drawRect(rect, paintBlackBackground);
+
                 canvas.drawBitmap(
                         bitmapFromMat,
                         null,
-                        createRect(topLeftX,topLeftY,scaledWidth, scaledHeight),
-                        null);
+                        rect,
+                        null
+                );
             }
 
             /*
@@ -811,11 +845,24 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
                 y_offset_statbox = Math.abs(canvas.getHeight()-scaledHeight)/2;
 
                 //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+                Rect rect = createRect(
+                        topLeftX,
+                        topLeftY,
+                        scaledWidth,
+                        scaledHeight);
+
+                // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
+                // annotations and doesn't specify alpha 255. This wasn't an issue when we just
+                // painted black behind the entire view, but now that we paint the RC background
+                // color, it is an issue...
+                canvas.drawRect(rect, paintBlackBackground);
+
                 canvas.drawBitmap(
                         bitmapFromMat,
                         null,
-                        createRect(topLeftX,topLeftY, scaledWidth, scaledHeight),
-                        null);
+                        rect,
+                        null
+                );
             }
 
             /*
