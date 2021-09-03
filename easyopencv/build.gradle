@@ -13,7 +13,7 @@ android {
         minSdkVersion 23
         targetSdkVersion 23
         versionCode 1
-        versionName "1.4.4"
+        versionName PUBLISH_VERSION
     }
 
     buildTypes {
@@ -62,4 +62,4 @@ dependencies {
     compileOnly 'com.android.support:support-annotations:28.0.0'
 }
 
-apply from: '../release-aar.gradle'
+apply from: '../sonatype-publish.gradle'
