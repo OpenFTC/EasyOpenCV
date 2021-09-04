@@ -33,11 +33,12 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 @TeleOp
 public class WebcamExample extends LinearOpMode
 {
-    OpenCvCamera webcam;
+    OpenCvWebcam webcam;
 
     @Override
     public void runOpMode()
@@ -74,6 +75,7 @@ public class WebcamExample extends LinearOpMode
          *
          * If you really want to open synchronously, the old method is still available.
          */
+        webcam.setMillisecondsPermissionTimeout(2500); // Timeout for obtaining permission is configurable. Set before opening.
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override

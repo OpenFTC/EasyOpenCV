@@ -78,7 +78,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
-    private final int secondsPermissionTimeout = 2;
+    private volatile int millisecondsPermissionTimeout = 2000;
     private final CameraName cameraName;
     private CameraCharacteristics cameraCharacteristics = null;
     protected Camera camera = null;
@@ -137,7 +137,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             {
                 try
                 {
-                    camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
+                    camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(millisecondsPermissionTimeout, TimeUnit.MILLISECONDS), cameraName, null);
 
                     if (camera != null) //Opening succeeded!
                     {
@@ -530,6 +530,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
             handleFrame(rgbMat, cameraFrame.getCaptureTime());
         }
+    }
+
+    @Override
+    public void setMillisecondsPermissionTimeout(int ms)
+    {
+        millisecondsPermissionTimeout = ms;
     }
 
     @Override
