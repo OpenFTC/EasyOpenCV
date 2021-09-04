@@ -60,33 +60,48 @@ public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera2(OpenCvInternalCamera2.CameraDirection.BACK, cameraMonitorViewId);
-        phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
 
-        /*
-         * Start streaming
-         */
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
 
-        /*
-         * Demonstrate how to turn on the flashlight
-         */
-        phoneCam.setFlashlightEnabled(true);
+                /*
+                 * Start streaming
+                 */
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
-        /*
-         * Demonstrate how to lock the camera hardware to sending frames at 30FPS
-         */
-        phoneCam.setSensorFps(30);
+                /*
+                 * Demonstrate how to turn on the flashlight
+                 */
+                phoneCam.setFlashlightEnabled(true);
 
-        /*
-         * Demonstrate how to set some manual sensor controls
-         */
-        phoneCam.setExposureMode(OpenCvInternalCamera2.ExposureMode.MANUAL);
-        phoneCam.setFocusMode(OpenCvInternalCamera2.FocusMode.MANUAL);
-        phoneCam.setFocusDistance(phoneCam.getMinFocusDistance());
-        phoneCam.setExposureFractional(60);
-        phoneCam.setSensorGain(400);
-        phoneCam.setWhiteBalanceMode(OpenCvInternalCamera2.WhiteBalanceMode.INCANDESCENT);
+                /*
+                 * Demonstrate how to lock the camera hardware to sending frames at 30FPS
+                 */
+                phoneCam.setSensorFps(30);
+
+                /*
+                 * Demonstrate how to set some manual sensor controls
+                 */
+                phoneCam.setExposureMode(OpenCvInternalCamera2.ExposureMode.MANUAL);
+                phoneCam.setFocusMode(OpenCvInternalCamera2.FocusMode.MANUAL);
+                phoneCam.setFocusDistance(phoneCam.getMinFocusDistance());
+                phoneCam.setExposureFractional(60);
+                phoneCam.setSensorGain(400);
+                phoneCam.setWhiteBalanceMode(OpenCvInternalCamera2.WhiteBalanceMode.INCANDESCENT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 

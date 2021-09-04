@@ -58,7 +58,6 @@ public class TrackerApiExample extends LinearOpMode
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        phoneCam.openCameraDevice();
 
         /**
          * Create an instance of the {@link OpenCvTrackerApiPipeline}
@@ -68,7 +67,22 @@ public class TrackerApiExample extends LinearOpMode
         trackerApiPipeline = new OpenCvTrackerApiPipeline();
         phoneCam.setPipeline(trackerApiPipeline);
 
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         /*
          * Create some trackers we want to run

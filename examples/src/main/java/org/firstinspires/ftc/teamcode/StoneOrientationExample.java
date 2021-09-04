@@ -80,6 +80,14 @@ public class StoneOrientationExample extends LinearOpMode
                 pipeline = new StoneOrientationAnalysisPipeline();
                 phoneCam.setPipeline(pipeline);
             }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
         });
 
         // Tell telemetry to update faster than the default 250ms period :)

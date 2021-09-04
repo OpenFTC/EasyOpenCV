@@ -74,14 +74,41 @@ public class MultipleCameraExample extends LinearOpMode
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, viewportContainerIds[0]);
         webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), viewportContainerIds[1]);
 
-        phoneCam.openCameraDevice();
-        webcam.openCameraDevice();
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                phoneCam.setPipeline(new UselessGreenBoxDrawingPipeline());
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
 
-        phoneCam.setPipeline(new UselessGreenBoxDrawingPipeline());
-        webcam.setPipeline(new UselessGreenBoxDrawingPipeline());
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-        webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                webcam.setPipeline(new UselessGreenBoxDrawingPipeline());
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 

@@ -62,6 +62,14 @@ public class TimestampedPipelineExample extends LinearOpMode
             {
                 camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
             }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
         });
 
         telemetry.setMsTransmissionInterval(50);

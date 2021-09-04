@@ -124,9 +124,24 @@ public class MultipleCameraExampleOpenCvAlongsideVuforia extends LinearOpMode
          * Setup OpenCV on the phone camera
          */
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.FRONT, viewportContainerIds[1]);
-        phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new SamplePipeline());
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                phoneCam.setPipeline(new SamplePipeline());
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 

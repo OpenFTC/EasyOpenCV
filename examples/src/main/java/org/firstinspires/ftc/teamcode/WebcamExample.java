@@ -97,6 +97,14 @@ public class WebcamExample extends LinearOpMode
                  */
                 webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
         });
 
         telemetry.addLine("Waiting for start");

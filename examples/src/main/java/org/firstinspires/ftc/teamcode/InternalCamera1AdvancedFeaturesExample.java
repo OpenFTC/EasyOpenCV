@@ -60,44 +60,59 @@ public class InternalCamera1AdvancedFeaturesExample extends LinearOpMode
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
 
-        /*
-         * We use the most verbose version of #startStreaming(), which allows us to specify whether we want to use double
-         * (default) or single buffering. See the JavaDoc for this method for more details
-         */
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT, OpenCvInternalCamera.BufferMethod.DOUBLE);
-
-        /*
-         * Demonstrate how to turn on the flashlight
-         */
-        phoneCam.setFlashlightEnabled(true);
-
-        /*
-         * Demonstrate how to use the zoom. Here we zoom
-         * in as much as is supported.
-         */
-        phoneCam.setZoom(phoneCam.getMaxSupportedZoom());
-
-        /*
-         * Demonstrate how to set the recording hint on the
-         * camera hardware. See the JavDoc for this method
-         * for more details.
-         */
-        phoneCam.setRecordingHint(true);
-
-        /*
-         * Demonstrate how to lock the camera hardware to sending frames at 30FPS, if it supports that
-         */
-        for (OpenCvInternalCamera.FrameTimingRange r : phoneCam.getFrameTimingRangesSupportedByHardware())
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
-            if(r.max == 30 && r.min == 30)
+            @Override
+            public void onOpened()
             {
-                phoneCam.setHardwareFrameTimingRange(r);
-                break;
+                phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
+
+                /*
+                 * We use the most verbose version of #startStreaming(), which allows us to specify whether we want to use double
+                 * (default) or single buffering. See the JavaDoc for this method for more details
+                 */
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT, OpenCvInternalCamera.BufferMethod.DOUBLE);
+
+                /*
+                 * Demonstrate how to turn on the flashlight
+                 */
+                phoneCam.setFlashlightEnabled(true);
+
+                /*
+                 * Demonstrate how to use the zoom. Here we zoom
+                 * in as much as is supported.
+                 */
+                phoneCam.setZoom(phoneCam.getMaxSupportedZoom());
+
+                /*
+                 * Demonstrate how to set the recording hint on the
+                 * camera hardware. See the JavDoc for this method
+                 * for more details.
+                 */
+                phoneCam.setRecordingHint(true);
+
+                /*
+                 * Demonstrate how to lock the camera hardware to sending frames at 30FPS, if it supports that
+                 */
+                for (OpenCvInternalCamera.FrameTimingRange r : phoneCam.getFrameTimingRangesSupportedByHardware())
+                {
+                    if(r.max == 30 && r.min == 30)
+                    {
+                        phoneCam.setHardwareFrameTimingRange(r);
+                        break;
+                    }
+                }
             }
-        }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 
