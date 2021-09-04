@@ -124,13 +124,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     }
 
     @Override
-    public void openCameraDevice() /*throws CameraException*/
+    public int openCameraDevice() /*throws CameraException*/
     {
         synchronized (sync)
         {
             if(hasBeenCleanedUp())
             {
-                return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+                return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
             }
 
             if(camera == null)
@@ -150,7 +150,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     }
                     else //Opening failed! :(
                     {
-                        cameraCharacteristics = cameraName.getCameraCharacteristics();
+                        return CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
                     }
                 }
                 catch (Exception e)
@@ -159,11 +159,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     throw e;
                 }
             }
+
+            return 0;
         }
     }
 
     @Override
-    public void openCameraDeviceAsync(final AsyncCameraOpenListener asyncCameraOpenListener)
+    public void openCameraDeviceAsync(final AsyncCameraOpenListener callback)
     {
         new Thread(new Runnable()
         {
@@ -174,8 +176,16 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                 {
                     try
                     {
-                        openCameraDevice();
-                        asyncCameraOpenListener.onOpened();
+                        int retCode = openCameraDevice();
+
+                        if(retCode < 0)
+                        {
+                            callback.onError(retCode);
+                        }
+                        else
+                        {
+                            callback.onOpened();
+                        }
                     }
                     catch (Exception e)
                     {

@@ -155,9 +155,10 @@ class OpenCvVuforiaPassthroughImpl extends OpenCvCameraBase
     }
 
     @Override
-    public synchronized void openCameraDevice()
+    public synchronized int openCameraDevice()
     {
         // nothing to do really
+        return 0;
     }
 
     @Override
@@ -172,8 +173,16 @@ class OpenCvVuforiaPassthroughImpl extends OpenCvCameraBase
                 {
                     try
                     {
-                        openCameraDevice();
-                        asyncCameraOpenListener.onOpened();
+                        int retCode = openCameraDevice();
+
+                        if(retCode < 0)
+                        {
+                            asyncCameraOpenListener.onError(retCode);
+                        }
+                        else
+                        {
+                            asyncCameraOpenListener.onOpened();
+                        }
                     }
                     catch (Exception e)
                     {
