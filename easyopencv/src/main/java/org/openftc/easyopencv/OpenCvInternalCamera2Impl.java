@@ -514,9 +514,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         Image.Plane[] planes = image.getPlanes();
         colorConversion(planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
+        long imgTimestamp = image.getTimestamp();
         image.close();
 
-        handleFrame(rgbMat, sensorTimestampsAreRealtime ? image.getTimestamp() : callbackTimestamp);
+        handleFrame(rgbMat, sensorTimestampsAreRealtime ? imgTimestamp : callbackTimestamp);
     }
 
     private void startFrameWorkerHandlerThread()
