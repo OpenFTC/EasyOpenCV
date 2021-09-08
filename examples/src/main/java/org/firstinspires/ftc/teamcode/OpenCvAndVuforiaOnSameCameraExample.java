@@ -19,13 +19,12 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -51,7 +50,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 public class OpenCvAndVuforiaOnSameCameraExample extends LinearOpMode
 {
     VuforiaLocalizer vuforia = null;
-    OpenCvCamera openCvPassthrough;
+    OpenCvCamera vuforiaPassthroughCam;
 
     @Override
     public void runOpMode()
@@ -77,9 +76,9 @@ public class OpenCvAndVuforiaOnSameCameraExample extends LinearOpMode
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         // Create a Vuforia passthrough "virtual camera"
-        openCvPassthrough = OpenCvCameraFactory.getInstance().createVuforiaPassthrough(vuforia, parameters, viewportContainerIds[1]);
+        vuforiaPassthroughCam = OpenCvCameraFactory.getInstance().createVuforiaPassthrough(vuforia, parameters, viewportContainerIds[1]);
 
-        openCvPassthrough.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        vuforiaPassthroughCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
@@ -88,15 +87,23 @@ public class OpenCvAndVuforiaOnSameCameraExample extends LinearOpMode
                 // mode, because Vuforia often chooses high resolutions (such as 720p) which can be
                 // very CPU-taxing to rotate in software. GPU acceleration has been observed to cause
                 // issues on some devices, though, so if you experience issues you may wish to disable it.
-                openCvPassthrough.setViewportRenderer(OpenCvCamera.ViewportRenderer.GPU_ACCELERATED);
-                openCvPassthrough.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
-                openCvPassthrough.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255,0,0,255)));
+                vuforiaPassthroughCam.setViewportRenderer(OpenCvCamera.ViewportRenderer.GPU_ACCELERATED);
+                vuforiaPassthroughCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
+                vuforiaPassthroughCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255,0,0,255)));
 
                 // We don't get to choose resolution, unfortunately. The width and height parameters
                 // are entirely ignored when using Vuforia passthrough mode. However, they are left
                 // in the method signature to provide interface compatibility with the other types
                 // of cameras.
-                openCvPassthrough.startStreaming(0,0, OpenCvCameraRotation.UPRIGHT);
+                vuforiaPassthroughCam.startStreaming(0,0, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
             }
         });
 
@@ -104,8 +111,8 @@ public class OpenCvAndVuforiaOnSameCameraExample extends LinearOpMode
 
         while (opModeIsActive())
         {
-            telemetry.addData("Passthrough FPS", openCvPassthrough.getFps());
-            telemetry.addData("Frame count", openCvPassthrough.getFrameCount());
+            telemetry.addData("Passthrough FPS", vuforiaPassthroughCam.getFps());
+            telemetry.addData("Frame count", vuforiaPassthroughCam.getFrameCount());
             telemetry.update();
 
             sleep(100);

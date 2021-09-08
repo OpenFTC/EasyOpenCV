@@ -158,13 +158,13 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     }
 
     @Override
-    public void openCameraDevice()
+    public int openCameraDevice()
     {
         sync.lock();
 
         if(hasBeenCleanedUp())
         {
-            return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+            return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE; // We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
         }
 
         if(mCameraDevice == null)
@@ -205,7 +205,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
             }
         }
 
+        int ret = mCameraDevice != null ? 0 : CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
         sync.unlock();
+
+        return ret;
     }
 
     @Override
@@ -220,8 +223,16 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
                 try
                 {
-                    openCameraDevice();
-                    asyncCameraOpenListener.onOpened();
+                    int retCode = openCameraDevice();
+
+                    if(retCode < 0)
+                    {
+                        asyncCameraOpenListener.onError(retCode);
+                    }
+                    else
+                    {
+                        asyncCameraOpenListener.onOpened();
+                    }
                 }
                 catch (Exception e)
                 {
@@ -514,9 +525,10 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         Image.Plane[] planes = image.getPlanes();
         colorConversion(planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
+        long imgTimestamp = image.getTimestamp();
         image.close();
 
-        handleFrame(rgbMat, sensorTimestampsAreRealtime ? image.getTimestamp() : callbackTimestamp);
+        handleFrame(rgbMat, sensorTimestampsAreRealtime ? imgTimestamp : callbackTimestamp);
     }
 
     private void startFrameWorkerHandlerThread()

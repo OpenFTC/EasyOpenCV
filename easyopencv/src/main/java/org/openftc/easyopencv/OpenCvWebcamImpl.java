@@ -78,7 +78,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
-    private final int secondsPermissionTimeout = 2;
+    private volatile int millisecondsPermissionTimeout = 2000;
     private final CameraName cameraName;
     private CameraCharacteristics cameraCharacteristics = null;
     protected Camera camera = null;
@@ -124,20 +124,20 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     }
 
     @Override
-    public void openCameraDevice() /*throws CameraException*/
+    public int openCameraDevice() /*throws CameraException*/
     {
         synchronized (sync)
         {
             if(hasBeenCleanedUp())
             {
-                return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+                return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
             }
 
             if(camera == null)
             {
                 try
                 {
-                    camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(secondsPermissionTimeout, TimeUnit.SECONDS), cameraName, null);
+                    camera = cameraManager.requestPermissionAndOpenCamera(new Deadline(millisecondsPermissionTimeout, TimeUnit.MILLISECONDS), cameraName, null);
 
                     if (camera != null) //Opening succeeded!
                     {
@@ -150,7 +150,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     }
                     else //Opening failed! :(
                     {
-                        cameraCharacteristics = cameraName.getCameraCharacteristics();
+                        return CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
                     }
                 }
                 catch (Exception e)
@@ -159,11 +159,13 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     throw e;
                 }
             }
+
+            return 0;
         }
     }
 
     @Override
-    public void openCameraDeviceAsync(final AsyncCameraOpenListener asyncCameraOpenListener)
+    public void openCameraDeviceAsync(final AsyncCameraOpenListener callback)
     {
         new Thread(new Runnable()
         {
@@ -174,8 +176,16 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                 {
                     try
                     {
-                        openCameraDevice();
-                        asyncCameraOpenListener.onOpened();
+                        int retCode = openCameraDevice();
+
+                        if(retCode < 0)
+                        {
+                            callback.onError(retCode);
+                        }
+                        else
+                        {
+                            callback.onOpened();
+                        }
                     }
                     catch (Exception e)
                     {
@@ -520,6 +530,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
             handleFrame(rgbMat, cameraFrame.getCaptureTime());
         }
+    }
+
+    @Override
+    public void setMillisecondsPermissionTimeout(int ms)
+    {
+        millisecondsPermissionTimeout = ms;
     }
 
     @Override

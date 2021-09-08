@@ -129,16 +129,26 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
     }
 
     @Override
-    public synchronized void openCameraDevice()
+    public synchronized int openCameraDevice()
     {
         if(hasBeenCleanedUp())
         {
-            return;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+            return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
         }
 
-        if(camera == null)
+        try
         {
-            camera = Camera.open(direction.id);
+            if(camera == null)
+            {
+                camera = Camera.open(direction.id);
+            }
+
+            return 0;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
         }
     }
 
@@ -154,8 +164,16 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
                 {
                     try
                     {
-                        openCameraDevice();
-                        asyncCameraOpenListener.onOpened();
+                        int retCode = openCameraDevice();
+
+                        if(retCode < 0)
+                        {
+                            asyncCameraOpenListener.onError(retCode);
+                        }
+                        else
+                        {
+                            asyncCameraOpenListener.onOpened();
+                        }
                     }
                     catch (Exception e)
                     {

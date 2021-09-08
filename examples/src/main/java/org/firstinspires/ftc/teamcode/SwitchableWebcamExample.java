@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
@@ -62,9 +62,23 @@ public class SwitchableWebcamExample extends LinearOpMode
          */
         switchableWebcam = OpenCvCameraFactory.getInstance().createSwitchableWebcam(cameraMonitorViewId, webcam1, webcam2);
 
-        switchableWebcam.openCameraDevice();
-        switchableWebcam.setPipeline(new SamplePipeline());
-        switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+        switchableWebcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                switchableWebcam.setPipeline(new SamplePipeline());
+                switchableWebcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 

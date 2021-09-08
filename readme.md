@@ -44,31 +44,22 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 **IMPORTANT NOTE #2: Do NOT locally clone and/or import this project unless you want to develop this library itself! If you're just a normal user, follow the below instructions verbatim.**
 
 1. Open your FTC SDK Android Studio project
-2. Open the `build.common.gradle` file:
 
-    ![img-here](doc/images/build-common-gradle.png)
-
-3. Add `jcenter()` to the `repositories` block at the bottom:
-
-    ![img-here](doc/images/jcenter.png)
-
-4. Open the `build.gradle` file for the TeamCode module:
+2. Open the `build.gradle` file for the TeamCode module:
 
     ![img-here](doc/images/teamcode-gradle.png)
 
-5. At the bottom, add this:
+3. At the bottom, add this:
 
         dependencies {
             implementation 'org.openftc:easyopencv:1.4.4'
          }
-         
-6. Open the `build.common.gradle` file, and find the line `minSdkVersion 19`, and replace it with `minSdkVersion 23`
 
-7. In the same file, `build.common.gradle`, scroll down until you find this part:
+4. Open the `build.common.gradle` file, scroll down until you find this part:
 
     <img src="doc/images/build-common-gradle-buildscript.png" width="50%" height="50%">
 
-8. Remove both references to `"arm64-v8a"` described in debug and release blocks, leaving `"armeabi-v7a"` untouched:
+5. Remove both references to `"arm64-v8a"` described in debug and release blocks, leaving `"armeabi-v7a"` untouched:
 
     ![img-here](doc/images/build-common-gradle-buildscript-remove-arm64.png)
 
@@ -76,13 +67,13 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 \*\**This step is needed because the OpenCV native library is compiled for 32-bit, and Android applications cannot load both 32-bit and 64-bit libraries at the same time. Otherwise, a warning will be shown when opening the app, indicating that OpenCV-enabled OpModes will crash.*
 
-9. Now perform a Gradle Sync:
+6. Now perform a Gradle Sync:
 
     ![img-here](doc/images/gradle-sync.png)
 
-10. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvNative.so`](https://github.com/OpenFTC/OpenCV-Repackaged/blob/master/doc/libOpenCvNative.so) from the `/doc` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, and drag 'n drop the file) .
+7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvNative.so`](https://github.com/OpenFTC/OpenCV-Repackaged/blob/master/doc/libOpenCvNative.so) from the `/doc` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, and drag 'n drop the file) .
 
-11. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
+8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
 
 ## Changelog:

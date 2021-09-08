@@ -25,6 +25,9 @@ import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
 
 public interface OpenCvCamera extends CameraStreamSource
 {
+    public static final int CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE = -1;
+    public static final int CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE = -2;
+
     /***
      * Open the connection to the camera device. If the camera is
      * already open, this will not do anything.
@@ -36,7 +39,8 @@ public interface OpenCvCamera extends CameraStreamSource
      *
      * See {@link #closeCameraDevice()}
      */
-    void openCameraDevice();
+    @Deprecated
+    int openCameraDevice();
 
     /***
      * Performs the same thing as {@link #openCameraDevice()} except
@@ -70,7 +74,16 @@ public interface OpenCvCamera extends CameraStreamSource
 
     interface AsyncCameraOpenListener
     {
+        /**
+         * Called if the camera was successfully opened
+         */
         void onOpened();
+
+        /**
+         * Called if there was an error opening the camera
+         * @param errorCode reason for failure
+         */
+        void onError(int errorCode);
     }
 
     /***

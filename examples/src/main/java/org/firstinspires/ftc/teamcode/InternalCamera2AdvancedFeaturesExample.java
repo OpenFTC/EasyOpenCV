@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 OpenFTC Team
+ * Copyright (c) 2020 OpenFTC Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-package org.openftc.easyopencv.examples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -31,22 +31,22 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera;
+import org.openftc.easyopencv.OpenCvInternalCamera2;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 /**
  * In this sample, we demonstrate how to use the advanced features provided
- * by the {@link OpenCvInternalCamera} interface
+ * by the {@link OpenCvInternalCamera2} interface
  */
 @TeleOp
-public class InternalCamera1AdvancedFeaturesExample extends LinearOpMode
+public class InternalCamera2AdvancedFeaturesExample extends LinearOpMode
 {
     /**
-     * NB: we declare our camera as the {@link OpenCvInternalCamera} type,
+     * NB: we declare our camera as the {@link OpenCvInternalCamera2} type,
      * as opposed to simply {@link OpenCvCamera}. This allows us to access
      * the advanced features supported only by the internal camera.
      */
-    OpenCvInternalCamera phoneCam;
+    OpenCvInternalCamera2 phoneCam;
 
     @Override
     public void runOpMode()
@@ -59,45 +59,49 @@ public class InternalCamera1AdvancedFeaturesExample extends LinearOpMode
          */
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        phoneCam.openCameraDevice();
-        phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
+        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera2(OpenCvInternalCamera2.CameraDirection.BACK, cameraMonitorViewId);
 
-        /*
-         * We use the most verbose version of #startStreaming(), which allows us to specify whether we want to use double
-         * (default) or single buffering. See the JavaDoc for this method for more details
-         */
-        phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT, OpenCvInternalCamera.BufferMethod.DOUBLE);
-
-        /*
-         * Demonstrate how to turn on the flashlight
-         */
-        phoneCam.setFlashlightEnabled(true);
-
-        /*
-         * Demonstrate how to use the zoom. Here we zoom
-         * in as much as is supported.
-         */
-        phoneCam.setZoom(phoneCam.getMaxSupportedZoom());
-
-        /*
-         * Demonstrate how to set the recording hint on the
-         * camera hardware. See the JavDoc for this method
-         * for more details.
-         */
-        phoneCam.setRecordingHint(true);
-
-        /*
-         * Demonstrate how to lock the camera hardware to sending frames at 30FPS, if it supports that
-         */
-        for (OpenCvInternalCamera.FrameTimingRange r : phoneCam.getFrameTimingRangesSupportedByHardware())
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
-            if(r.max == 30 && r.min == 30)
+            @Override
+            public void onOpened()
             {
-                phoneCam.setHardwareFrameTimingRange(r);
-                break;
+                phoneCam.setPipeline(new UselessColorBoxDrawingPipeline(new Scalar(255, 0, 0)));
+
+                /*
+                 * Start streaming
+                 */
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+
+                /*
+                 * Demonstrate how to turn on the flashlight
+                 */
+                phoneCam.setFlashlightEnabled(true);
+
+                /*
+                 * Demonstrate how to lock the camera hardware to sending frames at 30FPS
+                 */
+                phoneCam.setSensorFps(30);
+
+                /*
+                 * Demonstrate how to set some manual sensor controls
+                 */
+                phoneCam.setExposureMode(OpenCvInternalCamera2.ExposureMode.MANUAL);
+                phoneCam.setFocusMode(OpenCvInternalCamera2.FocusMode.MANUAL);
+                phoneCam.setFocusDistance(phoneCam.getMinFocusDistance());
+                phoneCam.setExposureFractional(60);
+                phoneCam.setSensorGain(400);
+                phoneCam.setWhiteBalanceMode(OpenCvInternalCamera2.WhiteBalanceMode.INCANDESCENT);
             }
-        }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
 
         waitForStart();
 

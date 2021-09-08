@@ -29,6 +29,13 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzCont
 
 public interface OpenCvWebcam extends OpenCvCamera
 {
+    /**
+     * Set how long to wait for permission to open the
+     * camera before giving up
+     * @param ms milliseconds to wait for
+     */
+    void setMillisecondsPermissionTimeout(int ms);
+
     /***
      * Gets the {@link ExposureControl} for this webcam.
      * Please see that interface's javadoc for how to use
