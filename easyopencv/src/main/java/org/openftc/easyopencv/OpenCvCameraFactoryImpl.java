@@ -47,24 +47,16 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     private static int sdk6_1_versionCode = 39;
     private static String sdk_6_1 = "6.1";
 
-    static void init()
+    static
     {
-        OpenCvCameraFactory.theInstance = new OpenCvCameraFactoryImpl();
-
         try
         {
-            appVersion = AppUtil.getDefContext().getPackageManager().getPackageInfo(AppUtil.getDefContext().getPackageName(), 0).versionCode;
+            appVersion = AppUtil.getInstance().getApplication().getPackageManager().getPackageInfo(AppUtil.getInstance().getApplication().getPackageName(), 0).versionCode;
         }
         catch (PackageManager.NameNotFoundException e)
         {
             e.printStackTrace();
         }
-    }
-
-    @OpModeRegistrar
-    public static void initOnSdkBoot(Context context, AnnotatedOpModeManager manager)
-    {
-        init();
     }
 
     private void throwIfIncompatibleSdkVersion()

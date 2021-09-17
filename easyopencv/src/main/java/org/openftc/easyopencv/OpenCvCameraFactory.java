@@ -31,7 +31,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
 public abstract class OpenCvCameraFactory
 {
-    static OpenCvCameraFactory theInstance; /***Assigned in {@link OpenCvCameraFactoryImpl#initOnSdkBoot(Context, AnnotatedOpModeManager)}*/
+    static OpenCvCameraFactory theInstance = new OpenCvCameraFactoryImpl();
 
     public static OpenCvCameraFactory getInstance()
     {
