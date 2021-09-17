@@ -589,6 +589,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
     static
     {
+        System.loadLibrary("OpenCvAndroid453");
         System.loadLibrary("EasyOpenCV");
     }
 }

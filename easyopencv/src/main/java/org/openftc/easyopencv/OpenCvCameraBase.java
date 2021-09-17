@@ -920,6 +920,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     static
     {
+        System.loadLibrary("OpenCvAndroid453");
         System.loadLibrary("EasyOpenCV");
     }
 }

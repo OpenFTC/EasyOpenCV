@@ -1114,6 +1114,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
     static
     {
+        System.loadLibrary("OpenCvAndroid453");
         System.loadLibrary("EasyOpenCV");
     }
 }
