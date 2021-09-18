@@ -28,7 +28,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
  - [Camera Initialization Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/camera_initialization_overview.md)
  - [Pipelines Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/pipelines_overview.md)
- - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.4.1/index.html)
+ - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.5.0/index.html)
  - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples)
  
  **IMPORTANT NOTE:** EasyOpenCV delivers RGB frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
@@ -52,7 +52,7 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 3. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.4.4'
+            implementation 'org.openftc:easyopencv:1.5.0'
          }
 
 4. Open the `build.common.gradle` file, scroll down until you find this part:
@@ -71,12 +71,24 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
     ![img-here](doc/images/gradle-sync.png)
 
-7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvNative.so`](https://github.com/OpenFTC/OpenCV-Repackaged/blob/master/doc/libOpenCvNative.so) from the `/doc` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, and drag 'n drop the file) .
+7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvAndroid453.so`](https://github.com/OpenFTC/OpenCV-Repackaged/raw/9a4d3d4bc001feffb3767842fa2de0c38a98883a/doc/native_libs/armeabi-v7a/libOpenCvAndroid453.so) from the `/doc/native_libs` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, and drag 'n drop the file) .
 
 8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
 
 ## Changelog:
+
+### v1.5.0
+
+ - **API CHANGE:** OpenCV core upgraded to OpenCV v4.5.3 (transitive dependency on `opencv-repackaged` updated to `4.5.3-A`)
+   - This change also requires an updated native library to be copied to the device (see installation instructions above)
+ - Failure to open the camera device is now properly handled (previously, the `onOpened()` callback would be called even in the case of failure)
+   - **API CHANGE:** User-defined `AsyncCameraOpenListener` instances must now also implement the `void onError(int errorCode)` function
+ - Change webcam opening timeout to be user-configurable (new function `void setMillisecondsPermissionTimeout(int ms)` added)
+ - Fix race condition when closing camera which could cause the camera worker thread to crash with an null pointer when trying to send a frame to the viewport
+ - Fix issue with viewport where user-drawn parts of the image (e.g. rect boxes) would not appear in the correct color unless an alpha parameter for the color was specified
+ - Fix bug where Camera2 backend was broken on some devices due to reading the image timestamp after closing the Image object
+ - Samples moved to `org.firstinspires.ftc.teamcode` package
 
 ### v1.4.4
 
