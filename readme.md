@@ -80,12 +80,12 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 ### v1.5.0
 
- - **API CHANGE:** OpenCV core upgraded to OpenCV v4.5.3 (transitive dependency on `opencv-repackaged` updated to `4.5.3-A`)
+ - **API CHANGE:** OpenCV core upgraded to OpenCV v4.5.3 (transitive dependency on `opencv-repackaged` updated to `4.5.3-B`)
    - This change also requires an updated native library to be copied to the device (see installation instructions above)
  - Failure to open the camera device is now properly handled (previously, the `onOpened()` callback would be called even in the case of failure)
    - **API CHANGE:** User-defined `AsyncCameraOpenListener` instances must now also implement the `void onError(int errorCode)` function
  - Change webcam opening timeout to be user-configurable (new function `void setMillisecondsPermissionTimeout(int ms)` added)
- - Fix race condition when closing camera which could cause the camera worker thread to crash with an null pointer when trying to send a frame to the viewport
+ - Fix race condition when closing camera which could cause the camera worker thread to crash with a null pointer when trying to send a frame to the viewport
  - Fix issue with viewport where user-drawn parts of the image (e.g. rect boxes) would not appear in the correct color unless an alpha parameter for the color was specified
  - Fix bug where Camera2 backend was broken on some devices due to reading the image timestamp after closing the Image object
  - Samples moved to `org.firstinspires.ftc.teamcode` package
