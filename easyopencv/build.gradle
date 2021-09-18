@@ -16,6 +16,11 @@ android {
         versionName PUBLISH_VERSION
     }
 
+    packagingOptions {
+        exclude '/lib/armeabi-v7a/libOpenCvAndroid453.so'
+        exclude '/lib/arm64-v8a/libOpenCvAndroid453.so'
+    }
+
     buildTypes {
 
         debug {
