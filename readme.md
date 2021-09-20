@@ -31,11 +31,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
  - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.5.0/index.html)
  - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples)
  
- **IMPORTANT NOTE:** EasyOpenCV delivers RGB frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
-
-## Note about OnBotJava:
-
-While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much more difficult, and makes upgrading to newer releases a pain. Additionally, if you're advanced enough to be writing custom OpenCV code, the better programming experience Android Studio offers will likely benefit you greatly. For these reasons we do not officially support using EasyOpenCV with OnBotJava.
+ **IMPORTANT NOTE:** EasyOpenCV delivers RGBA frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
 ## Installation instructions (OnBotJava):
 
