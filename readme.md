@@ -37,7 +37,13 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much more difficult, and makes upgrading to newer releases a pain. Additionally, if you're advanced enough to be writing custom OpenCV code, the better programming experience Android Studio offers will likely benefit you greatly. For these reasons we do not officially support using EasyOpenCV with OnBotJava.
 
-## Installation instructions:
+## Installation instructions (OnBotJava):
+
+1. Download the OBJ AAR bundle file from the [Releases page](https://github.com/OpenFTC/EasyOpenCV/releases)
+2. In the OnBotJava console, upload the `.aar` file and wait for the dexification process to complete
+8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
+
+## Installation instructions (Android Studio):
 
 **IMPORTANT NOTE: This tutorial assumes you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
 
@@ -80,6 +86,10 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 ### v1.5.0
 
+ - Fixes compatibility with SDK v7.0
+   - You MUST use 1.5.0 (or later) for SDK 7.0. Previous versions Will **not** work!!
+   - Backwards compatibility with SDK v6.1 is maintained.
+ - First release supporting OnBotJava! (See setup instructions)  
  - **API CHANGE:** OpenCV core upgraded to OpenCV v4.5.3 (transitive dependency on `opencv-repackaged` updated to `4.5.3-B`)
    - This change also requires an updated native library to be copied to the device (see installation instructions above)
  - Failure to open the camera device is now properly handled (previously, the `onOpened()` callback would be called even in the case of failure)
