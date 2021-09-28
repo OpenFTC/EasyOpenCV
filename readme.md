@@ -29,7 +29,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
  - [Camera Initialization Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/camera_initialization_overview.md)
  - [Pipelines Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/pipelines_overview.md)
  - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.5.0/index.html)
- - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples)
+ - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/firstinspires/ftc/teamcode)
  
  **IMPORTANT NOTE:** EasyOpenCV delivers RGBA frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
