@@ -35,8 +35,8 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 ## Installation instructions (OnBotJava):
 
-1. Download the OBJ AAR bundle file from the [Releases page](https://github.com/OpenFTC/EasyOpenCV/releases)
-2. In the OnBotJava console, upload the `.aar` file and wait for the dexification process to complete
+1. Go to the [Releases page](https://github.com/OpenFTC/EasyOpenCV/releases), find the latest release, and download the OBJ AAR bundle file from the assets section
+2. In the OnBotJava console, click the Upload Files button (to the left of the trash can), select the `.aar` file you just downloaded, and wait while OnBotJava processes the library
 8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
 ## Installation instructions (Android Studio):
