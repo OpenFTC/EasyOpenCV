@@ -78,6 +78,13 @@ Now that you've obtained an `OpenCvCamera` instance from the camera factory, the
          {
              // Usually this is where you'll want to start streaming from the camera (see section 4)
          }
+         @Override
+         public void onError(int errorCode)
+         {
+            /*
+            * This will be called if the camera could not be opened
+            */
+         }
      });
      ```
  - Synchronously (not recommended)
