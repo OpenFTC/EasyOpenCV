@@ -41,7 +41,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 ## Installation instructions (Android Studio):
 
-**IMPORTANT NOTE: This tutorial assumes you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
+**IMPORTANT NOTE: These instructions assume you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
 
 **IMPORTANT NOTE #2: Do NOT locally clone and/or import this project unless you want to develop this library itself! If you're just a normal user, follow the below instructions verbatim.**
 
