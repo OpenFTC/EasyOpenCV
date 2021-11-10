@@ -765,6 +765,12 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     }
 
     @Override
+    public boolean shouldTriggerWarningSound()
+    {
+        return false;
+    }
+
+    @Override
     public void suppressGlobalWarning(boolean suppress)
     {
 

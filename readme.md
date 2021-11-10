@@ -29,17 +29,19 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
  - [Camera Initialization Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/camera_initialization_overview.md)
  - [Pipelines Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/pipelines_overview.md)
  - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.5.0/index.html)
- - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/openftc/easyopencv/examples)
+ - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/firstinspires/ftc/teamcode)
  
- **IMPORTANT NOTE:** EasyOpenCV delivers RGB frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
+ **IMPORTANT NOTE:** EasyOpenCV delivers RGBA frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
-## Note about OnBotJava:
+## Installation instructions (OnBotJava):
 
-While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much more difficult, and makes upgrading to newer releases a pain. Additionally, if you're advanced enough to be writing custom OpenCV code, the better programming experience Android Studio offers will likely benefit you greatly. For these reasons we do not officially support using EasyOpenCV with OnBotJava.
+1. Go to the [Releases page](https://github.com/OpenFTC/EasyOpenCV/releases), find the latest release, and download the OBJ AAR bundle file from the assets section
+2. In the OnBotJava console, click the Upload Files button (to the left of the trash can), select the `.aar` file you just downloaded, and wait while OnBotJava processes the library
+8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
-## Installation instructions:
+## Installation instructions (Android Studio):
 
-**IMPORTANT NOTE: This tutorial assumes you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
+**IMPORTANT NOTE: These instructions assume you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
 
 **IMPORTANT NOTE #2: Do NOT locally clone and/or import this project unless you want to develop this library itself! If you're just a normal user, follow the below instructions verbatim.**
 
@@ -78,8 +80,16 @@ While it is *technically* possible to setup EasyOpenCV for OnBotJava, it is much
 
 ## Changelog:
 
+### v1.5.1
+
+ - Fixes crash with SDK v7.0 when memory leak warning was generated 
+
 ### v1.5.0
 
+ - Fixes compatibility with SDK v7.0
+   - You MUST use 1.5.0 (or later) for SDK 7.0. Previous versions Will **not** work!!
+   - Backwards compatibility with SDK v6.1 is maintained.
+ - First release supporting OnBotJava! (See setup instructions)  
  - **API CHANGE:** OpenCV core upgraded to OpenCV v4.5.3 (transitive dependency on `opencv-repackaged` updated to `4.5.3-B`)
    - This change also requires an updated native library to be copied to the device (see installation instructions above)
  - Failure to open the camera device is now properly handled (previously, the `onOpened()` callback would be called even in the case of failure)

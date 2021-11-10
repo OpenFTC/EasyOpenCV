@@ -23,7 +23,6 @@ package org.openftc.easyopencv;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.support.annotation.IdRes;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -103,7 +102,7 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     }
 
     @Override
-    public OpenCvWebcam createWebcam(WebcamName webcamName, @IdRes int viewportContainerId)
+    public OpenCvWebcam createWebcam(WebcamName webcamName, int viewportContainerId)
     {
         throwIfIncompatibleSdkVersion();
         return new OpenCvWebcamImpl(webcamName, viewportContainerId);

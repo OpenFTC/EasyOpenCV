@@ -22,7 +22,6 @@
 package org.openftc.easyopencv;
 
 import android.content.Context;
-import android.support.annotation.IdRes;
 
 import com.qualcomm.robotcore.eventloop.opmode.AnnotatedOpModeManager;
 
@@ -42,26 +41,26 @@ public abstract class OpenCvCameraFactory
      * Internal
      */
     public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction);
-    public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, @IdRes int viewportContainerId);
+    public abstract OpenCvInternalCamera createInternalCamera(OpenCvInternalCamera.CameraDirection direction, int viewportContainerId);
 
     /*
      * Internal2
      */
     public abstract OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction);
-    public abstract OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction, @IdRes int viewportContainerId);
+    public abstract OpenCvInternalCamera2 createInternalCamera2(OpenCvInternalCamera2.CameraDirection direction, int viewportContainerId);
 
     /*
      * Webcam
      */
     public abstract OpenCvWebcam createWebcam(WebcamName cameraName);
-    public abstract OpenCvWebcam createWebcam(WebcamName cameraName, @IdRes int viewportContainerId);
+    public abstract OpenCvWebcam createWebcam(WebcamName cameraName, int viewportContainerId);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names);
 
     /*
      * Vuforia passthrough
      */
-    public abstract OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters, @IdRes int viewportContainerId);
+    public abstract OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters, int viewportContainerId);
     public abstract OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters);
 
     public enum ViewportSplitMethod
@@ -73,5 +72,5 @@ public abstract class OpenCvCameraFactory
     /*
      * Viewport containers
      */
-    public abstract @IdRes int[] splitLayoutForMultipleViewports(@IdRes int containerId, int numViewports, ViewportSplitMethod viewportSplitMethod);
+    public abstract int[] splitLayoutForMultipleViewports(int containerId, int numViewports, ViewportSplitMethod viewportSplitMethod);
 }
