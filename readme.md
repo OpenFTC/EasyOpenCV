@@ -28,7 +28,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
  - [Camera Initialization Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/camera_initialization_overview.md)
  - [Pipelines Overview](https://github.com/OpenFTC/EasyOpenCV/blob/master/doc/user_docs/pipelines_overview.md)
- - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/1.5.0/index.html)
+ - [Javadocs](https://javadoc.io/doc/org.openftc/easyopencv/latest/index.html)
  - [Example programs](https://github.com/OpenFTC/EasyOpenCV/tree/master/examples/src/main/java/org/firstinspires/ftc/teamcode)
  
  **IMPORTANT NOTE:** EasyOpenCV delivers RGBA frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.5.0'
+            implementation 'org.openftc:easyopencv:1.5.1'
          }
 
 4. Open the `build.common.gradle` file, scroll down until you find this part:
