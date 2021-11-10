@@ -35,7 +35,6 @@
 package org.openftc.easyopencv;
 
 import android.graphics.ImageFormat;
-import android.support.annotation.Nullable;
 
 import com.qualcomm.robotcore.util.RobotLog;
 
