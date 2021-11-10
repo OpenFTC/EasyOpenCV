@@ -80,6 +80,10 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 ## Changelog:
 
+### v1.5.1
+
+ - Fixes crash with SDK v7.0 when memory leak warning was generated 
+
 ### v1.5.0
 
  - Fixes compatibility with SDK v7.0
