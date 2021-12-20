@@ -519,7 +519,16 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
             //Make sure we don't have any mats hanging around
             //from when we might have been running before
-            visionPreviewFrameQueue.clear();
+            //hold 'syncObj' mutex to synchronize with post()!
+            synchronized (syncObj)
+            {
+                for(MatRecycler.RecyclableMat mat : visionPreviewFrameQueue)
+                {
+                    framebufferRecycler.returnMat(mat);
+                }
+
+                visionPreviewFrameQueue.clear();
+            }
 
             Log.d(TAG, "Render thread is up!");
 
