@@ -13,7 +13,7 @@ Features at a glance:
      - Two webcams
      - Two internal cameras *(select devices; internal cameras must not share the same bus)*
  - Supports Driver Station camera preview feature introduced in SDK v5.1
- - Supports tapping on the viewport to cycle through the various stages of a pipeline (see [PipelineStageSwitchingExample](https://github.com/OpenFTC/EasyOpenCV/blob/master/examples/src/main/java/org/openftc/easyopencv/examples/PipelineStageSwitchingExample.java))
+ - Supports tapping on the viewport to cycle through the various stages of a pipeline (see [PipelineStageSwitchingExample](https://github.com/OpenFTC/EasyOpenCV/blob/master/examples/src/main/java/org/firstinspires/ftc/teamcode/PipelineStageSwitchingExample.java))
  - Supports using webcams directly with OpenCV instead of going through a Vuforia instance
  - Supports changing pipelines on-the-fly (while a streaming session is in flight)
  - Supports dynamically pausing/resuming live viewport to save battery and CPU time
@@ -73,7 +73,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
     ![img-here](doc/images/gradle-sync.png)
 
-7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvAndroid453.so`](https://github.com/OpenFTC/OpenCV-Repackaged/raw/9a4d3d4bc001feffb3767842fa2de0c38a98883a/doc/native_libs/armeabi-v7a/libOpenCvAndroid453.so) from the `/doc/native_libs` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, and drag 'n drop the file) .
+7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvAndroid453.so`](https://github.com/OpenFTC/OpenCV-Repackaged/raw/9a4d3d4bc001feffb3767842fa2de0c38a98883a/doc/native_libs/armeabi-v7a/libOpenCvAndroid453.so) from the `/doc/native_libs` folder of that repo into the `FIRST` folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, browse the contents of the file system, and drag 'n drop the file into the "FIRST" folder at the top level of the filesystem). Note that Control Hubs default to MTP mode and thus should be recognized immediately upon plugging it in. For Mac, you will either need to use the Android File Transfer program, or you can use the built-in file explorer side pane in Android Studio.
 
 8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
