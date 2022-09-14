@@ -3,7 +3,7 @@ apply plugin: 'com.android.library'
 ext {
     PUBLISH_GROUP_ID = 'org.openftc'
     PUBLISH_ARTIFACT_ID = 'easyopencv'
-    PUBLISH_VERSION = '1.5.1'
+    PUBLISH_VERSION = '1.5.2'
 }
 
 android {
@@ -63,7 +63,7 @@ android {
 dependencies {
     //compileOnly fileTree(include: ['*.aar'], dir: '../libs')
     api 'org.openftc:opencv-repackaged:4.5.3-B'
-    compileOnly 'org.firstinspires.ftc:RobotCore:7.0.0'
+    compileOnly 'org.firstinspires.ftc:RobotCore:8.0.0'
 }
 
 apply from: '../sonatype-publish.gradle'

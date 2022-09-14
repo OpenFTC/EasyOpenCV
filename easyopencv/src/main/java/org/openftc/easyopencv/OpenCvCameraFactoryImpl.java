@@ -21,15 +21,12 @@
 
 package org.openftc.easyopencv;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import com.qualcomm.robotcore.eventloop.opmode.AnnotatedOpModeManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -43,8 +40,8 @@ import java.util.concurrent.CountDownLatch;
 class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
 {
     private static int appVersion = -1;
-    private static int sdk6_1_versionCode = 39;
-    private static String sdk_6_1 = "6.1";
+    private static int sdk_8_0_versionCode = 47;
+    private static String sdk_8_0 = "8.0";
 
     static
     {
@@ -60,9 +57,9 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
 
     private void throwIfIncompatibleSdkVersion()
     {
-        if(appVersion < sdk6_1_versionCode)
+        if(appVersion < sdk_8_0_versionCode)
         {
-            throw new RuntimeException(String.format("EasyOpenCV v%s is only compatible with SDK v%s or greater!", BuildConfig.VERSION_NAME, sdk_6_1));
+            throw new RuntimeException(String.format("EasyOpenCV v%s is only compatible with SDK v%s or greater!", BuildConfig.VERSION_NAME, sdk_8_0));
         }
     }
 

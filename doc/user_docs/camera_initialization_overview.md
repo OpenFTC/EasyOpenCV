@@ -143,4 +143,4 @@ Most of the time there is no need to manually close the camera, as it will be au
 
 For the Control Hub, the DS camera preview feature may prove very helpful for you since it can show the output of your pipeline without requiring an HDMI monitor or use of `scrcpy`.
 
-To use this feature, simply make sure that you've started a streaming session during the OpMode initialization. When running your OpMode, do **NOT** press start. Only press INIT. While the OpMode is in the INIT phase, you can open the overflow menu on the DriverStation and select the "Camera Stream" option. This provides a tap-to-refresh view of the pipeline output.
+To use this feature, simply make sure that you've started a streaming session during the OpMode initialization. When running your OpMode, do **NOT** press start. Only press INIT. While the OpMode is in the INIT phase, you can open the overflow menu on the DriverStation and select the "Camera Stream" option. This provides a tap-to-refresh view of the pipeline output. Select `Camera Stream` again to close the preview and continue the OpMode.
