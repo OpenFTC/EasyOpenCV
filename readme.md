@@ -1,6 +1,6 @@
 # EasyOpenCV
 
-NOTE: SDK v6.1+ is required to use this
+NOTE: SDK v8.0+ is required to use this
 
 NOTE: an OpenRC-based SDK is NOT required to use this
 
@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.5.1'
+            implementation 'org.openftc:easyopencv:1.5.2'
          }
 
 4. Open the `build.common.gradle` file, scroll down until you find this part:
@@ -79,6 +79,11 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.5.2
+
+ - Fixes compatibility with SDK v8.0. You MUST use v1.5.2 (or later) for SDK 8.0. Previous versions Will **not** work!! Backwards compatibility is NOT maintained for this release unfortunately!
+ - Fixes possible leak of framebuffer when viewport render thread was restarted
 
 ### v1.5.1
 
