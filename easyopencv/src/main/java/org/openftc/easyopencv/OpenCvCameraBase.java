@@ -33,6 +33,7 @@ import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.EventLoopManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
 import com.qualcomm.robotcore.robot.RobotState;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -46,7 +47,6 @@ import org.firstinspires.ftc.robotcore.external.function.Continuation;
 import org.firstinspires.ftc.robotcore.external.function.ContinuationResult;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamServer;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
-import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
