@@ -63,7 +63,7 @@ android {
 dependencies {
     //compileOnly fileTree(include: ['*.aar'], dir: '../libs')
     api 'org.openftc:opencv-repackaged:4.5.3-B'
-    compileOnly 'org.firstinspires.ftc:RobotCore:7.0.0'
+    compileOnly 'org.firstinspires.ftc:RobotCore:8.0.0'
 }
 
 apply from: '../sonatype-publish.gradle'
