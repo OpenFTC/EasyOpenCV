@@ -77,7 +77,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 {
     private final CameraManagerInternal cameraManager;
     private final Executor serialThreadPool;
-    private volatile int millisecondsPermissionTimeout = 2000;
+    private volatile int millisecondsPermissionTimeout = 5000;
     private final CameraName cameraName;
     private CameraCharacteristics cameraCharacteristics = null;
     protected Camera camera = null;
