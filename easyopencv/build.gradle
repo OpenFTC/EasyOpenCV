@@ -17,15 +17,18 @@ android {
     }
 
     packagingOptions {
-        exclude '/lib/armeabi-v7a/libOpenCvAndroid453.so'
+        exclude '/lib/armeabi-v7a/libOpenCvAndroid453.so' // Leaving old names here for now
         exclude '/lib/arm64-v8a/libOpenCvAndroid453.so'
+
+        exclude '/lib/armeabi-v7a/libopencv_java4.so'
+        exclude '/lib/arm64-v8a/libopencv_java4.so'
     }
 
     buildTypes {
 
         debug {
             ndk {
-                abiFilters "armeabi-v7a"
+                abiFilters "armeabi-v7a", "arm64-v8a"
             }
         }
 
@@ -34,7 +37,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 
             ndk {
-                abiFilters "armeabi-v7a"
+                abiFilters "armeabi-v7a", "arm64-v8a"
             }
         }
     }
@@ -62,7 +65,7 @@ android {
 
 dependencies {
     //compileOnly fileTree(include: ['*.aar'], dir: '../libs')
-    api 'org.openftc:opencv-repackaged:4.5.3-B'
+    api 'org.openftc:opencv-repackaged-bundled-dylibs:4.5.3-C'
     compileOnly 'org.firstinspires.ftc:RobotCore:8.0.0'
 }
 

@@ -37,11 +37,11 @@ include_directories(src/main/cpp/include/
 
 # Specify path to prebuilt object
 
-set(OPENCV_NATIVE_LIB_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/doc/native_libs)
+set(OPENCV_NATIVE_LIB_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/OpenCV-Android-SDK/src/main/jniLibs)
 
 add_library(openCvNative SHARED IMPORTED)
 set_target_properties(openCvNative PROPERTIES IMPORTED_LOCATION
-        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libOpenCvAndroid453.so)
+        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so)
 
 # linking libs
 target_link_libraries(
