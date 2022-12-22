@@ -54,31 +54,26 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
 
         dependencies {
-            implementation 'org.openftc:easyopencv:1.5.2'
+            implementation 'org.openftc:easyopencv:1.5.3'
          }
 
-4. Open the `build.common.gradle` file, scroll down until you find this part:
-
-    <img src="doc/images/build-common-gradle-buildscript.png" width="50%" height="50%">
-
-5. Remove both references to `"arm64-v8a"` described in debug and release blocks, leaving `"armeabi-v7a"` untouched:
-
-    ![img-here](doc/images/build-common-gradle-buildscript-remove-arm64.png)
-
-\**If you already had `"arm64-v8a"` removed, no further changes are needed*
-
-\*\**This step is needed because the OpenCV native library is compiled for 32-bit, and Android applications cannot load both 32-bit and 64-bit libraries at the same time. Otherwise, a warning will be shown when opening the app, indicating that OpenCV-enabled OpModes will crash.*
-
-6. Now perform a Gradle Sync:
+4. Now perform a Gradle Sync:
 
     ![img-here](doc/images/gradle-sync.png)
 
-7. Because EasyOpenCv depends on [OpenCV-Repackaged](https://github.com/OpenFTC/OpenCV-Repackaged), you will also need to copy [`libOpenCvAndroid453.so`](https://github.com/OpenFTC/OpenCV-Repackaged/raw/9a4d3d4bc001feffb3767842fa2de0c38a98883a/doc/native_libs/armeabi-v7a/libOpenCvAndroid453.so) from the `/doc/native_libs` folder of that repo into the `FIRST`(`sdcard/FIRST` in Android Studio File Transfer) folder on the USB storage of the Robot Controller (i.e. connect the Robot Controller to your computer with a USB cable, put it into MTP mode, browse the contents of the file system, and drag 'n drop the file into the "FIRST" folder at the top level of the filesystem). Note that Control Hubs default to MTP mode and thus should be recognized immediately upon plugging it in. For Mac, you will either need to use the Android File Transfer program, or you can use the built-in file explorer side pane in Android Studio.
-
-8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
+5. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
 
 
 ## Changelog:
+
+### v1.5.3
+
+ - Dependency on OpenCV-Repackaged has been changed to a version which bundles the OpenCV native library with the artifact instead of requiring it to be copied to external storage manually. This change was made because:
+    1. The original reason for not bundling the native library was to reduce APK size for wireless deploy time, but that was something that it seems I cared about more than anyone else, and people often seem to have difficulty with setting it up properly for some reason
+    2. There have been multiple requests for 64-bit support, which would have made the dynamic loading from external storage even more complicated
+ - 64-bit support added
+ - Increases default webcam permission timeout to 5 seconds
+ - Removes app name resource strings which shouldn't have ever been there in the first place
 
 ### v1.5.2
 
