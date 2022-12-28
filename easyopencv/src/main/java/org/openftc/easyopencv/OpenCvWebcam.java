@@ -26,6 +26,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.Exposur
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 
 public interface OpenCvWebcam extends OpenCvCamera
 {
@@ -75,4 +76,14 @@ public interface OpenCvWebcam extends OpenCvCamera
      * @return the GainControl for this webcam
      */
     GainControl getGainControl();
+
+    /***
+     * Gets the {@Link WhiteBalanceControl} for this webcam.
+     * Please see that interface's javadoc for how to use
+     * it. It is an interface provided directly by the SDK
+     * UVC driver, not EasyOpenCV.
+     *
+     * @return the WhiteBalanceControl for this webcam
+     */
+    WhiteBalanceControl getWhiteBalanceControl();
 }
