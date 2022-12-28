@@ -78,7 +78,7 @@ public interface OpenCvWebcam extends OpenCvCamera
     GainControl getGainControl();
 
     /***
-     * Gets the {@Link WhiteBalanceControl} for this webcam.
+     * Gets the {@link WhiteBalanceControl} for this webcam.
      * Please see that interface's javadoc for how to use
      * it. It is an interface provided directly by the SDK
      * UVC driver, not EasyOpenCV.
