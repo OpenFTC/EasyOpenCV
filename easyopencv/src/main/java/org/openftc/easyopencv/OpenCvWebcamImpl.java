@@ -148,6 +148,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                         focusControl = camera.getControl(FocusControl.class);
                         ptzControl = camera.getControl(PtzControl.class);
                         gainControl = camera.getControl(GainControl.class);
+                        whiteBalanceControl = camera.getControl(WhiteBalanceControl.class);
                     }
                     else //Opening failed! :(
                     {
