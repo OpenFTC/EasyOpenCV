@@ -53,9 +53,9 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 3. At the bottom, add this:
 ```gradle
- dependencies {
-     implementation 'org.openftc:easyopencv:1.5.3'
- } 
+  dependencies {
+    implementation 'org.openftc:easyopencv:1.5.3'
+  } 
 ```
 4. Now perform a Gradle Sync:
 
