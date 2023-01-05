@@ -481,6 +481,10 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                  */
                 throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
             }
+            else if(userProcessedFrame.empty())
+            {
+                throw new OpenCvCameraException("User pipeline returned empty frame for viewport display");
+            }
             else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
             {
                 /*
