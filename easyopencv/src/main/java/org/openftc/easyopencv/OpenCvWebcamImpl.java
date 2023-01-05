@@ -54,6 +54,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.Exposur
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
 import org.firstinspires.ftc.robotcore.internal.camera.ImageFormatMapper;
 import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
@@ -93,6 +94,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private FocusControl focusControl;
     private PtzControl ptzControl;
     private GainControl gainControl;
+    private WhiteBalanceControl whiteBalanceControl;
 
     //----------------------------------------------------------------------------------------------
     // Constructors
@@ -146,6 +148,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                         focusControl = camera.getControl(FocusControl.class);
                         ptzControl = camera.getControl(PtzControl.class);
                         gainControl = camera.getControl(GainControl.class);
+                        whiteBalanceControl = camera.getControl(WhiteBalanceControl.class);
                     }
                     else //Opening failed! :(
                     {
@@ -579,6 +582,17 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
 
         return gainControl;
+    }
+
+    @Override
+    public WhiteBalanceControl getWhiteBalanceControl()
+    {
+        if(camera == null)
+        {
+            throw new OpenCvCameraException("getWhiteBalanceControl() called, but camera is not opened!");
+        }
+
+        return whiteBalanceControl;
     }
 
     public static native void setMatDataPtr(long matPtr, long dataPtr);
