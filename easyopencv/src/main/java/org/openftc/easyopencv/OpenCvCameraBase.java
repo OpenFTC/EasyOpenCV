@@ -249,7 +249,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                         @Override
                         public void onClick(View view)
                         {
-                            synchronized (OpenCvCameraBase.this)
+                            synchronized (pipelineChangeLock)
                             {
                                 if(pipeline != null)
                                 {
