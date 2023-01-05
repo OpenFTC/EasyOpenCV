@@ -105,7 +105,11 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     @Override
     protected int mapRotationEnumToOpenCvRotateCode(OpenCvCameraRotation rotation)
     {
-        if(direction == CameraDirection.BACK)
+        if(rotation == OpenCvCameraRotation.SENSOR_NATIVE)
+        {
+            return -1;
+        }
+        else if(direction == CameraDirection.BACK)
         {
             if(rotation == OpenCvCameraRotation.UPRIGHT)
             {

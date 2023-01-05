@@ -69,7 +69,11 @@ class OpenCvVuforiaPassthroughImpl extends OpenCvCameraBase
     @Override
     protected int mapRotationEnumToOpenCvRotateCode(OpenCvCameraRotation rotation)
     {
-        if(isWebcam)
+        if(rotation == OpenCvCameraRotation.SENSOR_NATIVE)
+        {
+            return -1;
+        }
+        else if(isWebcam)
         {
             /*
              * The camera sensor in a webcam is mounted in the logical manner, such

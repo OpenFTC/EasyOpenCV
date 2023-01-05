@@ -74,7 +74,11 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
          * to manually rotate the image if the phone is in any other orientation
          */
 
-        if(direction == OpenCvInternalCamera.CameraDirection.BACK)
+        if(rotation == OpenCvCameraRotation.SENSOR_NATIVE)
+        {
+            return -1;
+        }
+        else if(direction == OpenCvInternalCamera.CameraDirection.BACK)
         {
             if(rotation == OpenCvCameraRotation.UPRIGHT)
             {

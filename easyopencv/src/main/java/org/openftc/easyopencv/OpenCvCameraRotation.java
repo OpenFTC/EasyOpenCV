@@ -26,5 +26,6 @@ public enum OpenCvCameraRotation
     UPRIGHT,
     UPSIDE_DOWN,
     SIDEWAYS_LEFT,
-    SIDEWAYS_RIGHT
+    SIDEWAYS_RIGHT,
+    SENSOR_NATIVE,
 }

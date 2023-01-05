@@ -402,11 +402,15 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
          * we need to manually rotate the image.
          */
 
-        if(rotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+        if(rotation == OpenCvCameraRotation.SENSOR_NATIVE)
+        {
+            return -1;
+        }
+        else if(rotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
         {
             return Core.ROTATE_90_COUNTERCLOCKWISE;
         }
-        if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
+        else if(rotation == OpenCvCameraRotation.SIDEWAYS_RIGHT)
         {
             return Core.ROTATE_90_CLOCKWISE;
         }
