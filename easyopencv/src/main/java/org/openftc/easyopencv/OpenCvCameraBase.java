@@ -209,8 +209,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
     }
 
-    @Override
-    public synchronized final void setPipeline(OpenCvPipeline pipeline)
+    @Override // NOT synchronized to avoid blocking if pipeline is slow
+    public final void setPipeline(OpenCvPipeline pipeline)
     {
         synchronized (pipelineChangeLock)
         {
@@ -451,21 +451,30 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             frame = rotatedMat;
         }
 
-        if(pipeline != null)
+        OpenCvPipeline pipelineSafe = null;
+
+        // Grab a safe reference to what the pipeline currently is,
+        // since the user is allowed to change it at any time
+        synchronized (pipelineChangeLock)
         {
-            if(pipeline instanceof TimestampedOpenCvPipeline)
+            pipelineSafe = pipeline;
+        }
+
+        if(pipelineSafe != null)
+        {
+            if(pipelineSafe instanceof TimestampedOpenCvPipeline)
             {
-                ((TimestampedOpenCvPipeline) pipeline).setTimestamp(timestamp);
+                ((TimestampedOpenCvPipeline) pipelineSafe).setTimestamp(timestamp);
             }
 
             long pipelineStart = System.currentTimeMillis();
-            userProcessedFrame = pipeline.processFrameInternal(frame);
+            userProcessedFrame = pipelineSafe.processFrameInternal(frame);
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);
         }
 
         if(viewport != null)
         {
-            if(pipeline == null)
+            if(pipelineSafe == null)
             {
                 if(mediaRecorder != null)
                 {
