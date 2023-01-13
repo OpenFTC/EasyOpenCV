@@ -55,9 +55,11 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusCo
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
+import org.firstinspires.ftc.robotcore.internal.camera.CameraInternal;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
 import org.firstinspires.ftc.robotcore.internal.camera.ImageFormatMapper;
 import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
+import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibrationIdentity;
 import org.firstinspires.ftc.robotcore.internal.camera.libuvc.api.UvcApiCameraFrame;
 import org.firstinspires.ftc.robotcore.internal.camera.libuvc.nativeobject.UvcFrame;
 import org.firstinspires.ftc.robotcore.internal.system.Deadline;
@@ -611,6 +613,20 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             }
 
             return whiteBalanceControl;
+        }
+    }
+
+    @Override
+    public CameraCalibrationIdentity getCalibrationIdentity()
+    {
+        synchronized (sync)
+        {
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getCalibrationIdentity() called, but camera is not opened!");
+            }
+
+            return ((CameraInternal)camera).getCalibrationIdentity();
         }
     }
 
