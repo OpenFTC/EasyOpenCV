@@ -547,56 +547,71 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public ExposureControl getExposureControl()
     {
-        if(camera == null)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("getExposureControl() called, but camera is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getExposureControl() called, but camera is not opened!");
+            }
 
-        return exposureControl;
+            return exposureControl;
+        }
     }
 
     @Override
     public FocusControl getFocusControl()
     {
-        if(camera == null)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("getFocusControl() called, but camera is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getFocusControl() called, but camera is not opened!");
+            }
 
-        return focusControl;
+            return focusControl;
+        }
     }
 
     @Override
     public PtzControl getPtzControl()
     {
-        if(camera == null)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("getPtzControl() called, but camera is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getPtzControl() called, but camera is not opened!");
+            }
 
-        return ptzControl;
+            return ptzControl;
+        }
     }
 
     @Override
     public GainControl getGainControl()
     {
-        if(camera == null)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("getGainControl() called, but camera is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getGainControl() called, but camera is not opened!");
+            }
 
-        return gainControl;
+            return gainControl;
+        }
     }
 
     @Override
     public WhiteBalanceControl getWhiteBalanceControl()
     {
-        if(camera == null)
+        synchronized (sync)
         {
-            throw new OpenCvCameraException("getWhiteBalanceControl() called, but camera is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getWhiteBalanceControl() called, but camera is not opened!");
+            }
 
-        return whiteBalanceControl;
+            return whiteBalanceControl;
+        }
     }
 
     public static native void setMatDataPtr(long matPtr, long dataPtr);
