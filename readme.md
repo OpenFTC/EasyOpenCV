@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
     ```gradle
     dependencies {
-        implementation 'org.openftc:easyopencv:1.5.3'
+        implementation 'org.openftc:easyopencv:1.6.0'
     } 
     ```
 4. Now perform a Gradle Sync:
@@ -65,6 +65,16 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.6.0
+
+ - Add support for getting WhiteBalanceControl for webcams
+ - Handle pipeline returning empty Mat for viewport display with an error message instead of an unclear exception
+ - Add SENSOR_NATIVE to camera rotation enum
+ - Desynchronize setPipeline() from active pipeline frame processing (fixes #58)
+ - Synchronize getting webcam controls with opening/closing camera
+ - Add support for getting the CameraCalibrationIdentity for an OpenCvWebcam
+ - Improve memory leak detection warning
 
 ### v1.5.3
 
