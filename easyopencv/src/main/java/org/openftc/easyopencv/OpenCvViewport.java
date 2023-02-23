@@ -34,6 +34,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.qualcomm.robotcore.util.Device;
+
 import org.firstinspires.ftc.robotcore.external.android.util.Size;
 import org.firstinspires.ftc.robotcore.external.function.Consumer;
 import org.firstinspires.ftc.robotcore.internal.collections.EvictingBlockingQueue;
@@ -55,10 +57,13 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private EvictingBlockingQueue<MatRecycler.RecyclableMat> visionPreviewFrameQueue = new EvictingBlockingQueue<>(new ArrayBlockingQueue<MatRecycler.RecyclableMat>(VISION_PREVIEW_FRAME_QUEUE_CAPACITY));
     private MatRecycler framebufferRecycler;
     private volatile RenderingState internalRenderingState = RenderingState.STOPPED;
-    private int statBoxW = 450;
-    private int statBoxH = 120;
-    private int statBoxTextLineSpacing = 35;
-    private int statBoxLTxtMargin = 5;
+    private final int statBoxW;
+    private final int statBoxH;
+    private final int statBoxTextLineSpacing;
+    private final int statBoxTextFirstLineYFromBottomOffset;
+    private final int statBoxLTxtMargin;
+    private static final float referenceDPI = 443; // Nexus 5
+    private final float metricsScale;
     private final Object syncObj = new Object();
     private volatile boolean userRequestedActive = false;
     private volatile boolean userRequestedPause = false;
@@ -67,6 +72,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     private Paint fpsMeterNormalBgPaint;
     private Paint fpsMeterRecordingPaint;
     private Paint fpsMeterTextPaint;
+    private final float fpsMeterTextSize;
     private Paint paintBlackBackground;
     private boolean fpsMeterEnabled = true;
     private float fps = 0;
@@ -83,6 +89,23 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
     {
         super(context);
 
+        if (Device.isRevControlHub())
+        {
+            // Control Hub reports a bogus dpi so use something that looks somewhat ok
+            metricsScale = 0.5f;
+        }
+        else
+        {
+            metricsScale = context.getResources().getDisplayMetrics().xdpi / referenceDPI;
+        }
+
+        fpsMeterTextSize = 30 * metricsScale;
+        statBoxW = (int) (450 * metricsScale);
+        statBoxH = (int) (120 * metricsScale);
+        statBoxTextLineSpacing = (int) (35 * metricsScale);
+        statBoxLTxtMargin = (int) (5 * metricsScale);
+        statBoxTextFirstLineYFromBottomOffset = (int) (80*metricsScale);
+
         fpsMeterNormalBgPaint = new Paint();
         fpsMeterNormalBgPaint.setColor(Color.rgb(102, 20, 68));
         fpsMeterNormalBgPaint.setStyle(Paint.Style.FILL);
@@ -93,7 +116,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
         fpsMeterTextPaint = new Paint();
         fpsMeterTextPaint.setColor(Color.WHITE);
-        fpsMeterTextPaint.setTextSize(30);
+        fpsMeterTextPaint.setTextSize(fpsMeterTextSize);
 
         paintBlackBackground = new Paint();
         paintBlackBackground.setColor(Color.BLACK);
@@ -905,7 +928,7 @@ public class OpenCvViewport extends SurfaceView implements SurfaceHolder.Callbac
 
         // Some formatting stuff
         int statBoxLTxtStart = rect.left+statBoxLTxtMargin;
-        int textLine1Y = rect.bottom - 80;
+        int textLine1Y = rect.bottom - statBoxTextFirstLineYFromBottomOffset;
         int textLine2Y = textLine1Y + statBoxTextLineSpacing;
         int textLine3Y = textLine2Y + statBoxTextLineSpacing;
 
