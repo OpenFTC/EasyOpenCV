@@ -502,6 +502,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             }
 
             isStreaming = false;
+            abortNewFrameCallback = false;
         }
     }
 
