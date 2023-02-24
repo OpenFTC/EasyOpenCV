@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
     ```gradle
     dependencies {
-        implementation 'org.openftc:easyopencv:1.6.0'
+        implementation 'org.openftc:easyopencv:1.6.1'
     } 
     ```
 4. Now perform a Gradle Sync:
@@ -65,6 +65,11 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.6.1
+
+ - Fixes bug where if using a webcam, frames were not delivered to user pipeline when calling `startStreaming()` after a previous call to `stopStreaming()` even though the stream was in fact restarted successfully (#65)
+ - Scales viewport statistics overlay based on pixel density so that it's not overly large on some devices
 
 ### v1.6.0
 
