@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
     ```gradle
     dependencies {
-        implementation 'org.openftc:easyopencv:1.6.1'
+        implementation 'org.openftc:easyopencv:1.6.2'
     } 
     ```
 4. Now perform a Gradle Sync:
@@ -65,6 +65,12 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.6.2
+
+- Add generic `getControl()` method to OpenCvWebcam
+- Fix corrupted camera frame delivery when using Camera2 API on some devices
+- Prevent deadlock if pipeline tried to perform a synchronized UI thread operation and the device orientation was changed
 
 ### v1.6.1
 
