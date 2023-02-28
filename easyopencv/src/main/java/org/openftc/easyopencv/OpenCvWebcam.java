@@ -21,6 +21,7 @@
 
 package org.openftc.easyopencv;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.CameraControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.FocusControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
@@ -86,6 +87,13 @@ public interface OpenCvWebcam extends OpenCvCamera
      * @return the WhiteBalanceControl for this webcam
      */
     WhiteBalanceControl getWhiteBalanceControl();
+
+    /**
+     * Gets a control for this webcam
+     * @param controlType the class of the control to get
+     * @return the requested control
+     */
+    <T extends CameraControl> T getControl(Class<T> controlType);
 
     /**
      * Gets the {@link CameraCalibrationIdentity} for this webcam.

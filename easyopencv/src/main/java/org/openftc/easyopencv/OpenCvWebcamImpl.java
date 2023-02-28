@@ -618,6 +618,20 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     }
 
     @Override
+    public <T extends CameraControl> T getControl(Class<T> controlType)
+    {
+        synchronized (sync)
+        {
+            if (camera == null)
+            {
+                throw new OpenCvCameraException("getControl() called, but camera is not opened!");
+            }
+        }
+
+        return camera.getControl(controlType);
+    }
+
+    @Override
     public CameraCalibrationIdentity getCalibrationIdentity()
     {
         synchronized (sync)
