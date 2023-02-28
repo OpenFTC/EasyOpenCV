@@ -528,7 +528,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
         }
 
         Image.Plane[] planes = image.getPlanes();
-        colorConversion(planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
+
+        colorConversion(planes[0].getRowStride(), planes[0].getBuffer(), planes[1].getBuffer(), planes[2].getBuffer(), ptrNativeContext, rgbMat.nativeObj);
         long imgTimestamp = image.getTimestamp();
         image.close();
 
@@ -1114,7 +1115,7 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
     private native long createNativeContext(int width, int height);
     private native void releaseNativeContext(long ptr);
-    private native void colorConversion(ByteBuffer plane0, ByteBuffer plane1, ByteBuffer plane2, long ptrContext, long ptrRgbFrame);
+    private native void colorConversion(int rowStride, ByteBuffer plane0, ByteBuffer plane1, ByteBuffer plane2, long ptrContext, long ptrRgbFrame);
 
     static
     {

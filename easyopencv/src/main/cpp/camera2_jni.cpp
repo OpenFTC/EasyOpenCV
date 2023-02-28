@@ -51,7 +51,7 @@ Java_org_openftc_easyopencv_OpenCvInternalCamera2Impl_releaseNativeContext(JNIEn
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_openftc_easyopencv_OpenCvInternalCamera2Impl_colorConversion(JNIEnv *env, jobject thiz,
-    jobject plane0, jobject plane1, jobject plane2, jlong ptr_context, jlong ptr_rgb_frame)
+    jint rowStride, jobject plane0, jobject plane1, jobject plane2, jlong ptr_context, jlong ptr_rgb_frame)
 {
     // Get some pointers
     void* ptrPlane0_data = env->GetDirectBufferAddress(plane0);
@@ -64,6 +64,10 @@ Java_org_openftc_easyopencv_OpenCvInternalCamera2Impl_colorConversion(JNIEnv *en
     context->y_mat.data = (uchar*) ptrPlane0_data;
     context->uv_mat1.data = (uchar*) ptrPlane1_data;
     context->uv_mat2.data = (uchar*) ptrPlane2_data;
+
+    context->y_mat.step = rowStride;
+    context->uv_mat1.step = rowStride;
+    context->uv_mat2.step = rowStride;
 
     /*
      * Actually do the color conversion. Found on the interwebs. I think what's going on here is that
