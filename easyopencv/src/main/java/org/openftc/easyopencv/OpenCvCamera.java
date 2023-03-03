@@ -193,8 +193,15 @@ public interface OpenCvCamera extends CameraStreamSource
          * However, using GPU acceleration has been observed to occasionally cause crashes
          * in libgles.so / libutils.so on some devices, if the activity orientation is changed
          * (i.e. you rotate the device) while a streaming session is in flight. Caveat emptor.
+         * Deprecated in favor of NATIVE_VIEW
          */
-        GPU_ACCELERATED
+        @Deprecated
+        GPU_ACCELERATED,
+
+        /**
+         * Renders using the native Android view (which is hardware accelerated).
+         */
+        NATIVE_VIEW
     }
 
     /***

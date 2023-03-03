@@ -166,6 +166,8 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         sync.lock();
 
+        prepareForOpenCameraDevice();
+
         if(hasBeenCleanedUp())
         {
             return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE; // We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW

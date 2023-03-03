@@ -63,14 +63,14 @@ import java.util.concurrent.CountDownLatch;
 
 public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSource, GlobalWarningSource
 {
-
     private OpenCvPipeline pipeline = null;
     private LinearLayout viewportContainerLayout;
     private MovingStatistics msFrameIntervalRollingAverage;
     private MovingStatistics msUserPipelineRollingAverage;
     private MovingStatistics msTotalFrameProcessingTimeRollingAverage;
     private ElapsedTime timer;
-    protected OpenCvViewport viewport;
+    private OpenCvViewport viewport;
+    private int containerLayoutId;
     private OpenCvCameraRotation rotation;
     private int frameCount = 0;
     private float avgFps;
@@ -94,6 +94,9 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     private long mediaRecorderSurfaceNativeHandle;
     private int width;
     private int height;
+
+    ViewportRenderer desiredViewportRenderer = ViewportRenderer.SOFTWARE;
+    ViewportRenderingPolicy desiredRenderingPolicy = ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY;
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -127,7 +130,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         this();
 
-        setupViewport(containerLayoutId);
+        this.containerLayoutId = containerLayoutId;
 
         AppUtil.getInstance().getApplication().registerComponentCallbacks(componentCallbacksForRotation);
         OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotificationsForOrientation);
@@ -137,7 +140,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         if(viewport != null)
         {
-            removeViewportAsync(viewport);
+            removeViewportAsync((View)viewport);
             viewport = null;
         }
     }
@@ -145,6 +148,15 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     public synchronized boolean hasBeenCleanedUp()
     {
         return hasBeenCleanedUp;
+    }
+
+    public synchronized final void prepareForOpenCameraDevice()
+    {
+        if (containerLayoutId != 0 && viewport == null)
+        {
+            setupViewport(containerLayoutId);
+            viewport.setRenderingPolicy(desiredRenderingPolicy);
+        }
     }
 
     public synchronized final void prepareForStartStreaming(int width, int height, OpenCvCameraRotation rotation)
@@ -162,7 +174,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
         if(viewport != null)
         {
-            viewport.setSize(sizeAfterRotation);
+            viewport.setSize(width, height);
             viewport.setOptimizedViewRotation(getOptimizedViewportRotation(rotation, AppUtil.getInstance().getActivity().getWindowManager().getDefaultDisplay().getRotation()));
             viewport.activate();
         }
@@ -254,30 +266,46 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                         throw new OpenCvCameraException("Viewport container specified by user is not empty!");
                     }
 
-                    synchronized (viewportLock)
+                    View.OnClickListener onClickListener = new View.OnClickListener()
                     {
-                        viewport = new OpenCvViewport(AppUtil.getInstance().getActivity(), new View.OnClickListener()
+                        @Override
+                        public void onClick(View v)
                         {
-                            @Override
-                            public void onClick(View view)
+                            synchronized (pipelineChangeLock)
                             {
-                                synchronized (pipelineChangeLock)
+                                if(pipeline != null)
                                 {
-                                    if(pipeline != null)
-                                    {
-                                        pipeline.onViewportTapped();
-                                    }
+                                    pipeline.onViewportTapped();
                                 }
                             }
-                        });
+                        }
+                    };
+
+                    synchronized (viewportLock)
+                    {
+                        switch (desiredViewportRenderer)
+                        {
+                            case SOFTWARE:
+                            case GPU_ACCELERATED:
+                            {
+                                viewport = new OpenCvSurfaceViewViewport(AppUtil.getInstance().getActivity(), onClickListener);
+                                ((OpenCvSurfaceViewViewport)viewport).setUseGpuCanvas(desiredViewportRenderer == ViewportRenderer.GPU_ACCELERATED);
+                                break;
+                            }
+
+                            case NATIVE_VIEW:
+                            {
+                                break;
+                            }
+                        }
                     }
 
-                    viewport.setSize(new org.firstinspires.ftc.robotcore.external.android.util.Size(320, 240));
+                    viewport.setSize(320, 240);
 
-                    viewport.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    ((View)viewport).setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
                     viewportContainerLayout.setVisibility(View.VISIBLE);
-                    viewportContainerLayout.addView(viewport);
+                    viewportContainerLayout.addView((View)viewport);
 
                     latch.countDown();
                 }
@@ -727,37 +755,33 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         synchronized (viewportLock)
         {
-            if(viewport != null)
+            if(!cameraOrientationIsTiedToDeviceOrientation())
             {
-                if(!cameraOrientationIsTiedToDeviceOrientation())
+                RobotLog.addGlobalWarningMessage("Setting viewport rendering policy is not applicable for this type of camera - ignoring.");
+            }
+            else
+            {
+                if (viewport == null)
                 {
-                    RobotLog.addGlobalWarningMessage("Setting viewport rendering policy is not applicable for this type of camera - ignoring.");
+                    desiredRenderingPolicy = policy;
                 }
                 else
                 {
-                    viewport.setRenderingPolicy(policy);
+                    throw new IllegalStateException("setViewportRenderingPolicy() must only be called before opening the camera.");
                 }
             }
         }
     }
 
     @Override
-    public void setViewportRenderer(ViewportRenderer renderer)
+    public synchronized void setViewportRenderer(ViewportRenderer renderer)
     {
-        synchronized (viewportLock)
+        if(viewport != null)
         {
-            if(viewport != null)
-            {
-                try
-                {
-                    viewport.setRenderer(renderer);
-                }
-                catch (IllegalStateException e)
-                {
-                    throw new IllegalStateException("setViewportRenderer() may only be called BEFORE a streaming session has been started!");
-                }
-            }
+            throw new IllegalStateException("setViewportRenderer() must only be called before opening the camera.");
         }
+
+        desiredViewportRenderer = renderer;
     }
 
     private class OpModeNotificationsForOrientation implements OpModeManagerNotifier.Notifications

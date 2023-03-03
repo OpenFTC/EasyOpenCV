@@ -136,6 +136,8 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                 return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
             }
 
+            prepareForOpenCameraDevice();
+
             if(camera == null)
             {
                 try

@@ -140,6 +140,8 @@ class OpenCvInternalCameraImpl extends OpenCvCameraBase implements Camera.Previe
             return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE;// We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
         }
 
+        prepareForOpenCameraDevice();
+
         try
         {
             if(camera == null)

@@ -21,34 +21,55 @@
 
 package org.openftc.easyopencv;
 
-import org.opencv.core.Mat;
+import java.util.concurrent.CountDownLatch;
 
-public interface OpenCvViewport
+public class Util
 {
-    enum OptimizedRotation
+    public static void joinUninterruptibly(Thread thread)
     {
-        NONE(0),
-        ROT_90_COUNTERCLOCWISE(90),
-        ROT_90_CLOCKWISE(-90),
-        ROT_180(180);
+        boolean interrupted = false;
 
-        int val;
-
-        OptimizedRotation(int val)
+        while (true)
         {
-            this.val = val;
+            try
+            {
+                thread.join();
+                break;
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+                interrupted = true;
+            }
+        }
+
+        if (interrupted)
+        {
+            Thread.currentThread().interrupt();
         }
     }
 
-    void setFpsMeterEnabled(boolean enabled);
-    void pause();
-    void resume();
-    void activate();
-    void deactivate();
-    void setSize(int width, int height);
-    void setOptimizedViewRotation(OptimizedRotation rotation);
-    void notifyStatistics(float fps, int pipelineMs, int overheadMs);
-    void setRecording(boolean recording);
-    void post(Mat frame);
-    void setRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy policy);
+    public static void acquireUninterruptibly(CountDownLatch latch)
+    {
+        boolean interrupted = false;
+
+        while (true)
+        {
+            try
+            {
+                latch.await();
+                break;
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+                interrupted = true;
+            }
+        }
+
+        if (interrupted)
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
 }
