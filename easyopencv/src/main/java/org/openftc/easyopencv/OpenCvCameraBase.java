@@ -295,6 +295,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
                             case NATIVE_VIEW:
                             {
+                                viewport = new OpenCvNativeViewViewport(AppUtil.getInstance().getActivity(), onClickListener);
                                 break;
                             }
                         }
