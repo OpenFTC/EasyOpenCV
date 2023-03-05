@@ -97,6 +97,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     ViewportRenderer desiredViewportRenderer = ViewportRenderer.SOFTWARE;
     ViewportRenderingPolicy desiredRenderingPolicy = ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY;
+    boolean fpsMeterDesired = true;
 
     /*
      * NOTE: We cannot simply pass `new OpModeNotifications()` inline to the call
@@ -224,6 +225,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         synchronized (viewportLock)
         {
+            fpsMeterDesired = show;
+
             if(viewport != null)
             {
                 viewport.setFpsMeterEnabled(show);
@@ -300,6 +303,8 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                             }
                         }
                     }
+
+                    viewport.setFpsMeterEnabled(fpsMeterDesired);
 
                     viewport.setSize(320, 240);
 
