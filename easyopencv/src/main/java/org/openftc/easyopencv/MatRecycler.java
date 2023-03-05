@@ -89,5 +89,17 @@ class MatRecycler
         {
             this.idx = idx;
         }
+
+        private Object context;
+
+        public void setContext(Object context)
+        {
+            this.context = context;
+        }
+
+        public Object getContext()
+        {
+            return context;
+        }
     }
 }

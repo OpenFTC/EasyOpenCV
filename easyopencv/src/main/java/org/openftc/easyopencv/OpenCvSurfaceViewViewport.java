@@ -58,6 +58,7 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
     private volatile boolean useGpuCanvas;
 
     private final OpenCvViewRenderer renderer;
+    private volatile RenderHook renderHook;
 
     private String TAG = "OpenCvViewport";
 
@@ -125,7 +126,7 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
         }
     }
 
-    public void post(Mat mat)
+    public void post(Mat mat, Object context)
     {
         synchronized (syncObj)
         {
@@ -154,6 +155,7 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
                      */
                     MatRecycler.RecyclableMat matToCopyTo = framebufferRecycler.takeMat();
                     mat.copyTo(matToCopyTo);
+                    matToCopyTo.setContext(context);
                     visionPreviewFrameQueue.offer(matToCopyTo);
                 }
                 catch (InterruptedException e)
@@ -336,6 +338,12 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
         renderer.setRenderingPolicy(policy);
     }
 
+    @Override
+    public void setRenderHook(RenderHook renderHook)
+    {
+        this.renderHook = renderHook;
+    }
+
     public void resume()
     {
         synchronized (syncObj)
@@ -497,7 +505,7 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
                          */
                         if(canvas != null)
                         {
-                            renderer.render(mat, canvas);
+                            renderer.render(mat, canvas, renderHook, mat.getContext());
                             swapBuffer(canvas);
                         }
                         else

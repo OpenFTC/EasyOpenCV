@@ -21,9 +21,11 @@
 
 package org.openftc.easyopencv;
 
+import android.graphics.Canvas;
+
 import org.opencv.core.Mat;
 
-public interface OpenCvViewport
+interface OpenCvViewport
 {
     enum OptimizedRotation
     {
@@ -40,6 +42,11 @@ public interface OpenCvViewport
         }
     }
 
+    interface RenderHook
+    {
+        void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float canvasDensityScale, Object userContext);
+    }
+
     void setFpsMeterEnabled(boolean enabled);
     void pause();
     void resume();
@@ -49,6 +56,19 @@ public interface OpenCvViewport
     void setOptimizedViewRotation(OptimizedRotation rotation);
     void notifyStatistics(float fps, int pipelineMs, int overheadMs);
     void setRecording(boolean recording);
-    void post(Mat frame);
+    void post(Mat frame, Object userContext);
     void setRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy policy);
+    void setRenderHook(RenderHook renderHook);
+
+    class FrameContext
+    {
+        OpenCvPipeline generatingPipeline;
+        Object userContext;
+
+        public FrameContext(OpenCvPipeline generatingPipeline, Object userContext)
+        {
+            this.generatingPipeline = generatingPipeline;
+            this.userContext = userContext;
+        }
+    }
 }

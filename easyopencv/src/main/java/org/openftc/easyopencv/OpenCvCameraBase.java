@@ -24,6 +24,7 @@ package org.openftc.easyopencv;
 import android.content.ComponentCallbacks;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
 import android.view.Surface;
@@ -306,6 +307,24 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
                     viewport.setFpsMeterEnabled(fpsMeterDesired);
 
+                    viewport.setRenderHook(new OpenCvViewport.RenderHook()
+                    {
+                        @Override
+                        public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object context)
+                        {
+                            OpenCvViewport.FrameContext frameContext = (OpenCvViewport.FrameContext) context;
+
+                            // We must make sure that we call onDrawFrame() for the same pipeline which set the
+                            // context object when requesting a draw hook. (i.e. we can't just call onDrawFrame()
+                            // for whatever pipeline happens to be currently attached; it might have an entirely
+                            // different notion of what to expect in the context object)
+                            if (frameContext.generatingPipeline != null)
+                            {
+                                frameContext.generatingPipeline.onDrawFrame(canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, scaleCanvasDensity, frameContext.userContext);
+                            }
+                        }
+                    });
+
                     viewport.setSize(320, 240);
 
                     ((View)viewport).setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -532,7 +551,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                     nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, frame.nativeObj);
                 }
 
-                viewport.post(frame);
+                viewport.post(frame, new OpenCvViewport.FrameContext(null, null));
             }
             else if(userProcessedFrame == null)
             {
@@ -605,7 +624,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                 }
 
                 //Send that correct size Mat to the viewport
-                viewport.post(matToUseIfPipelineReturnedCropped);
+                viewport.post(matToUseIfPipelineReturnedCropped, new OpenCvViewport.FrameContext(pipelineSafe, pipelineSafe.getUserContextForDrawHook()));
             }
             else
             {
@@ -617,7 +636,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                 {
                     nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, userProcessedFrame.nativeObj);
                 }
-                viewport.post(userProcessedFrame);
+                viewport.post(userProcessedFrame, new OpenCvViewport.FrameContext(pipelineSafe, pipelineSafe.getUserContextForDrawHook()));
             }
         }
 

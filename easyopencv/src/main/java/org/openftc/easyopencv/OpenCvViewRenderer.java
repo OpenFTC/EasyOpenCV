@@ -105,7 +105,7 @@ public class OpenCvViewRenderer
         paintBlackBackground.setStyle(Paint.Style.FILL);
     }
 
-    private void unifiedDraw(Canvas canvas, int onscreenWidth, int onscreenHeight)
+    private void unifiedDraw(Canvas canvas, int onscreenWidth, int onscreenHeight, OpenCvViewport.RenderHook userHook, Object userCtx)
     {
         int x_offset_statbox = 0;
         int y_offset_statbox = 0;
@@ -175,6 +175,18 @@ public class OpenCvViewRenderer
 
             drawStats(canvas, statsRect);
         }
+
+        // Allow the user to do some drawing if they want
+        if (userHook != null)
+        {
+            // Can either use width or height I guess ¯\_(ツ)_/¯
+            float scaleBitmapPxToCanvasPx = (float) scaledWidth / bitmapFromMat.getWidth();
+
+            // To make the user's life easy, we teleport the origin to the top
+            // left corner of the bitmap we painted
+            canvas.translate(topLeftX, topLeftY);
+            userHook.onDrawFrame(canvas, scaledWidth, scaledHeight, scaleBitmapPxToCanvasPx, metricsScale, userCtx);
+        }
     }
 
     private void drawStats(Canvas canvas, Rect rect)
@@ -228,7 +240,7 @@ public class OpenCvViewRenderer
         this.optimizedViewRotation = optimizedViewRotation;
     }
 
-    public void render(Mat mat, Canvas canvas)
+    public void render(Mat mat, Canvas canvas, OpenCvViewport.RenderHook userHook, Object userCtx)
     {
         if (bitmapFromMat == null || bitmapFromMat.getWidth() != mat.width() || bitmapFromMat.getHeight() != mat.height())
         {
@@ -255,7 +267,7 @@ public class OpenCvViewRenderer
 
         if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY || optimizedRotationSafe == OpenCvViewport.OptimizedRotation.NONE)
         {
-            unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight());
+            unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight(), userHook, userCtx);
         }
         else if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW)
         {
@@ -263,7 +275,7 @@ public class OpenCvViewRenderer
             {
                 // 180 is easy, just rotate canvas 180 about center and draw as usual
                 canvas.rotate(optimizedRotationSafe.val, canvas.getWidth()/2, canvas.getHeight()/2);
-                unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight());
+                unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight(), userHook, userCtx);
             }
             else // 90 either way
             {
@@ -276,7 +288,7 @@ public class OpenCvViewRenderer
                 canvas.translate(origin_x, origin_y);
 
                 // Now draw as normal, but, the onscreen width and height are swapped
-                unifiedDraw(canvas, canvas.getHeight(), canvas.getWidth());
+                unifiedDraw(canvas, canvas.getHeight(), canvas.getWidth(), userHook, userCtx);
             }
         }
     }

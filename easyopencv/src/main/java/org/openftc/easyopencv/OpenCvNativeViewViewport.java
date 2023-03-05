@@ -54,6 +54,8 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
 
     private volatile boolean isInvalidatePending = false;
 
+    private volatile RenderHook renderHook;
+
     public OpenCvNativeViewViewport(Context context,  OnClickListener onClickListener)
     {
         super(context);
@@ -109,7 +111,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     }
 
     @Override
-    public void post(Mat frame)
+    public void post(Mat frame, Object context)
     {
         // Synchronized with activation/deactivation, but NOT with
         // anything else (we don't want to be blocked by onDraw() or something)
@@ -136,6 +138,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
                      */
                     MatRecycler.RecyclableMat matToCopyTo = framebufferRecycler.takeMat();
                     frame.copyTo(matToCopyTo);
+                    matToCopyTo.setContext(context);
                     visionPreviewFrameQueue.offer(matToCopyTo);
 
                     handler.post(invalidateRunnable);
@@ -225,6 +228,12 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     }
 
     @Override
+    public void setRenderHook(RenderHook renderHook)
+    {
+        this.renderHook = renderHook;
+    }
+
+    @Override
     public synchronized void onDraw(Canvas canvas) // synchronized with activate and deactivate
     {
         isInvalidatePending = false;
@@ -248,7 +257,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
                 return;
             }
 
-            renderer.render(mat, canvas);
+            renderer.render(mat, canvas, renderHook, mat.getContext());
 
             //We're done with that Mat object; return it to the Mat recycler so it can be used again later
             framebufferRecycler.returnMat(mat);
