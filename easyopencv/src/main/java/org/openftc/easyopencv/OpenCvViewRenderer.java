@@ -98,6 +98,7 @@ public class OpenCvViewRenderer
         fpsMeterTextPaint = new Paint();
         fpsMeterTextPaint.setColor(Color.WHITE);
         fpsMeterTextPaint.setTextSize(fpsMeterTextSize);
+        fpsMeterTextPaint.setAntiAlias(true);
 
         paintBlackBackground = new Paint();
         paintBlackBackground.setColor(Color.BLACK);
