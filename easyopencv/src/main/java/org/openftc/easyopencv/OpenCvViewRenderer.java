@@ -42,6 +42,9 @@ public class OpenCvViewRenderer
     private final int statBoxLTxtMargin;
     private static final float referenceDPI = 443; // Nexus 5
     private final float metricsScale;
+    private static final int OVERLAY_COLOR = Color.rgb(102, 20, 68);
+    private static final int PAUSED_COLOR = Color.rgb(255, 166, 0);
+    private static final int RC_ACTIVITY_BG_COLOR = Color.rgb(239,239,239);
     private Paint fpsMeterNormalBgPaint;
     private Paint fpsMeterRecordingPaint;
     private Paint fpsMeterTextPaint;
@@ -85,11 +88,11 @@ public class OpenCvViewRenderer
         statBoxTextFirstLineYFromBottomOffset = (int) (80*metricsScale);
 
         fpsMeterNormalBgPaint = new Paint();
-        fpsMeterNormalBgPaint.setColor(Color.rgb(102, 20, 68));
+        fpsMeterNormalBgPaint.setColor(OVERLAY_COLOR);
         fpsMeterNormalBgPaint.setStyle(Paint.Style.FILL);
 
         fpsMeterRecordingPaint = new Paint();
-        fpsMeterRecordingPaint.setColor(Color.rgb(255, 0, 0));
+        fpsMeterRecordingPaint.setColor(Color.RED);
         fpsMeterRecordingPaint.setStyle(Paint.Style.FILL);
 
         fpsMeterTextPaint = new Paint();
@@ -101,243 +104,76 @@ public class OpenCvViewRenderer
         paintBlackBackground.setStyle(Paint.Style.FILL);
     }
 
-    private void drawOptimizingView(Canvas canvas)
-    {
-        /***
-         * WE CAN ONLY LOOK AT THIS VARIABLE ONCE BECAUSE IT CAN BE CHANGED BEHIND
-         * OUT BACKS FROM ANOTHER THREAD!
-         *
-         * Technically, we could synchronize with {@link #setOptimizedViewRotation(OpenCvViewport.OptimizedRotation)}
-         * but drawing can sometimes take a long time (e.g. 30ms) so just caching seems to be better...
-         */
-        OpenCvViewport.OptimizedRotation optimizedViewRotationLocalCache = optimizedViewRotation;
-
-        if(optimizedViewRotationLocalCache == OpenCvViewport.OptimizedRotation.NONE)
-        {
-            /*
-             * Ignore this request to optimize the view, nothing to do
-             */
-            drawOptimizingEfficiency(canvas);
-            return;
-        }
-        else if(optimizedViewRotationLocalCache == OpenCvViewport.OptimizedRotation.ROT_180)
-        {
-            /*
-             * If we're rotating by 180, then we can just re-use the drawing code
-             * from the efficient method
-             */
-            canvas.rotate(optimizedViewRotationLocalCache.val, canvas.getWidth()/2, canvas.getHeight()/2);
-            drawOptimizingEfficiency(canvas);
-            return;
-        }
-
-        drawOptimizingViewForQuarterRot(canvas, optimizedViewRotationLocalCache);
-    }
-
-    private void drawOptimizingViewForQuarterRot(Canvas canvas, OpenCvViewport.OptimizedRotation optimizedViewRotationLocalCache)
-    {
-        canvas.rotate(optimizedViewRotationLocalCache.val, canvas.getWidth()/2, canvas.getHeight()/2);
-
-        // Swapped because of 90deg rotation
-        int canvasWidth = canvas.getHeight();
-        int canvasHeight = canvas.getWidth();
-
-        // Calculate the new origin (top left) that will be visible onscreen
-        int origin_x = (canvasHeight-canvasWidth)/2;
-        int origin_y = (canvasWidth-canvasHeight)/2;
-
-        // Calculate the aspect ratio of the canvas and bitmap
-        double canvasAspect = (float) canvasWidth/canvasHeight;
-
-        int y_offset_statbox = 0;
-
-        // Image width is the factor we need to consider
-        if(aspectRatio > canvasAspect)
-        {
-            // Width: we use the max we have, since horizontal bounds are hit before vertical bounds
-            int scaledWidth = canvasWidth;
-
-            // Height: calculate a scaled height assuming width is maxed for the canvas
-            int scaledHeight = (int) Math.round(canvasWidth / aspectRatio);
-
-            // We want to center the image in the viewport
-            int topLeftX = origin_x;
-            int topLeftY = origin_y + Math.abs(canvasHeight-scaledHeight)/2;
-            y_offset_statbox = Math.abs(canvasHeight-scaledHeight)/2;
-
-            Rect rect = createRect(
-                    topLeftX,
-                    topLeftY,
-                    scaledWidth,
-                    scaledHeight);
-
-            // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
-            // annotations and doesn't specify alpha 255. This wasn't an issue when we just
-            // painted black behind the entire view, but now that we paint the RC background
-            // color, it is an issue...
-            canvas.drawRect(rect, paintBlackBackground);
-
-            canvas.drawBitmap(
-                    bitmapFromMat,
-                    null,
-                    rect,
-                    null
-            );
-        }
-        // Image height is the factor we need to consider
-        else
-        {
-            // Height: we use the max we have, since vertical bounds are hit before horizontal bounds
-            int scaledHeight = canvasHeight;
-
-            // Width: calculate a scaled width assuming height is maxed for the canvas
-            int scaledWidth = (int) Math.round(canvasHeight * aspectRatio);
-
-            // We want to center the image in the viewport
-            int topLeftY = origin_y;
-            int topLeftX = origin_x + Math.abs(canvasWidth-scaledWidth)/2;
-
-            Rect rect = createRect(
-                    topLeftX,
-                    topLeftY,
-                    scaledWidth,
-                    scaledHeight);
-
-            // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
-            // annotations and doesn't specify alpha 255. This wasn't an issue when we just
-            // painted black behind the entire view, but now that we paint the RC background
-            // color, it is an issue...
-            canvas.drawRect(rect, paintBlackBackground);
-
-            canvas.drawBitmap(
-                    bitmapFromMat,
-                    null,
-                    rect,
-                    null
-            );
-        }
-
-        /*
-         * If we don't need to draw the statistics, get out of dodge
-         */
-        if(!fpsMeterEnabled)
-            return;
-
-        Rect rect = null;
-
-        if(optimizedViewRotationLocalCache == OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE)
-        {
-            rect = createRect(
-                    origin_x+canvasWidth-statBoxW,
-                    origin_y+canvasHeight-statBoxH-y_offset_statbox,
-                    statBoxW,
-                    statBoxH);
-        }
-        else if(optimizedViewRotationLocalCache == OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE)
-        {
-            rect = createRect(
-                    origin_x,
-                    origin_y+canvasHeight-statBoxH-y_offset_statbox,
-                    statBoxW,
-                    statBoxH);
-        }
-
-        drawStats(canvas, rect);
-    }
-
-    private void drawOptimizingEfficiency(Canvas canvas)
+    private void unifiedDraw(Canvas canvas, int onscreenWidth, int onscreenHeight)
     {
         int x_offset_statbox = 0;
         int y_offset_statbox = 0;
 
-        /*
-         * We need to draw minding the HEIGHT we have to work with; width is not an issue
-         */
-        if((canvas.getHeight() * aspectRatio) < canvas.getWidth())
-        {
-            // Height: we use the max we have, since vertical bounds are hit before horizontal bounds
-            int scaledHeight = canvas.getHeight();
+        int topLeftX;
+        int topLeftY;
+        int scaledWidth;
+        int scaledHeight;
 
-            // Width: calculate a scaled width assuming height is maxed for the canvas
-            int scaledWidth = (int) Math.round(canvas.getHeight() * aspectRatio);
+        double canvasAspect = (float) onscreenWidth/onscreenHeight;
 
-            // We want to center the image in the viewport
-            x_offset_statbox = Math.abs(canvas.getWidth()-scaledWidth)/2;
-            int topLeftY = 0;
-            int topLeftX = 0 + Math.abs(canvas.getWidth()-scaledWidth)/2;
-
-            //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
-            Rect rect = createRect(
-                    topLeftX,
-                    topLeftY,
-                    scaledWidth,
-                    scaledHeight);
-
-            // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
-            // annotations and doesn't specify alpha 255. This wasn't an issue when we just
-            // painted black behind the entire view, but now that we paint the RC background
-            // color, it is an issue...
-            canvas.drawRect(rect, paintBlackBackground);
-
-            canvas.drawBitmap(
-                    bitmapFromMat,
-                    null,
-                    rect,
-                    null
-            );
-        }
-
-        /*
-         * We need to draw minding the WIDTH we have to work with; height is not an issue
-         */
-        else
+        if(aspectRatio > canvasAspect) /* Image is WIDER than canvas */
         {
             // Width: we use the max we have, since horizontal bounds are hit before vertical bounds
-            int scaledWidth = canvas.getWidth();
+            scaledWidth = onscreenWidth;
 
             // Height: calculate a scaled height assuming width is maxed for the canvas
-            int scaledHeight = (int) Math.round(canvas.getWidth() / aspectRatio);
+            scaledHeight = (int) Math.round(onscreenWidth / aspectRatio);
 
             // We want to center the image in the viewport
-            int topLeftY = Math.abs(canvas.getHeight()-scaledHeight)/2;
-            int topLeftX = 0;
-            y_offset_statbox = Math.abs(canvas.getHeight()-scaledHeight)/2;
+            topLeftY = Math.abs(onscreenHeight-scaledHeight)/2;
+            topLeftX = 0;
+            y_offset_statbox = topLeftY;
+        }
+        else /* Image is TALLER than canvas */
+        {
+            // Height: we use the max we have, since vertical bounds are hit before horizontal bounds
+            scaledHeight = onscreenHeight;
 
-            //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
-            Rect rect = createRect(
-                    topLeftX,
-                    topLeftY,
-                    scaledWidth,
-                    scaledHeight);
+            // Width: calculate a scaled width assuming height is maxed for the canvas
+            scaledWidth = (int) Math.round(onscreenHeight * aspectRatio);
 
-            // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
-            // annotations and doesn't specify alpha 255. This wasn't an issue when we just
-            // painted black behind the entire view, but now that we paint the RC background
-            // color, it is an issue...
-            canvas.drawRect(rect, paintBlackBackground);
-
-            canvas.drawBitmap(
-                    bitmapFromMat,
-                    null,
-                    rect,
-                    null
-            );
+            // We want to center the image in the viewport
+            topLeftY = 0;
+            topLeftX = Math.abs(onscreenWidth - scaledWidth) / 2;
+            x_offset_statbox = topLeftX;
         }
 
-        /*
-         * If we don't need to draw the statistics, get out of dodge
-         */
-        if(!fpsMeterEnabled)
-            return;
+        //Draw the bitmap, scaling it to the maximum size that will fit in the viewport
+        Rect bmpRect = createRect(
+                topLeftX,
+                topLeftY,
+                scaledWidth,
+                scaledHeight);
 
-        Rect rect = createRect(
-                x_offset_statbox,
-                canvas.getHeight()-statBoxH-y_offset_statbox,
-                statBoxW,
-                statBoxH
+        // Draw black behind the bitmap to avoid alpha issues if usercode tries to draw
+        // annotations and doesn't specify alpha 255. This wasn't an issue when we just
+        // painted black behind the entire view, but now that we paint the RC background
+        // color, it is an issue...
+        canvas.drawRect(bmpRect, paintBlackBackground);
+
+        canvas.drawBitmap(
+                bitmapFromMat,
+                null,
+                bmpRect,
+                null
         );
 
-        drawStats(canvas, rect);
+        if (fpsMeterEnabled)
+        {
+            Rect statsRect = createRect(
+                    x_offset_statbox,
+                    onscreenHeight-y_offset_statbox-statBoxH,
+                    statBoxW,
+                    statBoxH
+            );
+
+            drawStats(canvas, statsRect);
+        }
     }
 
     private void drawStats(Canvas canvas, Rect rect)
@@ -411,15 +247,36 @@ public class OpenCvViewRenderer
         aspectRatio = (float) width / height;
 
         //Draw the background each time to prevent double buffering problems
-        canvas.drawColor(Color.rgb(239,239,239)); // RC activity background color
+        canvas.drawColor(RC_ACTIVITY_BG_COLOR);
 
-        if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY)
+        // Cache current state, can change behind our backs
+        OpenCvViewport.OptimizedRotation optimizedRotationSafe = optimizedViewRotation;
+
+        if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.MAXIMIZE_EFFICIENCY || optimizedRotationSafe == OpenCvViewport.OptimizedRotation.NONE)
         {
-            drawOptimizingEfficiency(canvas);
+            unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight());
         }
         else if(renderingPolicy == OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW)
         {
-            drawOptimizingView(canvas);
+            if(optimizedRotationSafe == OpenCvViewport.OptimizedRotation.ROT_180)
+            {
+                // 180 is easy, just rotate canvas 180 about center and draw as usual
+                canvas.rotate(optimizedRotationSafe.val, canvas.getWidth()/2, canvas.getHeight()/2);
+                unifiedDraw(canvas, canvas.getWidth(), canvas.getHeight());
+            }
+            else // 90 either way
+            {
+                // Rotate the canvas +-90 about the center
+                canvas.rotate(optimizedRotationSafe.val, canvas.getWidth()/2, canvas.getHeight()/2);
+
+                // Translate the canvas such that 0,0 is in the top left corner (for this perspective) ONSCREEN.
+                int origin_x = (canvas.getWidth()-canvas.getHeight())/2;
+                int origin_y = -origin_x;
+                canvas.translate(origin_x, origin_y);
+
+                // Now draw as normal, but, the onscreen width and height are swapped
+                unifiedDraw(canvas, canvas.getHeight(), canvas.getWidth());
+            }
         }
     }
 
@@ -430,8 +287,27 @@ public class OpenCvViewRenderer
 
     public void renderPaused(Canvas canvas)
     {
-        canvas.drawColor(Color.rgb(255, 166, 0));
-        canvas.drawRect(0, canvas.getHeight()-40, 450, canvas.getHeight(), fpsMeterNormalBgPaint);
-        canvas.drawText("VIEWPORT PAUSED", 5, canvas.getHeight()-10, fpsMeterTextPaint);
+        canvas.drawColor(PAUSED_COLOR);
+
+        Rect rect = createRect(
+                0,
+                canvas.getHeight()-statBoxH,
+                statBoxW,
+                statBoxH
+        );
+
+        // Draw the purple rectangle
+        canvas.drawRect(rect, fpsMeterNormalBgPaint);
+
+        // Some formatting stuff
+        int statBoxLTxtStart = rect.left+statBoxLTxtMargin;
+        int textLine1Y = rect.bottom - statBoxTextFirstLineYFromBottomOffset;
+        int textLine2Y = textLine1Y + statBoxTextLineSpacing;
+        int textLine3Y = textLine2Y + statBoxTextLineSpacing;
+
+        // Draw the 3 text lines
+        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig.VERSION_NAME), statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
+        canvas.drawText("VIEWPORT PAUSED", statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
+        //canvas.drawText("Hi", statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
     }
 }

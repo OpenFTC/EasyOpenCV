@@ -915,7 +915,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
         if(windowRotation == Surface.ROTATION_0)
         {
-            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT || streamRotation == OpenCvCameraRotation.SENSOR_NATIVE)
             {
                 return OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE;
             }
@@ -953,7 +953,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         }
         else if(windowRotation == Surface.ROTATION_270)
         {
-            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT)
+            if(streamRotation == OpenCvCameraRotation.SIDEWAYS_LEFT || streamRotation == OpenCvCameraRotation.SENSOR_NATIVE)
             {
                 return OpenCvViewport.OptimizedRotation.ROT_180;
             }
