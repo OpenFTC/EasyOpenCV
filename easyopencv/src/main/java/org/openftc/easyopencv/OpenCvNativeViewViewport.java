@@ -60,7 +60,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     {
         super(context);
 
-        renderer = new OpenCvViewRenderer(context);
+        renderer = new OpenCvViewRenderer(context, false);
         setOnClickListener(onClickListener);
 
         visionPreviewFrameQueue.setEvictAction(new Consumer<MatRecycler.RecyclableMat>()

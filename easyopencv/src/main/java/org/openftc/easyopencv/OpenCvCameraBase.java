@@ -521,7 +521,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             frame = rotatedMat;
         }
 
-        OpenCvPipeline pipelineSafe = null;
+        final OpenCvPipeline pipelineSafe;
 
         // Grab a safe reference to what the pipeline currently is,
         // since the user is allowed to change it at any time
@@ -542,102 +542,95 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
             msUserPipelineRollingAverage.add(System.currentTimeMillis() - pipelineStart);
         }
 
-        if(viewport != null)
+        // Will point to whatever mat we end up deciding to send to the screen
+        final Mat matForDisplay;
+
+        if (pipelineSafe == null)
         {
-            if(pipelineSafe == null)
-            {
-                if(mediaRecorder != null)
-                {
-                    nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, frame.nativeObj);
-                }
+            matForDisplay = frame;
+        }
+        else if(userProcessedFrame == null)
+        {
+            throw new OpenCvCameraException("User pipeline returned null");
+        }
+        else if(userProcessedFrame.empty())
+        {
+            throw new OpenCvCameraException("User pipeline returned empty mat");
+        }
+        else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
+        {
+            /*
+             * The user didn't return the same size image from their pipeline as we gave them,
+             * ugh. This makes our lives interesting because we can't just send an arbitrary
+             * frame size to the viewport. It re-uses framebuffers that are of a fixed resolution.
+             * So, we copy the user's Mat onto a Mat of the correct size, and then send that other
+             * Mat to the viewport.
+             */
 
-                viewport.post(frame, new OpenCvViewport.FrameContext(null, null));
-            }
-            else if(userProcessedFrame == null)
-            {
-                /*
-                 * Silly user, they returned null from their pipeline....
-                 */
-                throw new OpenCvCameraException("User pipeline returned null frame for viewport display");
-            }
-            else if(userProcessedFrame.empty())
-            {
-                throw new OpenCvCameraException("User pipeline returned empty frame for viewport display");
-            }
-            else if(userProcessedFrame.cols() != frame.cols() || userProcessedFrame.rows() != frame.rows())
-            {
-                /*
-                 * The user didn't return the same size image from their pipeline as we gave them,
-                 * ugh. This makes our lives interesting because we can't just send an arbitrary
-                 * frame size to the viewport. It re-uses framebuffers that are of a fixed resolution.
-                 * So, we copy the user's Mat onto a Mat of the correct size, and then send that other
-                 * Mat to the viewport.
-                 */
-
-                if(userProcessedFrame.cols() > frame.cols() || userProcessedFrame.rows() > frame.rows())
-                {
-                    /*
-                     * What on earth was this user thinking?! They returned a Mat that's BIGGER in
-                     * a dimension than the one we gave them!
-                     */
-
-                    throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
-                }
-
-                //We re-use this buffer, only create if needed
-                if(matToUseIfPipelineReturnedCropped == null)
-                {
-                    matToUseIfPipelineReturnedCropped = frame.clone();
-                }
-
-                //Set to brown to indicate to the user the areas which they cropped off
-                matToUseIfPipelineReturnedCropped.setTo(brown);
-
-                int usrFrmTyp = userProcessedFrame.type();
-
-                if(usrFrmTyp == CvType.CV_8UC1)
-                {
-                    /*
-                     * Handle 8UC1 returns (masks and single channels of images);
-                     *
-                     * We have to color convert onto a different mat (rather than
-                     * doing so in place) to avoid breaking any of the user's submats
-                     */
-                    Imgproc.cvtColor(userProcessedFrame, croppedColorCvtedMat, Imgproc.COLOR_GRAY2RGBA);
-                    userProcessedFrame = croppedColorCvtedMat; //Doesn't affect user's handle, only ours
-                }
-                else if(usrFrmTyp != CvType.CV_8UC4 && usrFrmTyp != CvType.CV_8UC3)
-                {
-                    /*
-                     * Oof, we don't know how to handle the type they gave us
-                     */
-                    throw new OpenCvCameraException("User pipeline returned a frame of an illegal type. Valid types are CV_8UC1, CV_8UC3, and CV_8UC4");
-                }
-
-                //Copy the user's frame onto a Mat of the correct size
-                userProcessedFrame.copyTo(matToUseIfPipelineReturnedCropped.submat(
-                        new Rect(0,0,userProcessedFrame.cols(), userProcessedFrame.rows())));
-
-                if(mediaRecorder != null)
-                {
-                    nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, matToUseIfPipelineReturnedCropped.nativeObj);
-                }
-
-                //Send that correct size Mat to the viewport
-                viewport.post(matToUseIfPipelineReturnedCropped, new OpenCvViewport.FrameContext(pipelineSafe, pipelineSafe.getUserContextForDrawHook()));
-            }
-            else
+            if(userProcessedFrame.cols() > frame.cols() || userProcessedFrame.rows() > frame.rows())
             {
                 /*
-                 * Yay, smart user! They gave us the frame size we were expecting!
-                 * Go ahead and send it right on over to the viewport.
+                 * What on earth was this user thinking?! They returned a Mat that's BIGGER in
+                 * a dimension than the one we gave them!
                  */
-                if(mediaRecorder != null)
-                {
-                    nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, userProcessedFrame.nativeObj);
-                }
-                viewport.post(userProcessedFrame, new OpenCvViewport.FrameContext(pipelineSafe, pipelineSafe.getUserContextForDrawHook()));
+
+                throw new OpenCvCameraException("User pipeline returned frame of unexpected size");
             }
+
+            //We re-use this buffer, only create if needed
+            if(matToUseIfPipelineReturnedCropped == null)
+            {
+                matToUseIfPipelineReturnedCropped = frame.clone();
+            }
+
+            //Set to brown to indicate to the user the areas which they cropped off
+            matToUseIfPipelineReturnedCropped.setTo(brown);
+
+            int usrFrmTyp = userProcessedFrame.type();
+
+            if(usrFrmTyp == CvType.CV_8UC1)
+            {
+                /*
+                 * Handle 8UC1 returns (masks and single channels of images);
+                 *
+                 * We have to color convert onto a different mat (rather than
+                 * doing so in place) to avoid breaking any of the user's submats
+                 */
+                Imgproc.cvtColor(userProcessedFrame, croppedColorCvtedMat, Imgproc.COLOR_GRAY2RGBA);
+                userProcessedFrame = croppedColorCvtedMat; //Doesn't affect user's handle, only ours
+            }
+            else if(usrFrmTyp != CvType.CV_8UC4 && usrFrmTyp != CvType.CV_8UC3)
+            {
+                /*
+                 * Oof, we don't know how to handle the type they gave us
+                 */
+                throw new OpenCvCameraException("User pipeline returned a frame of an illegal type. Valid types are CV_8UC1, CV_8UC3, and CV_8UC4");
+            }
+
+            //Copy the user's frame onto a Mat of the correct size
+            userProcessedFrame.copyTo(matToUseIfPipelineReturnedCropped.submat(
+                    new Rect(0,0,userProcessedFrame.cols(), userProcessedFrame.rows())));
+
+            //Send that correct size Mat to the viewport
+            matForDisplay = matToUseIfPipelineReturnedCropped;
+        }
+        else
+        {
+            /*
+             * Yay, smart user! They gave us the frame size we were expecting!
+             * Go ahead and send it right on over to the viewport.
+             */
+            matForDisplay = userProcessedFrame;
+        }
+
+        if(mediaRecorder != null)
+        {
+            nativeCopyMatToSurface(mediaRecorderSurfaceNativeHandle, matForDisplay.nativeObj);
+        }
+
+        if (viewport != null)
+        {
+            viewport.post(matForDisplay, new OpenCvViewport.FrameContext(pipelineSafe, pipelineSafe != null ? pipelineSafe.getUserContextForDrawHook() : null));
         }
 
         avgPipelineTime = (int) Math.round(msUserPipelineRollingAverage.getMean());
@@ -660,34 +653,81 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         {
             if (bitmapContinuation != null)
             {
-                Mat matToCvt = null;
+                OpenCvViewRenderer renderer = new OpenCvViewRenderer(AppUtil.getInstance().getActivity(), true);
+                OpenCvViewport.OptimizedRotation optimizedRotation = getOptimizedViewportRotation(rotation, AppUtil.getInstance().getActivity().getWindowManager().getDefaultDisplay().getRotation());
+                renderer.setOptimizedViewRotation(optimizedRotation);
 
-                if(userProcessedFrame == null)
+                renderer.notifyStatistics(avgFps, avgPipelineTime, avgOverheadTime);
+                renderer.setRenderingPolicy(desiredRenderingPolicy);
+
+                final Bitmap bitmapForDs;
+
+                if (pipelineSafe != null)
                 {
-                    matToCvt = frame;
+                    // We try to exactly re-render the local view using an offscreen canvas so that the DS preview
+                    // looks just like the local one. But, we use a fixed resolution rather than trying to match the
+                    // local canvas resolution.
+
+                    int fixedWidth = 1280;
+                    int fixedHeight = 720;
+
+                    // However, we don't want to waste space with black borders, so we crop down that fixed resolution
+                    // to be the same aspect ratio as the target image.
+                    float imageAspect = (float) matForDisplay.width() / matForDisplay.height();
+                    float fixedAspect = (float) fixedWidth / fixedHeight;
+
+                    if (imageAspect > fixedAspect) /* Image is WIDER than canvas */
+                    {
+                        fixedHeight = (int) Math.round(fixedWidth / imageAspect);
+                    }
+                    else /* Image is TALLER than canvas */
+                    {
+                        fixedWidth = (int) Math.round(fixedHeight * imageAspect);
+                    }
+
+                    // If the image is going to be rotated, then swap the width and height of the fixed res bitmap used to back the canvas
+                    if (desiredRenderingPolicy == ViewportRenderingPolicy.OPTIMIZE_VIEW && (optimizedRotation == OpenCvViewport.OptimizedRotation.ROT_90_CLOCKWISE || optimizedRotation == OpenCvViewport.OptimizedRotation.ROT_90_COUNTERCLOCWISE))
+                    {
+                        int tmp = fixedWidth;
+                        fixedWidth = fixedHeight;
+                        fixedHeight = tmp;
+                    }
+
+                    bitmapForDs = Bitmap.createBitmap(fixedWidth, fixedHeight, Bitmap.Config.RGB_565);
+                    renderer.setFpsMeterEnabled(fpsMeterDesired);
+
+                    Canvas canvas = new Canvas(bitmapForDs);
+
+                    renderer.render(
+                            matForDisplay,
+                            canvas,
+                            new OpenCvViewport.RenderHook()
+                            {
+                                @Override
+                                public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float canvasDensityScale, Object userContext)
+                                {
+                                    pipelineSafe.onDrawFrame(canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, canvasDensityScale, userContext);
+                                }
+                            },
+                            pipelineSafe.getUserContextForDrawHook()
+                    );
                 }
                 else
                 {
-                    matToCvt = userProcessedFrame;
+                    bitmapForDs = Bitmap.createBitmap(matForDisplay.cols(), matForDisplay.rows(), Bitmap.Config.RGB_565);
+                    Utils.matToBitmap(matForDisplay, bitmapForDs);
                 }
 
-                final Bitmap bitmapFromMat = Bitmap.createBitmap(matToCvt.cols(), matToCvt.rows(), Bitmap.Config.RGB_565);
-
-                Utils.matToBitmap(matToCvt, bitmapFromMat);
-
-                if (bitmapFromMat != null)
+                bitmapContinuation.dispatch(new ContinuationResult<Consumer<Bitmap>>()
                 {
-                    bitmapContinuation.dispatch(new ContinuationResult<Consumer<Bitmap>>()
+                    @Override
+                    public void handle(Consumer<Bitmap> bitmapConsumer)
                     {
-                        @Override
-                        public void handle(Consumer<Bitmap> bitmapConsumer)
-                        {
-                            bitmapConsumer.accept(bitmapFromMat);
-                            bitmapFromMat.recycle();
-                        }
-                    });
-                    bitmapContinuation = null;
-                }
+                        bitmapConsumer.accept(bitmapForDs);
+                        bitmapForDs.recycle();
+                    }
+                });
+                bitmapContinuation = null;
             }
         }
     }

@@ -59,6 +59,7 @@ public class OpenCvViewRenderer
 
     private int width;
     private int height;
+    private final boolean offscreen;
 
     private volatile boolean isRecording;
 
@@ -68,9 +69,17 @@ public class OpenCvViewRenderer
 
     private Bitmap bitmapFromMat;
 
-    public OpenCvViewRenderer(Context context)
+    public OpenCvViewRenderer(Context context, boolean renderingOffsceen)
     {
-        if (Device.isRevControlHub())
+        offscreen = renderingOffsceen;
+
+        if (offscreen)
+        {
+            // We use an offscreen canvas size of 1280x720 which is roughly the same size
+            // as the canvas on the Nexus 5 so this looks okay-ish.
+            metricsScale = 1.0f;
+        }
+        else if (Device.isRevControlHub())
         {
             // Control Hub reports a bogus dpi so use something that looks somewhat ok
             metricsScale = 0.5f;
@@ -259,8 +268,11 @@ public class OpenCvViewRenderer
         height = bitmapFromMat.getHeight();
         aspectRatio = (float) width / height;
 
-        //Draw the background each time to prevent double buffering problems
-        canvas.drawColor(RC_ACTIVITY_BG_COLOR);
+        if (!offscreen)
+        {
+            //Draw the background each time to prevent double buffering problems
+            canvas.drawColor(RC_ACTIVITY_BG_COLOR);
+        }
 
         // Cache current state, can change behind our backs
         OpenCvViewport.OptimizedRotation optimizedRotationSafe = optimizedViewRotation;

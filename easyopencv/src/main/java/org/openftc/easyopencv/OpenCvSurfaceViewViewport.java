@@ -66,7 +66,7 @@ public class OpenCvSurfaceViewViewport extends SurfaceView implements SurfaceHol
     {
         super(context);
 
-        renderer = new OpenCvViewRenderer(context);
+        renderer = new OpenCvViewRenderer(context, false);
 
         getHolder().addCallback(this);
 
