@@ -256,8 +256,26 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     }
 
     @Override
-    public void startStreaming(final int width, final int height, OpenCvCameraRotation rotation)
+    public void startStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
+        startStreaming(width, height, rotation, StreamFormat.YUY2);
+    }
+
+    private int streamFormat2ImageFormat(StreamFormat streamFormat)
+    {
+        switch (streamFormat)
+        {
+            case YUY2: return ImageFormat.YUY2;
+            case MJPEG: return ImageFormat.JPEG;
+            default: throw new IllegalArgumentException();
+        }
+    }
+
+    @Override
+    public void startStreaming(final int width, final int height, OpenCvCameraRotation rotation, StreamFormat streamFormat)
+    {
+        final int format = streamFormat2ImageFormat(streamFormat);
+
         synchronized (sync)
         {
             if(camera == null)
@@ -282,7 +300,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             final CountDownLatch captureStartResult = new CountDownLatch(1);
 
             boolean sizeSupported = false;
-            for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
+            for(Size s : cameraCharacteristics.getSizes(format))
             {
                 if(s.getHeight() == height && s.getWidth() == width)
                 {
@@ -295,7 +313,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             {
                 StringBuilder supportedSizesBuilder = new StringBuilder();
 
-                for(Size s : cameraCharacteristics.getSizes(ImageFormat.YUY2))
+                for(Size s : cameraCharacteristics.getSizes(format))
                 {
                     supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
                 }
@@ -313,7 +331,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                         try
                         {
                             Size size = new Size(width, height);
-                            int format = ImageFormat.YUY2;
                             int fps = cameraCharacteristics.getMaxFramesPerSecond(format, size);
 
                             //Indicate how we want to stream
@@ -515,6 +532,10 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             {
                 yuy2BufToRgbaMat(cameraFrame.getImageBuffer(), cameraFrame.getSize().getWidth(), cameraFrame.getSize().getHeight(), rgbaMat.nativeObj);
             }
+            else if (cameraFrame.getUvcFrameFormat() == UvcFrameFormat.MJPEG)
+            {
+                mjpegBufToRgbaMat(cameraFrame.getImageBuffer(), cameraFrame.getImageSize(), cameraFrame.getSize().getWidth(), cameraFrame.getSize().getHeight(), rgbaMat.nativeObj);
+            }
 
             handleFrame(rgbaMat, cameraFrame.getCaptureTime());
         }
@@ -625,6 +646,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     }
 
     public static native void yuy2BufToRgbaMat(long rawDataPtr, int width, int height, long rgbaPtr);
+    public static native void mjpegBufToRgbaMat(long rawDataPtr, int bufSize, int width, int height, long rgbPtr);
 
     static
     {

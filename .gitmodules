@@ -1,0 +1,3 @@
+[submodule "easyopencv/AndroidJpegTurbo"]
+	path = easyopencv/AndroidJpegTurbo
+	url = git@github.com:OpenFTC/AndroidJpegTurbo.git

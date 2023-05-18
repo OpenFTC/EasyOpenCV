@@ -22,6 +22,7 @@
 #include <jni.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include "turbojpeg.h"
 
 using namespace cv;
 
@@ -34,4 +35,19 @@ Java_org_openftc_easyopencv_OpenCvWebcamImpl_yuy2BufToRgbaMat(JNIEnv *env, jclas
     Mat* rgba = (Mat*) rgbaMatPtr;
 
     cvtColor(rawSensorMat, *rgba, COLOR_YUV2RGBA_YUY2, 4);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_openftc_easyopencv_OpenCvWebcamImpl_mjpegBufToRgbaMat(JNIEnv *env, jclass clazz,
+                                                              jlong buf, jint bufSize, jint width, jint height, jlong rgbaMatPtr)
+{
+    Mat* rgba = (Mat*) rgbaMatPtr;
+
+    tjhandle decompressor = tj3Init(TJINIT_DECOMPRESS);
+
+    // We decompress DIRECTLY into the image buffer of the mat
+    tj3Decompress8(decompressor, (uint8_t*) buf, bufSize, rgba->data, 0, TJPF_RGBA);
+
+    tj3Destroy(decompressor);
 }

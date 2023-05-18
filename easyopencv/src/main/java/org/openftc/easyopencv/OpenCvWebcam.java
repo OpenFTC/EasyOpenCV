@@ -38,6 +38,26 @@ public interface OpenCvWebcam extends OpenCvCamera
      */
     void setMillisecondsPermissionTimeout(int ms);
 
+    enum StreamFormat
+    {
+        // The only format that was supported historically; it is uncompressed but
+        // chroma subsampled and uses lots of bandwidth - this limits frame rate
+        // at higher resolutions and also limits the ability to use two cameras
+        // on the same bus to lower resolutions
+        YUY2,
+
+        // Compressed motion JPEG stream format; allows for higher resolutions at
+        // full frame rate, and better ability to use two cameras on the same bus.
+        // Requires extra CPU time to run decompression routine.
+        MJPEG;
+    }
+
+    /**
+     * Same as {@link #startStreaming(int, int, OpenCvCameraRotation)} except for
+     * @param streamFormat indicates the desired stream format.
+     */
+    void startStreaming(int width, int height, OpenCvCameraRotation rotation, StreamFormat streamFormat);
+
     /***
      * Gets the {@link ExposureControl} for this webcam.
      * Please see that interface's javadoc for how to use

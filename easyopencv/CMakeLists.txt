@@ -33,7 +33,8 @@ add_library( # Specifies the name of the library.
 
 # Specifies a path to native header files.
 include_directories(src/main/cpp/include/
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/doc/native_headers/)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/doc/native_headers/
+                    AndroidJpegTurbo/libjpeg-turbo/)
 
 # Specify path to prebuilt object
 
@@ -43,9 +44,14 @@ add_library(openCvNative SHARED IMPORTED)
 set_target_properties(openCvNative PROPERTIES IMPORTED_LOCATION
         ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so)
 
+add_library(turbojpeg SHARED IMPORTED)
+set_target_properties(turbojpeg PROPERTIES IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/AndroidJpegTurbo/bin/${ANDROID_ABI}/libturbojpeg.so)
+
 # linking libs
 target_link_libraries(
         EasyOpenCV
+        turbojpeg
         openCvNative
         log
         android)
