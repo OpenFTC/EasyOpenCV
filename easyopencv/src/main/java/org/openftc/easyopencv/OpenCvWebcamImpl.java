@@ -57,20 +57,13 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzCont
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraInternal;
 import org.firstinspires.ftc.robotcore.internal.camera.CameraManagerInternal;
-import org.firstinspires.ftc.robotcore.internal.camera.ImageFormatMapper;
-import org.firstinspires.ftc.robotcore.internal.camera.RenumberedCameraFrame;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibrationIdentity;
-import org.firstinspires.ftc.robotcore.internal.camera.libuvc.api.UvcApiCameraFrame;
-import org.firstinspires.ftc.robotcore.internal.camera.libuvc.nativeobject.UvcFrame;
+import org.firstinspires.ftc.robotcore.internal.camera.libuvc.constants.UvcFrameFormat;
 import org.firstinspires.ftc.robotcore.internal.system.Deadline;
-import org.firstinspires.ftc.robotcore.internal.vuforia.externalprovider.CameraMode;
-import org.firstinspires.ftc.robotcore.internal.vuforia.externalprovider.FrameFormat;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -85,8 +78,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private CameraCharacteristics cameraCharacteristics = null;
     protected Camera camera = null;
     private CameraCaptureSession cameraCaptureSession = null;
-    private long ptrNativeExtSourceRawSensorMat;
-    private Mat rgbMat;
+    private Mat rgbaMat;
     private volatile boolean isStreaming = false;
     private final Object sync = new Object();
     private final Object newFrameSync = new Object();
@@ -320,19 +312,12 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     {
                         try
                         {
-                            CameraMode streamingMode = new CameraMode(
-                                    width,
-                                    height,
-                                    cameraCharacteristics.getMaxFramesPerSecond(
-                                            ImageFormatMapper.androidFromVuforiaWebcam(FrameFormat.YUYV),
-                                            new Size(width, height)),
-                                    FrameFormat.YUYV);
+                            Size size = new Size(width, height);
+                            int format = ImageFormat.YUY2;
+                            int fps = cameraCharacteristics.getMaxFramesPerSecond(format, size);
 
                             //Indicate how we want to stream
-                            final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(
-                                    streamingMode.getAndroidFormat(),
-                                    streamingMode.getSize(),
-                                    streamingMode.getFramesPerSecond());
+                            final CameraCaptureRequest cameraCaptureRequest = camera.createCaptureRequest(format, size, fps);
 
                             // Start streaming!
                             session.startCapture(cameraCaptureRequest,
@@ -461,13 +446,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
                 cleanupForEndStreaming();
 
-                if(ptrNativeExtSourceRawSensorMat != 0)
-                {
-                    freeExtImgDatMat(ptrNativeExtSourceRawSensorMat);
-                    ptrNativeExtSourceRawSensorMat = 0;
-                }
-
-                rgbMat = null;
+                rgbaMat = null;
             }
 
             if (cameraCaptureSession != null)
@@ -527,19 +506,17 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
             notifyStartOfFrameProcessing();
 
-            if(rgbMat == null)
+            if(rgbaMat == null)
             {
-                rgbMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC1);
-            }
-            if(ptrNativeExtSourceRawSensorMat == 0)
-            {
-                ptrNativeExtSourceRawSensorMat = allocExtImgDatMat(cameraFrame.getSize().getWidth(), cameraFrame.getSize().getHeight(),  CvType.CV_8UC2);
+                rgbaMat = new Mat(cameraFrame.getSize().getHeight(), cameraFrame.getSize().getWidth(), CvType.CV_8UC4);
             }
 
-            setMatDataPtr(ptrNativeExtSourceRawSensorMat, cameraFrame.getImageBuffer());
-            colorConversion(ptrNativeExtSourceRawSensorMat, rgbMat.nativeObj);
+            if (cameraFrame.getUvcFrameFormat() == UvcFrameFormat.YUY2)
+            {
+                yuy2BufToRgbaMat(cameraFrame.getImageBuffer(), cameraFrame.getSize().getWidth(), cameraFrame.getSize().getHeight(), rgbaMat.nativeObj);
+            }
 
-            handleFrame(rgbMat, cameraFrame.getCaptureTime());
+            handleFrame(rgbaMat, cameraFrame.getCaptureTime());
         }
     }
 
@@ -647,10 +624,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
     }
 
-    public static native void setMatDataPtr(long matPtr, long dataPtr);
-    public static native void colorConversion(long rawDataPtr, long rgbPtr);
-    public static native long allocExtImgDatMat(int width, int height, int type);
-    public static native void freeExtImgDatMat(long ptr);
+    public static native void yuy2BufToRgbaMat(long rawDataPtr, int width, int height, long rgbaPtr);
 
     static
     {

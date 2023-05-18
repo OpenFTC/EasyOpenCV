@@ -25,37 +25,13 @@
 
 using namespace cv;
 
-extern "C" JNIEXPORT void JNICALL
-Java_org_openftc_easyopencv_OpenCvWebcamImpl_setMatDataPtr(JNIEnv *env, jclass type,
-    jlong ptrMat, jlong ptrImgDat)
-{
-    Mat* mat = (Mat*) ptrMat;
-    mat->data = (uchar*) ptrImgDat;
-}
-
-extern "C"
-JNIEXPORT jlong JNICALL
-Java_org_openftc_easyopencv_OpenCvWebcamImpl_allocExtImgDatMat(JNIEnv *env, jclass clazz,
-    jint width, jint height, jint type)
-{
-    Mat* mat = new Mat(height, width, type, 4634); // placeholder data ptr. Is properly set in setMatDataPtr
-    return (jlong) mat;
-}
-
 extern "C"
 JNIEXPORT void JNICALL
-Java_org_openftc_easyopencv_OpenCvWebcamImpl_freeExtImgDatMat(JNIEnv *env, jclass clazz, jlong ptr)
+Java_org_openftc_easyopencv_OpenCvWebcamImpl_yuy2BufToRgbaMat(JNIEnv *env, jclass clazz,
+                                                              jlong buf, jint width, jint height, jlong rgbaMatPtr)
 {
-    delete (Mat*) ptr;
-}
+    Mat rawSensorMat(height, width, CV_8UC2, (void*)buf);
+    Mat* rgba = (Mat*) rgbaMatPtr;
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_org_openftc_easyopencv_OpenCvWebcamImpl_colorConversion(JNIEnv *env, jclass clazz,
-                                                             jlong raw_sensor_mat_ptr, jlong rgb_ptr)
-{
-    Mat* rawSensorMat = (Mat*) raw_sensor_mat_ptr;
-    Mat* rgb = (Mat*) rgb_ptr;
-
-    cvtColor(*rawSensorMat, *rgb, COLOR_YUV2RGBA_YUY2, 4);
+    cvtColor(rawSensorMat, *rgba, COLOR_YUV2RGBA_YUY2, 4);
 }
