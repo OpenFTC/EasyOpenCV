@@ -161,13 +161,16 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     @Override
     public void pause()
     {
-        synchronized (activeSync)
+        if (!paused)
         {
-            paused = true;
-
-            if (active)
+            synchronized (activeSync)
             {
-                handler.post(invalidateRunnable);
+                paused = true;
+
+                if (active)
+                {
+                    handler.post(invalidateRunnable);
+                }
             }
         }
     }
@@ -177,11 +180,14 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     {
         synchronized (activeSync)
         {
-            paused = false;
-
-            if (active)
+            if (paused)
             {
-                handler.post(invalidateRunnable);
+                paused = false;
+
+                if (active)
+                {
+                    handler.post(invalidateRunnable);
+                }
             }
         }
     }
