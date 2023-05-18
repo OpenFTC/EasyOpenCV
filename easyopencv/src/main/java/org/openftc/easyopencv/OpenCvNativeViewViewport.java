@@ -44,6 +44,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
     private MatRecycler framebufferRecycler;
 
     private volatile boolean active = false;
+    private volatile boolean wasJustActivated;
     private volatile boolean paused = false;
 
     private final Object activeSync = new Object();
@@ -198,6 +199,7 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
         synchronized (activeSync)
         {
             active = true;
+            wasJustActivated = true;
             handler.post(invalidateRunnable);
         }
     }
@@ -258,8 +260,17 @@ public class OpenCvNativeViewViewport extends View implements OpenCvViewport
 
             if (mat == null)
             {
-                canvas.drawColor(Color.BLUE);
-                System.out.println("Invalidate w/ null mat " + System.currentTimeMillis());
+                if (wasJustActivated)
+                {
+                    wasJustActivated = false;
+                    canvas.drawColor(Color.BLUE);
+                }
+                else
+                {
+                    // This can happen if the layout changes and triggers a redraw
+                    System.out.println("Invalidate w/ null mat " + System.currentTimeMillis());
+                }
+
                 return;
             }
 
