@@ -1,3 +1,6 @@
 [submodule "easyopencv/AndroidJpegTurbo"]
 	path = easyopencv/AndroidJpegTurbo
 	url = git@github.com:OpenFTC/AndroidJpegTurbo.git
+[submodule "easyopencv/OpenCV-Repackaged"]
+	path = easyopencv/OpenCV-Repackaged
+	url = git@github.com:OpenFTC/OpenCV-Repackaged.git

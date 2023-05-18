@@ -24,25 +24,17 @@ add_library( # Specifies the name of the library.
              src/main/cpp/camera_base_jni.cpp
              src/main/cpp/vuforia_passthrough_jni.cpp)
 
-#########################################################
-# You must clone OpenCv-Repackaged into the same parent #
-# directory as this copy of EasyOpenCV in order to be   #
-# able to compile the native code. (Or, you can edit    #
-# these paths)                                          #
-#########################################################
-
 # Specifies a path to native header files.
 include_directories(src/main/cpp/include/
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/doc/native_headers/
+                    ${CMAKE_CURRENT_SOURCE_DIR}/OpenCV-Repackaged/doc/native_headers/
                     AndroidJpegTurbo/libjpeg-turbo/)
 
 # Specify path to prebuilt object
-
-set(OPENCV_NATIVE_LIB_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../OpenCV-Repackaged/OpenCV-Android-SDK/src/main/jniLibs)
+set(OPENCV_NATIVE_LIB_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenCV-Repackaged/OpenCV-Android-SDK/src/main/jniLibs)
 
 add_library(openCvNative SHARED IMPORTED)
 set_target_properties(openCvNative PROPERTIES IMPORTED_LOCATION
-        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so)
+        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so.470)
 
 add_library(turbojpeg SHARED IMPORTED)
 set_target_properties(turbojpeg PROPERTIES IMPORTED_LOCATION

@@ -1,1 +1,4 @@
 include ':easyopencv', ':examples'
+
+include ':OpenCV-Android-SDK'
+project(':OpenCV-Android-SDK').projectDir=new File('easyopencv/OpenCV-Repackaged/OpenCV-Android-SDK')
