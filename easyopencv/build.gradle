@@ -30,6 +30,8 @@ android {
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
+
+            buildConfigField("String","_VERSION_NAME", "\"DEV BUILD\"")
         }
 
         release {
@@ -39,6 +41,8 @@ android {
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
+
+            buildConfigField("String","_VERSION_NAME","\"" + PUBLISH_VERSION + "\"")
         }
     }
 

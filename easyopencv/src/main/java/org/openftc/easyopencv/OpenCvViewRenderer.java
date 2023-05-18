@@ -217,7 +217,7 @@ public class OpenCvViewRenderer
         int textLine3Y = textLine2Y + statBoxTextLineSpacing;
 
         // Draw the 3 text lines
-        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig.VERSION_NAME),        statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
+        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig._VERSION_NAME),        statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
         canvas.drawText(String.format("FPS@%dx%d: %.2f", width, height, fps), statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
         canvas.drawText(String.format("Pipeline: %dms - Overhead: %dms", pipelineMs, overheadMs), statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
     }
@@ -331,7 +331,7 @@ public class OpenCvViewRenderer
         int textLine3Y = textLine2Y + statBoxTextLineSpacing;
 
         // Draw the 3 text lines
-        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig.VERSION_NAME), statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
+        canvas.drawText(String.format("OpenFTC EasyOpenCV v%s", BuildConfig._VERSION_NAME), statBoxLTxtStart, textLine1Y, fpsMeterTextPaint);
         canvas.drawText("VIEWPORT PAUSED", statBoxLTxtStart, textLine2Y, fpsMeterTextPaint);
         //canvas.drawText("Hi", statBoxLTxtStart, textLine3Y, fpsMeterTextPaint);
     }

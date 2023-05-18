@@ -110,7 +110,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
 
     public OpenCvCameraBase()
     {
-        System.out.println("OpenCvCameraBase ctor: EasyOpenCV version " + BuildConfig.VERSION_NAME);
+        System.out.println("OpenCvCameraBase ctor: EasyOpenCV version " + BuildConfig._VERSION_NAME);
 
         frameCount = 0;
         LIFO_OpModeCallbackDelegate.getInstance().add(opModeNotifications);

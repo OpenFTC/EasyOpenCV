@@ -59,7 +59,7 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
     {
         if(appVersion < sdk_8_0_versionCode)
         {
-            throw new RuntimeException(String.format("EasyOpenCV v%s is only compatible with SDK v%s or greater!", BuildConfig.VERSION_NAME, sdk_8_0));
+            throw new RuntimeException(String.format("EasyOpenCV v%s is only compatible with SDK v%s or greater!", BuildConfig._VERSION_NAME, sdk_8_0));
         }
     }
 
