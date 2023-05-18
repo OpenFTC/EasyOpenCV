@@ -34,7 +34,7 @@ set(OPENCV_NATIVE_LIB_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenCV-Repackaged/O
 
 add_library(openCvNative SHARED IMPORTED)
 set_target_properties(openCvNative PROPERTIES IMPORTED_LOCATION
-        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so.470)
+        ${OPENCV_NATIVE_LIB_PARENT_DIR}/${ANDROID_ABI}/libopencv_java4.so)
 
 add_library(turbojpeg SHARED IMPORTED)
 set_target_properties(turbojpeg PROPERTIES IMPORTED_LOCATION
