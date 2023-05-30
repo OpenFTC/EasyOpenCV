@@ -80,7 +80,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private CameraCaptureSession cameraCaptureSession = null;
     private Mat rgbaMat;
     private volatile boolean isStreaming = false;
-    private final Object sync = new Object();
+    private final Object cameraDeviceStateSync = new Object();
     private final Object newFrameSync = new Object();
     private boolean abortNewFrameCallback = false;
     private volatile boolean hasSeenFrame = false;
@@ -121,7 +121,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public int openCameraDevice() /*throws CameraException*/
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(hasBeenCleanedUp())
             {
@@ -170,7 +170,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             @Override
             public void run()
             {
-                synchronized (sync)
+                synchronized (cameraDeviceStateSync)
                 {
                     try
                     {
@@ -205,7 +205,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public void closeCameraDevice()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             cleanupForClosingCamera();
 
@@ -226,7 +226,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
             @Override
             public void run()
             {
-                synchronized (sync)
+                synchronized (cameraDeviceStateSync)
                 {
                     try
                     {
@@ -276,7 +276,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     {
         final int format = streamFormat2ImageFormat(streamFormat);
 
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -450,7 +450,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public void stopStreaming()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -550,7 +550,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public ExposureControl getExposureControl()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -564,7 +564,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public FocusControl getFocusControl()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -578,7 +578,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public PtzControl getPtzControl()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -592,7 +592,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public GainControl getGainControl()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -606,7 +606,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public WhiteBalanceControl getWhiteBalanceControl()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
@@ -620,7 +620,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public <T extends CameraControl> T getControl(Class<T> controlType)
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if (camera == null)
             {
@@ -634,7 +634,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public CameraCalibrationIdentity getCalibrationIdentity()
     {
-        synchronized (sync)
+        synchronized (cameraDeviceStateSync)
         {
             if(camera == null)
             {
