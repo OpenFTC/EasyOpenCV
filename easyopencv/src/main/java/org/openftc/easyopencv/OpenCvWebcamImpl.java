@@ -80,7 +80,7 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     private CameraCaptureSession cameraCaptureSession = null;
     private Mat rgbaMat;
     private volatile boolean isStreaming = false;
-    private final Object cameraDeviceStateSync = new Object();
+    protected final Object cameraDeviceStateSync = new Object();
     private final Object newFrameSync = new Object();
     private boolean abortNewFrameCallback = false;
     private volatile boolean hasSeenFrame = false;

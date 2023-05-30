@@ -38,35 +38,44 @@ class OpenCvSwitchableWebcamImpl extends OpenCvWebcamImpl implements OpenCvSwitc
     }
 
     @Override
-    public synchronized void setActiveCamera(WebcamName cameraName)
+    public void setActiveCamera(WebcamName cameraName)
     {
-        if(camera == null)
+        synchronized (cameraDeviceStateSync)
         {
-            throw new OpenCvCameraException("setActiveCamera() called, but camera device is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("setActiveCamera() called, but camera device is not opened!");
+            }
 
-        ((SwitchableCamera)camera).setActiveCamera(cameraName);
+            ((SwitchableCamera)camera).setActiveCamera(cameraName);
+        }
     }
 
     @Override
-    public synchronized WebcamName getActiveCamera()
+    public WebcamName getActiveCamera()
     {
-        if(camera == null)
+        synchronized (cameraDeviceStateSync)
         {
-            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
+            }
 
-        return (WebcamName) ((SwitchableCamera)camera).getActiveCamera();
+            return (WebcamName) ((SwitchableCamera)camera).getActiveCamera();
+        }
     }
 
     @Override
-    public synchronized WebcamName[] getMembers()
+    public WebcamName[] getMembers()
     {
-        if(camera == null)
+        synchronized (cameraDeviceStateSync)
         {
-            throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
-        }
+            if(camera == null)
+            {
+                throw new OpenCvCameraException("getActiveCamera() called, but camera device is not opened!");
+            }
 
-        return (WebcamName[]) ((SwitchableCamera)camera).getMembers();
+            return (WebcamName[]) ((SwitchableCamera)camera).getMembers();
+        }
     }
 }
