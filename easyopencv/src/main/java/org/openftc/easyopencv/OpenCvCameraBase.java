@@ -138,12 +138,15 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity()).registerListener(opModeNotificationsForOrientation);
     }
 
-    public synchronized final void cleanupForClosingCamera()
+    public final void cleanupForClosingCamera()
     {
-        if(viewport != null)
+        synchronized (viewportLock)
         {
-            removeViewportAsync((View)viewport);
-            viewport = null;
+            if(viewport != null)
+            {
+                removeViewportAsync((View)viewport);
+                viewport = null;
+            }
         }
     }
 
@@ -303,34 +306,33 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                                 break;
                             }
                         }
-                    }
 
-                    viewport.setFpsMeterEnabled(fpsMeterDesired);
-
-                    viewport.setRenderHook(new OpenCvViewport.RenderHook()
-                    {
-                        @Override
-                        public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object context)
+                        viewport.setFpsMeterEnabled(fpsMeterDesired);
+                        viewport.setRenderHook(new OpenCvViewport.RenderHook()
                         {
-                            OpenCvViewport.FrameContext frameContext = (OpenCvViewport.FrameContext) context;
-
-                            // We must make sure that we call onDrawFrame() for the same pipeline which set the
-                            // context object when requesting a draw hook. (i.e. we can't just call onDrawFrame()
-                            // for whatever pipeline happens to be currently attached; it might have an entirely
-                            // different notion of what to expect in the context object)
-                            if (frameContext.generatingPipeline != null)
+                            @Override
+                            public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object context)
                             {
-                                frameContext.generatingPipeline.onDrawFrame(canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, scaleCanvasDensity, frameContext.userContext);
+                                OpenCvViewport.FrameContext frameContext = (OpenCvViewport.FrameContext) context;
+
+                                // We must make sure that we call onDrawFrame() for the same pipeline which set the
+                                // context object when requesting a draw hook. (i.e. we can't just call onDrawFrame()
+                                // for whatever pipeline happens to be currently attached; it might have an entirely
+                                // different notion of what to expect in the context object)
+                                if (frameContext.generatingPipeline != null)
+                                {
+                                    frameContext.generatingPipeline.onDrawFrame(canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, scaleCanvasDensity, frameContext.userContext);
+                                }
                             }
-                        }
-                    });
+                        });
 
-                    viewport.setSize(320, 240);
+                        viewport.setSize(320, 240);
 
-                    ((View)viewport).setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                        ((View)viewport).setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-                    viewportContainerLayout.setVisibility(View.VISIBLE);
-                    viewportContainerLayout.addView((View)viewport);
+                        viewportContainerLayout.setVisibility(View.VISIBLE);
+                        viewportContainerLayout.addView((View)viewport);
+                    }
 
                     latch.countDown();
                 }

@@ -166,55 +166,60 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         sync.lock();
 
-        prepareForOpenCameraDevice();
-
-        if(hasBeenCleanedUp())
+        try
         {
-            return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE; // We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
-        }
-
-        if(mCameraDevice == null)
-        {
-            try
+            if(hasBeenCleanedUp())
             {
-                startCameraHardwareHandlerThread();
+                return CAMERA_OPEN_ERROR_POSTMORTEM_OPMODE; // We're running on a zombie thread post-mortem of the OpMode GET OUT OF DODGE NOW
+            }
 
-                String camList[] = cameraManager.getCameraIdList();
+            prepareForOpenCameraDevice();
 
-                String camId = null;
-
-                for(String s : camList)
+            if(mCameraDevice == null)
+            {
+                try
                 {
-                    if(cameraManager.getCameraCharacteristics(s).get(CameraCharacteristics.LENS_FACING) == direction.id)
+                    startCameraHardwareHandlerThread();
+
+                    String camList[] = cameraManager.getCameraIdList();
+
+                    String camId = null;
+
+                    for(String s : camList)
                     {
-                        camId = s;
-                        break;
+                        if(cameraManager.getCameraCharacteristics(s).get(CameraCharacteristics.LENS_FACING) == direction.id)
+                        {
+                            camId = s;
+                            break;
+                        }
                     }
+
+                    cameraOpenedLatch = new CountDownLatch(1);
+                    cameraCharacteristics = cameraManager.getCameraCharacteristics(camId);
+                    cameraManager.openCamera(camId, mStateCallback, cameraHardwareHandler);
+                    sensorTimestampsAreRealtime = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) == CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME;
+                    RobotLog.vv("OpenCvInternalCamera2Impl", "Camera sensor timestamps are realtime: %b", sensorTimestampsAreRealtime);
+
+                    cameraOpenedLatch.await();
                 }
+                catch (CameraAccessException e)
+                {
+                    e.printStackTrace();
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                }
+            }
 
-                cameraOpenedLatch = new CountDownLatch(1);
-                cameraCharacteristics = cameraManager.getCameraCharacteristics(camId);
-                cameraManager.openCamera(camId, mStateCallback, cameraHardwareHandler);
-                sensorTimestampsAreRealtime = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) == CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME;
-                RobotLog.vv("OpenCvInternalCamera2Impl", "Camera sensor timestamps are realtime: %b", sensorTimestampsAreRealtime);
-
-                cameraOpenedLatch.await();
-            }
-            catch (CameraAccessException e)
-            {
-                e.printStackTrace();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-            }
+            int ret = mCameraDevice != null ? 0 : CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
+            return ret;
         }
-
-        int ret = mCameraDevice != null ? 0 : CAMERA_OPEN_ERROR_FAILURE_TO_OPEN_CAMERA_DEVICE;
-        sync.unlock();
-
-        return ret;
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     @Override
@@ -265,18 +270,23 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
     {
         sync.lock();
 
-        cleanupForClosingCamera();
-
-        if(mCameraDevice != null)
+        try
         {
-            stopStreaming();
+            cleanupForClosingCamera();
 
-            mCameraDevice.close();
-            stopCameraHardwareHandlerThread();
-            mCameraDevice = null;
+            if(mCameraDevice != null)
+            {
+                stopStreaming();
+
+                mCameraDevice.close();
+                stopCameraHardwareHandlerThread();
+                mCameraDevice = null;
+            }
         }
-
-        sync.unlock();
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     @Override
@@ -442,24 +452,17 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
         sync.lock();
 
-        cleanupForEndStreaming();
-
         try
         {
+            cleanupForEndStreaming();
+
             if (null != cameraCaptureSession)
             {
                 cameraCaptureSession.close();
                 cameraCaptureSession = null;
                 isStreaming = false;
             }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
 
-        try
-        {
             //stopCameraHardwareHandlerThread();
             //stopFrameWorkerHandlerThread();
             if (null != imageReader)
@@ -540,60 +543,79 @@ public class OpenCvInternalCamera2Impl extends OpenCvCameraBase implements OpenC
 
     private void startFrameWorkerHandlerThread()
     {
-
         sync.lock();
 
-        frameWorkerHandlerThread = new FixedHandlerThread("FrameWorkerHandlerThread");
-        frameWorkerHandlerThread.start();
+        try
+        {
+            frameWorkerHandlerThread = new FixedHandlerThread("FrameWorkerHandlerThread");
+            frameWorkerHandlerThread.start();
 
-        frameWorkerHandler = new Handler(frameWorkerHandlerThread.getLooper());
-
-        sync.unlock();
+            frameWorkerHandler = new Handler(frameWorkerHandlerThread.getLooper());
+        }
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     private void stopFrameWorkerHandlerThread()
     {
         sync.lock();
 
-        if (frameWorkerHandlerThread != null)
+        try
         {
-            frameWorkerHandlerThread.quit();
-            frameWorkerHandlerThread.interrupt();
-            joinUninterruptibly(frameWorkerHandlerThread);
+            if (frameWorkerHandlerThread != null)
+            {
+                frameWorkerHandlerThread.quit();
+                frameWorkerHandlerThread.interrupt();
+                joinUninterruptibly(frameWorkerHandlerThread);
 
-            frameWorkerHandlerThread = null;
-            frameWorkerHandler = null;
+                frameWorkerHandlerThread = null;
+                frameWorkerHandler = null;
+            }
         }
-
-        sync.unlock();
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     private void startCameraHardwareHandlerThread()
     {
         sync.lock();
 
-        cameraHardwareHandlerThread = new FixedHandlerThread("CameraHardwareHandlerThread");
-        cameraHardwareHandlerThread.start();
-        cameraHardwareHandler = new Handler(cameraHardwareHandlerThread.getLooper());
-
-        sync.unlock();
+        try
+        {
+            cameraHardwareHandlerThread = new FixedHandlerThread("CameraHardwareHandlerThread");
+            cameraHardwareHandlerThread.start();
+            cameraHardwareHandler = new Handler(cameraHardwareHandlerThread.getLooper());
+        }
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     private void stopCameraHardwareHandlerThread()
     {
         sync.lock();
 
-        if (cameraHardwareHandlerThread == null)
-            return;
+        try
+        {
+            if (cameraHardwareHandlerThread == null)
+                return;
 
-        cameraHardwareHandlerThread.quitSafely();
-        cameraHardwareHandlerThread.interrupt();
+            cameraHardwareHandlerThread.quitSafely();
+            cameraHardwareHandlerThread.interrupt();
 
-        joinUninterruptibly(cameraHardwareHandlerThread);
-        cameraHardwareHandlerThread = null;
-        cameraHardwareHandler = null;
-
-        sync.unlock();
+            joinUninterruptibly(cameraHardwareHandlerThread);
+            cameraHardwareHandlerThread = null;
+            cameraHardwareHandler = null;
+        }
+        finally
+        {
+            sync.unlock();
+        }
     }
 
     @Override
