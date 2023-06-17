@@ -17,8 +17,7 @@ Features at a glance:
  - Supports using webcams directly with OpenCV instead of going through a Vuforia instance
  - Supports changing pipelines on-the-fly (while a streaming session is in flight)
  - Supports dynamically pausing/resuming live viewport to save battery and CPU time
- -  Support for rotating stream based on physical camera orientation (e.g. use a webcam in portrait without having to mess with rotation yourself)
- - Loads 10MB native library for OpenCV from internal storage to prevent bloating the APK
+ - Support for rotating stream based on physical camera orientation (e.g. use a webcam in portrait without having to mess with rotation yourself)
  
 ## Device compatibility:
 
