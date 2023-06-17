@@ -54,7 +54,7 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 3. At the bottom, add this:
     ```gradle
     dependencies {
-        implementation 'org.openftc:easyopencv:1.6.2'
+        implementation 'org.openftc:easyopencv:1.7.0'
     } 
     ```
 4. Now perform a Gradle Sync:
@@ -65,6 +65,28 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
 
 
 ## Changelog:
+
+### v1.7.0
+
+ - Adds new `NATIVE_VIEW` viewport renderer option
+    - Attempts to provide a balance between the stability of the `SOFTWARE` renderer and the speedup seen with the `GPU_ACCELERATED` renderer
+    - Drawing is done on the UI thread using the GPU accelerated main canvas, instead of making another canvas as the `GPU_ACCELERATED` renderer does
+ - Uses anti-aliasing when drawing the statistics overlay to make text more readable on low resolution screens
+ - Adds ability for user pipelines to hook into the Canvas rendering of frames to the live view
+    - This is an alternate means besides OpenCV calls to draw annotations from a pipeline
+    - Allows drawing annotations at the full screen resolution even if performing image processing at a much lower resolution (e.g. 320x240). This allows e.g. drawing actually legible text on a low res image feed.
+    - Because live view rendering happens on a different thread than the image processing, in order to make use of this feature, pipelines must call `requestViewportDrawHook(object)` during `processFrame()`, providing any type of context object they may wish which encapsulates the data needed to draw the annotations. Pipelines then also need to override `onDrawFrame(...)` which can receive that same object back, and perform the annotation drawing there.
+    - The image sent to the DriverStation is now rendered using an offsceen canvas to ensure that annotations rendered using the canvas will be visible on the DS as well.
+ - Adds support for MJPEG streaming for webcams
+    - Requires FTC SDK v8.2
+    - Uses libjpeg-turbo for JPEG decompression routine
+    - Allows for streaming at full frame rate at higher resolutions (e.g. 1280x720) which were previously limited to 10FPS due to bandwidth constraints
+    - Improves ability to use multiple cameras simultaneously by reducing bandwidth usage
+    - CPU load will be increased due to additional overhead from JPEG decompression
+    - Uncompressed streaming is still the default; in order to request MJPEG, use the overloaded `startStreaming()` method in `OpenCvWebcam` which takes a `StreamFormat` argument
+ - Fixes a deadlock when trying to switch cameras when using `OpenCvSwitchableWebcam`
+ - Fixes cases where mutex might not be released in internal camera v2 implementation
+ - Updates OpenCV-Repackaged transitive dependency to `4.7.0-A`
 
 ### v1.6.2
 

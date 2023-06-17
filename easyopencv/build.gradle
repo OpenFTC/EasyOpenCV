@@ -3,7 +3,7 @@ apply plugin: 'com.android.library'
 ext {
     PUBLISH_GROUP_ID = 'org.openftc'
     PUBLISH_ARTIFACT_ID = 'easyopencv'
-    PUBLISH_VERSION = '1.6.2'
+    PUBLISH_VERSION = '1.7.0'
 }
 
 android {
@@ -69,8 +69,8 @@ android {
 
 dependencies {
     //compileOnly fileTree(include: ['*.aar'], dir: '../libs')
-    api project(':OpenCV-Android-SDK')
-    //releaseApi 'org.openftc:opencv-repackaged-bundled-dylibs:4.5.3-C'
+    debugApi project(':OpenCV-Android-SDK')
+    releaseApi 'org.openftc:opencv-repackaged-bundled-dylibs:4.7.0-A'
     compileOnly 'org.firstinspires.ftc:RobotCore:8.1.1'
 }
 
