@@ -173,17 +173,10 @@ public class OpenCvViewRenderer
                 null
         );
 
-        if (fpsMeterEnabled)
-        {
-            Rect statsRect = createRect(
-                    x_offset_statbox,
-                    onscreenHeight-y_offset_statbox-statBoxH,
-                    statBoxW,
-                    statBoxH
-            );
-
-            drawStats(canvas, statsRect);
-        }
+        // We need to save the canvas translation/rotation and such before we hand off to the user,
+        // because if they don't put it back how they found it and then we go to draw the FPS meter,
+        // it's... well... not going to draw properly lol
+        int canvasSaveBeforeUserDraw = canvas.save();
 
         // Allow the user to do some drawing if they want
         if (userHook != null)
@@ -195,6 +188,21 @@ public class OpenCvViewRenderer
             // left corner of the bitmap we painted
             canvas.translate(topLeftX, topLeftY);
             userHook.onDrawFrame(canvas, scaledWidth, scaledHeight, scaleBitmapPxToCanvasPx, metricsScale, userCtx);
+        }
+
+        // Make sure the canvas translation/rotation is what we expect (see comment when we save state)
+        canvas.restoreToCount(canvasSaveBeforeUserDraw);
+
+        if (fpsMeterEnabled)
+        {
+            Rect statsRect = createRect(
+                    x_offset_statbox,
+                    onscreenHeight-y_offset_statbox-statBoxH,
+                    statBoxW,
+                    statBoxH
+            );
+
+            drawStats(canvas, statsRect);
         }
     }
 
