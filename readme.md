@@ -32,36 +32,15 @@ Unfortunately, due to a [known bug with OpenCV 4.x](https://github.com/opencv/op
  
  **IMPORTANT NOTE:** EasyOpenCV delivers RGBA frames, but desktop OpenCV (what you may be used to) delivers BGR frames. Beware when porting code between the two!
 
-## Installation instructions (OnBotJava):
+## Installation instructions:
 
-1. Go to the [Releases page](https://github.com/OpenFTC/EasyOpenCV/releases), find the latest release, and download the OBJ AAR bundle file from the assets section
-2. In the OnBotJava console, click the Upload Files button (to the left of the trash can), select the `.aar` file you just downloaded, and wait while OnBotJava processes the library
-8. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
+As of FTC SDK v8.2, EasyOpenCV is now packaged with the SDK as part of the Vision module. **No manual installation is neccesary** whether you are using Android Studio or Blocks.
 
-## Installation instructions (Android Studio):
-
-**IMPORTANT NOTE: These instructions assume you are starting with a clean SDK project. This library includes the OpenCV Android SDK, so if you have already installed OpenCV in your project through the traditional means, you will need to remove it first. Otherwise, you will get a compiler error that multiple files define the same class.**
-
-**IMPORTANT NOTE #2: Do NOT locally clone and/or import this project unless you want to develop this library itself! If you're just a normal user, follow the below instructions verbatim.**
-
-1. Open your FTC SDK Android Studio project
-
-2. Open the `build.gradle` file for the TeamCode module:
-
-    ![img-here](doc/images/teamcode-gradle.png)
-
-3. At the bottom, add this:
-    ```gradle
-    dependencies {
-        implementation 'org.openftc:easyopencv:1.7.0'
-    } 
-    ```
-4. Now perform a Gradle Sync:
-
-    ![img-here](doc/images/gradle-sync.png)
-
-5. Congrats, you're ready to go! Now check out the example OpModes and other documentation in the [Documentation Section](https://github.com/OpenFTC/EasyOpenCV/tree/master#documentation).
-
+**PLEASE NOTE THAT THERE IS CURRENTLY A KNOWN BUG IN v9.0 and v9.0.1 OF THE FTC SDK WHICH PREVENTS IMPORTING THE `OpenCvCameraFactory` CLASS IN OBJ**
+ - This means you cannot use the "raw" EOCV APIs from OBJ
+ - As a workaround, you can port your pipeline to a `VisionProcessor` and use the Vision Portal API. There is a chapter in the LearnJava4FTC book that covers this
+ - Alternatively, you can switch to using Android Studio.
+ - **THIS WILL BE FIXED IN A FUTURE RELEASE OF THE FTC SDK**
 
 ## Changelog:
 
