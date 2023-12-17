@@ -21,12 +21,7 @@
 
 package org.openftc.easyopencv;
 
-import android.content.Context;
-
-import com.qualcomm.robotcore.eventloop.opmode.AnnotatedOpModeManager;
-
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
 public abstract class OpenCvCameraFactory
 {
@@ -56,12 +51,6 @@ public abstract class OpenCvCameraFactory
     public abstract OpenCvWebcam createWebcam(WebcamName cameraName, int viewportContainerId);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(WebcamName... names);
     public abstract OpenCvSwitchableWebcam createSwitchableWebcam(int viewportContainerId, WebcamName... names);
-
-    /*
-     * Vuforia passthrough
-     */
-    public abstract OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters, int viewportContainerId);
-    public abstract OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters);
 
     public enum ViewportSplitMethod
     {

@@ -754,7 +754,7 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
         RobotLog.setGlobalErrorMsg("User code threw an uncaught exception: " + errorMsg);
 
         OpModeManagerImpl mgr = OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity());
-        mgr.initActiveOpMode(OpModeManagerImpl.DEFAULT_OP_MODE_NAME);
+        mgr.initOpMode(OpModeManagerImpl.DEFAULT_OP_MODE_NAME);
 
         try
         {

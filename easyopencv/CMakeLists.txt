@@ -21,8 +21,7 @@ add_library( # Specifies the name of the library.
              # Provides a relative path to your source file(s).
              src/main/cpp/webcam_jni.cpp
              src/main/cpp/camera2_jni.cpp
-             src/main/cpp/camera_base_jni.cpp
-             src/main/cpp/vuforia_passthrough_jni.cpp)
+             src/main/cpp/camera_base_jni.cpp)
 
 # Specifies a path to native header files.
 include_directories(src/main/cpp/include/

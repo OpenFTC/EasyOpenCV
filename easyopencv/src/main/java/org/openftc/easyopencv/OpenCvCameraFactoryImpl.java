@@ -30,7 +30,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.internal.camera.delegating.SwitchableCameraName;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
@@ -121,18 +120,6 @@ class OpenCvCameraFactoryImpl extends OpenCvCameraFactory
         SwitchableCameraName cameraName = ClassFactory.getInstance().getCameraManager().nameForSwitchableCamera(names);
 
         return new OpenCvSwitchableWebcamImpl(cameraName, viewportContainerId);
-    }
-
-    @Override
-    public OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters, int viewportId)
-    {
-        return new OpenCvVuforiaPassthroughImpl(vuforiaLocalizer, parameters, viewportId);
-    }
-
-    @Override
-    public OpenCvCamera createVuforiaPassthrough(VuforiaLocalizer vuforiaLocalizer, VuforiaLocalizer.Parameters parameters)
-    {
-        return new OpenCvVuforiaPassthroughImpl(vuforiaLocalizer, parameters);
     }
 
     @Override
