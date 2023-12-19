@@ -27,6 +27,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
+import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +37,7 @@ import com.qualcomm.robotcore.eventloop.EventLoopManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier;
+import com.qualcomm.robotcore.robocol.Command;
 import com.qualcomm.robotcore.robot.RobotState;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.GlobalWarningSource;
@@ -48,6 +50,8 @@ import org.firstinspires.ftc.robotcore.external.function.Continuation;
 import org.firstinspires.ftc.robotcore.external.function.ContinuationResult;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamServer;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
+import org.firstinspires.ftc.robotcore.internal.network.NetworkConnectionHandler;
+import org.firstinspires.ftc.robotcore.internal.network.RobotCoreCommandList;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -761,28 +765,22 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
     {
         RobotLog.ee("OpenCvCamera", e, "User code threw an uncaught exception");
 
-        String errorMsg = e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-        RobotLog.setGlobalErrorMsg("User code threw an uncaught exception: " + errorMsg);
-
         OpModeManagerImpl mgr = OpModeManagerImpl.getOpModeManagerOfActivity(AppUtil.getInstance().getActivity());
         mgr.initOpMode(OpModeManagerImpl.DEFAULT_OP_MODE_NAME);
 
-        try
-        {
-            Field eventLoopMgrField = OpModeManagerImpl.class.getDeclaredField("eventLoopManager");
-            eventLoopMgrField.setAccessible(true);
-            EventLoopManager eventLoopManager = (EventLoopManager) eventLoopMgrField.get(mgr);
+        // Get the trace as a string
+        String stacktrace = Log.getStackTraceString(e);
+        String[] lines = stacktrace.split("\n");
+        StringBuilder builder = new StringBuilder();
 
-            Method changeStateMethod = EventLoopManager.class.getDeclaredMethod("changeState", RobotState.class);
-            changeStateMethod.setAccessible(true);
-            changeStateMethod.invoke(eventLoopManager, RobotState.EMERGENCY_STOP);
-
-            eventLoopManager.refreshSystemTelemetryNow();
-        }
-        catch (Exception e2)
+        // Truncate at 15 lines
+        for(int i = 0; i < Math.min(lines.length, 15); i++)
         {
-            e2.printStackTrace();
+            builder.append(lines[i]).append("\n");
         }
+
+        // Send it off to the DS
+        NetworkConnectionHandler.getInstance().sendCommand(new Command(RobotCoreCommandList.CMD_SHOW_STACKTRACE, builder.toString()));
     }
 
     @Override
