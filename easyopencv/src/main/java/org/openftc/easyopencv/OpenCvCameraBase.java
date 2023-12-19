@@ -321,7 +321,18 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                                 // different notion of what to expect in the context object)
                                 if (frameContext.generatingPipeline != null)
                                 {
-                                    frameContext.generatingPipeline.onDrawFrame(canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, scaleCanvasDensity, frameContext.userContext);
+                                    // Since we are handing off to user code here, we need to protect against crashes
+                                    // the same way we do with pipeline code, since this isn't running on the OpMode
+                                    // thread so a crash would otherwise take down the entire app.
+                                    try
+                                    {
+                                        frameContext.generatingPipeline.onDrawFrame(
+                                                canvas, onscreenWidth, onscreenHeight, scaleBmpPxToCanvasPx, scaleCanvasDensity, frameContext.userContext);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        emulateEStop(e);
+                                    }
                                 }
                             }
                         });
