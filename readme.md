@@ -1,6 +1,6 @@
 # EasyOpenCV
 
-NOTE: SDK v8.0+ is required to use this
+NOTE: SDK v9.0+ is required to use this
 
 NOTE: an OpenRC-based SDK is NOT required to use this
 
@@ -43,6 +43,15 @@ As of FTC SDK v8.2, EasyOpenCV is now packaged with the SDK as part of the Visio
  - **THIS WILL BE FIXED IN A FUTURE RELEASE OF THE FTC SDK**
 
 ## Changelog:
+
+### v1.7.1
+
+ - **IMPORTANT NOTE:** SDK v9.0 or higher is now required!
+ - Build against FTC SDK v9.x; remove support for Vuforia integration
+    - Fixes inability to use CameraFactory in OnBotJava due to reference of Vuforia classes no longer in SDK
+    - Fixes entire RC app crash due to ABI breakage when user pipeline throws an exception
+ - Handle exceptions in user-provided canvas annotators the same way exceptions in pipelines are handled to prevent entire RC app crash
+ - Use the modern stacktrace display when handling user exceptions instead of the legacy ESTOP telemetry message
 
 ### v1.7.0
 

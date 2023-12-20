@@ -3,7 +3,7 @@ apply plugin: 'com.android.library'
 ext {
     PUBLISH_GROUP_ID = 'org.openftc'
     PUBLISH_ARTIFACT_ID = 'easyopencv'
-    PUBLISH_VERSION = '1.7.0'
+    PUBLISH_VERSION = '1.7.1'
 }
 
 android {
