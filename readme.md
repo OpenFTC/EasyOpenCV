@@ -44,6 +44,10 @@ As of FTC SDK v8.2, EasyOpenCV is now packaged with the SDK as part of the Visio
 
 ## Changelog:
 
+### v1.7.2
+
+ - Fix race conditions when handling exception during viewport insertion
+
 ### v1.7.1
 
  - **IMPORTANT NOTE:** SDK v9.0 or higher is now required!
