@@ -348,25 +348,31 @@ public abstract class OpenCvCameraBase implements OpenCvCamera, CameraStreamSour
                         viewportContainerLayout.setVisibility(View.VISIBLE);
                         viewportContainerLayout.addView((View)viewport);
                     }
-
-                    latch.countDown();
                 }
                 catch (RuntimeException e)
                 {
+                    e.printStackTrace();
                     exToRethrowOnOpModeThread[0] = e;
                 }
-
+                catch (Error e)
+                {
+                    e.printStackTrace();
+                }
+                finally
+                {
+                    latch.countDown();
+                }
             }
         });
-
-        if(exToRethrowOnOpModeThread[0] != null)
-        {
-            throw exToRethrowOnOpModeThread[0];
-        }
 
         try
         {
             latch.await();
+
+            if(exToRethrowOnOpModeThread[0] != null)
+            {
+                throw exToRethrowOnOpModeThread[0];
+            }
         }
         catch (InterruptedException e)
         {
