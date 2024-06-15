@@ -44,6 +44,12 @@ As of FTC SDK v8.2, EasyOpenCV is now packaged with the SDK as part of the Visio
 
 ## Changelog:
 
+### v1.7.3
+ - Updates `libjpeg-turbo` to 3.0.3 
+ - Updates OpenCV to v4.10.0
+ - Show more detail about camera supported resolutions and formats when user requests unsupported configuration
+ - Show warning if performance could be improved by using MJPEG format
+
 ### v1.7.2
 
  - Fix race conditions when handling exception during viewport insertion

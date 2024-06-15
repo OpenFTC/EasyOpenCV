@@ -34,6 +34,7 @@
 
 package org.openftc.easyopencv;
 
+import android.annotation.SuppressLint;
 import android.graphics.ImageFormat;
 
 import com.qualcomm.robotcore.util.RobotLog;
@@ -258,10 +259,10 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
     @Override
     public void startStreaming(int width, int height, OpenCvCameraRotation rotation)
     {
-        startStreaming(width, height, rotation, StreamFormat.YUY2);
+        startStreaming(width, height, rotation, null);
     }
 
-    private int streamFormat2ImageFormat(StreamFormat streamFormat)
+    private static int streamFormat2ImageFormat(StreamFormat streamFormat)
     {
         switch (streamFormat)
         {
@@ -271,9 +272,47 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
         }
     }
 
+    private static boolean isSizeSupportedForFormat(CameraCharacteristics characteristics, int width, int height, StreamFormat format)
+    {
+        for(Size s : characteristics.getSizes(streamFormat2ImageFormat(format)))
+        {
+            if(s.getHeight() == height && s.getWidth() == width)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressLint("DefaultLocale")
+    private static String getSizeAndFpsListForFormat(CameraCharacteristics characteristics, StreamFormat format)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        boolean areAnySupported = false;
+
+        for(Size s : characteristics.getSizes(streamFormat2ImageFormat(format)))
+        {
+            int fps = characteristics.getMaxFramesPerSecond(streamFormat2ImageFormat(format), s);
+            builder.append(String.format("[%dx%d @ %dFPS], ", s.getWidth(), s.getHeight(), fps));
+            areAnySupported = true;
+        }
+
+        return areAnySupported ? builder.toString() : "NONE";
+    }
+
+    @SuppressLint("DefaultLocale")
     @Override
     public void startStreaming(final int width, final int height, OpenCvCameraRotation rotation, StreamFormat streamFormat)
     {
+        boolean userExplicitlyRequestedFormat = streamFormat != null;
+
+        if (streamFormat == null)
+        {
+            streamFormat = StreamFormat.YUY2;
+        }
+
         final int format = streamFormat2ImageFormat(streamFormat);
 
         synchronized (cameraDeviceStateSync)
@@ -299,26 +338,36 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
 
             final CountDownLatch captureStartResult = new CountDownLatch(1);
 
-            boolean sizeSupported = false;
-            for(Size s : cameraCharacteristics.getSizes(format))
+            boolean sizeSupportedForReqFormat = isSizeSupportedForFormat(cameraCharacteristics, width, height, streamFormat);
+            boolean sizeSupportedForMjpeg = isSizeSupportedForFormat(cameraCharacteristics, width, height, StreamFormat.MJPEG);
+
+            if(!sizeSupportedForReqFormat)
             {
-                if(s.getHeight() == height && s.getWidth() == width)
-                {
-                    sizeSupported = true;
-                    break;
-                }
+                throw new OpenCvCameraException(String.format(
+                        "Camera does not support requested resolution for format %s!" +
+                        "\nSupported resolutions for YUY2 are: %s\n" +
+                        "\nSupported resolutions for MJPEG are: %s\n",
+                        streamFormat,
+                        getSizeAndFpsListForFormat(cameraCharacteristics, StreamFormat.YUY2),
+                        getSizeAndFpsListForFormat(cameraCharacteristics, StreamFormat.MJPEG)
+                ));
             }
 
-            if(!sizeSupported)
+            final Size size = new Size(width, height);
+
+            if (!userExplicitlyRequestedFormat && streamFormat == StreamFormat.YUY2 && sizeSupportedForMjpeg)
             {
-                StringBuilder supportedSizesBuilder = new StringBuilder();
+                int maxFpsYuy2 = cameraCharacteristics.getMaxFramesPerSecond(streamFormat2ImageFormat(StreamFormat.YUY2), size);
+                int maxFpsMjpeg = cameraCharacteristics.getMaxFramesPerSecond(streamFormat2ImageFormat(StreamFormat.MJPEG), size);
 
-                for(Size s : cameraCharacteristics.getSizes(format))
+                if (maxFpsMjpeg > maxFpsYuy2)
                 {
-                    supportedSizesBuilder.append(String.format("[%dx%d], ", s.getWidth(), s.getHeight()));
+                    RobotLog.addGlobalWarningMessage(String.format(
+                            "You are using YUY2 image format for this camera. You could increase your maximum " +
+                            "FPS from %d to %d by choosing MJPEG format. To suppress this warning, explicitly " +
+                            "request YUY2 format.", maxFpsYuy2, maxFpsMjpeg
+                    ));
                 }
-
-                throw new OpenCvCameraException("Camera does not support requested resolution! Supported resolutions are " + supportedSizesBuilder.toString());
             }
 
             try
@@ -330,7 +379,6 @@ class OpenCvWebcamImpl extends OpenCvCameraBase implements OpenCvWebcam, CameraC
                     {
                         try
                         {
-                            Size size = new Size(width, height);
                             int fps = cameraCharacteristics.getMaxFramesPerSecond(format, size);
 
                             //Indicate how we want to stream
